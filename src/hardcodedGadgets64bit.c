@@ -247,3 +247,101 @@ void divideTwoVariablesAndGetRemainder(void) {
 
 #pragma endregion Arithmetic operations
 
+
+
+#pragma #region Bitwise operations
+#if false
+int ________Bitwise_operations________;
+#endif
+
+void bitwiseNotOnVariable(void) {
+    // RAX - address of memory location (variable)
+    __asm__(
+        "nop;" // For easier visual separation in the output
+        "pop %rax;"
+        "ret;"
+    );
+
+    __asm__(
+        "nop;" // For easier visual separation in the output
+        "notq (%rax);"
+        "ret;"
+    );
+}
+
+void bitwiseAndOnTwoVariables(void) {
+    // RAX, RBX - addresses of input variables
+    // RCX - address of output variable
+    __asm__(
+        "nop;" // For easier visual separation in the output
+        "pop %rax;"
+        "ret;"
+    );
+
+    __asm__(
+        "nop;" // For easier visual separation in the output
+        "pop %rbx;"
+        "pop %rcx;"
+        "mov (%rax), %rax;"
+        "mov (%rbx), %rbx;"
+        "ret;"
+    );
+
+    __asm__(
+        "nop;" // For easier visual separation in the output
+        "and %rbx, %rax;"
+        "mov %rax, (%rcx);"
+        "ret;"
+    );
+}
+
+void bitwiseOrOnTwoVariables(void) {
+    // RAX, RBX - addresses of input variables
+    // RCX - address of output variable
+    __asm__(
+        "nop;" // For easier visual separation in the output
+        "pop %rax;"
+        "ret;"
+    );
+
+    __asm__(
+        "nop;" // For easier visual separation in the output
+        "pop %rbx;"
+        "pop %rcx;"
+        "mov (%rax), %rax;"
+        "ret;"
+    );
+
+    __asm__(
+        "nop;" // For easier visual separation in the output
+        "or (%rbx), %rax;"
+        "mov %rax, (%rcx);"
+        "ret;"
+    );
+}
+
+void bitwiseXorOnTwoVariables(void) {
+    // RAX, RBX - addresses of input variables
+    // RCX - address of output variable
+    __asm__(
+        "nop;" // For easier visual separation in the output
+        "pop %rax;"
+        "pop %rbx;"
+        "ret;"
+    );
+
+    __asm__(
+        "nop;" // For easier visual separation in the output
+        "pop %rcx;"
+        "mov (%rax), %rax;"
+        "xor (%rbx), %rax;"
+        "mov %rax, (%rcx);"
+        "ret;"
+    );
+}
+
+void rightShiftVariable(void) {
+    // TODO: Add binary shifts?
+}
+
+#pragma endregion Bitwise operations
