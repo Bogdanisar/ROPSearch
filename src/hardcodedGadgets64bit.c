@@ -157,6 +157,7 @@ void addTwoVariables(void) {
     );
 
     __asm__(
+        "nop;" // For easier visual separation in the output
         "mov %rax, (%rcx);"
         "ret;"
     );
