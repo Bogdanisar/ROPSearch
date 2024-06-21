@@ -345,3 +345,106 @@ void rightShiftVariable(void) {
 }
 
 #pragma endregion Bitwise operations
+
+
+
+#pragma #region Branching operations
+#if false
+int ________Branching_operations________;
+#endif
+
+// TODO
+
+#pragma endregion Branching operations
+
+
+
+#pragma #region Call operations
+#if false
+int ________Call_operations________;
+#endif
+
+// Some references:
+// https://stackoverflow.com/a/2538212
+// https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI
+
+
+void callRegularFunctionWithRegisterArguments(void) {
+    // On x86-64 Linux, integers and pointer arguments of regular function calls
+    // are passed in %rdi, %rsi, %rdx, %rcx, %r8 and %r9.
+    // Extra such arguments are placed on the stack.
+
+    __asm__(
+        "nop;" // For easier visual separation in the output
+        "pop %rdi;"
+        "pop %rsi;"
+        "pop %rdx;"
+        "pop %rcx;"
+        "pop %r8;"
+        "pop %r9;"
+        "ret;"
+    );
+
+    __asm__(
+        "nop;" // For easier visual separation in the output
+        "mov (%rdi), %rdi;"
+        "mov (%rsi), %rsi;"
+        "mov (%rdx), %rdx;"
+        "mov (%rcx), %rcx;"
+        "mov (%r8), %r8;"
+        "mov (%r9), %r9;"
+        "pop %rax;" // Pop the address of the function to call
+        "call %rax;"
+        "ret;"
+    );
+
+    // RAX - Call return value
+    // R10 - Address of variable to hold the call return value.
+    __asm__(
+        "nop;" // For easier visual separation in the output
+        "pop %r10;"
+        "mov %rax, (%r10);"
+        "ret;"
+    );
+}
+
+void makeSystemCallWithRegisterArguments(void) {
+    // On x86-64 Linux, the kernel system call interface
+    // uses %rdi, %rsi, %rdx, %r10, %r8 and %r9 for integer and pointer arguments.
+    // System calls take at most 6 arguments.
+
+    __asm__(
+        "nop;" // For easier visual separation in the output
+        "pop %rdi;"
+        "pop %rsi;"
+        "pop %rdx;"
+        "pop %r10;"
+        "pop %r8;"
+        "pop %r9;"
+        "ret;"
+    );
+
+    __asm__(
+        "nop;" // For easier visual separation in the output
+        "mov (%rdi), %rdi;"
+        "mov (%rsi), %rsi;"
+        "mov (%rdx), %rdx;"
+        "mov (%r10), %r10;"
+        "mov (%r8), %r8;"
+        "mov (%r9), %r9;"
+        "ret;"
+    );
+
+    // RAX - Call return value
+    // R10 - Address of variable to hold the call return value.
+    __asm__(
+        "nop;" // For easier visual separation in the output
+        "pop %rax;" // Pop the system call number.
+        "syscall;"
+        "pop %r10;"
+        "mov %rax, (%r10);"
+        "ret;"
+    );
+}
+
+#pragma endregion Call operations
