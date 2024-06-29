@@ -1,0 +1,68 @@
+#include "VirtualMemoryMapping.hpp"
+
+#include <fstream>
+#include <inttypes.h>
+#include <sstream>
+#include "utils.h"
+
+
+// // PRIu64 is a portable format string specifier for uint64_t when printing.
+// // PRIx64 is the same, but for a hexadecimal literal.
+// static const char *printSegmentFormat =
+//     PRIx64"-"PRIx64 " %s " PRIx64 " " PRIu64":"PRIu64 PRIu64 "   %s";
+
+// // SCNu64 is a portable format string specifier for uint64_t when scanning.
+// // SCNx64 is the same, but for a hexadecimal literal.
+// static const char *scanSegmentFormat =
+//     SCNx64"-"SCNx64 " %4c " SCNx64 " " SCNu64":"SCNu64 SCNu64 " ";
+
+
+void ROOP::VirtualMemorySegment::printSegment() {
+    printf("%llx-%llx %s %08llx %02llu:%02llu %-7llu %18c %s;",
+           this->startAddress, this->endAddress, this->rights, this->offset,
+           this->deviceMajor, this->deviceMinor, this->inodeNumber, ' ', this->name.c_str());
+    printf("\n");
+
+    pv(this->rightsMask); pn;
+}
+
+
+ROOP::VirtualMemoryMapping::VirtualMemoryMapping(int processPid) {
+
+    std::stringstream ss;
+    ss << "/proc/" << processPid << "/maps";
+    std::string mapsPath = ss.str();
+
+    std::ifstream fin(mapsPath);
+    std::string line;
+    while (std::getline(fin, line)) {
+
+        VirtualMemorySegment vms;
+        unsigned int readCharacters;
+        int matched = sscanf(line.c_str(), "%llx-%llx %4c %llx %llu:%llu %llu %n",
+                             &vms.startAddress, &vms.endAddress, vms.rights, &vms.offset,
+                             &vms.deviceMajor, &vms.deviceMinor, &vms.inodeNumber, &readCharacters);
+
+        if (matched != 7) {
+            pv(line); pn;
+            exiterror("Got error when parsing /maps segment line");
+        }
+
+        vms.rights[4] = '\0';
+        vms.rightsMask = 0;
+        if (vms.rights[0] == 'r') { vms.rightsMask |= (unsigned int)ROOP::VirtualMemorySegment::SegmentRights::READ; }
+        if (vms.rights[1] == 'w') { vms.rightsMask |= (unsigned int)ROOP::VirtualMemorySegment::SegmentRights::WRITE; }
+        if (vms.rights[2] == 'x') { vms.rightsMask |= (unsigned int)ROOP::VirtualMemorySegment::SegmentRights::EXECUTE; }
+        if (vms.rights[3] == 'p') { vms.rightsMask |= (unsigned int)ROOP::VirtualMemorySegment::SegmentRights::PRIVATE; }
+
+        vms.name = std::string(line.c_str() + readCharacters);
+
+        this->segments.push_back(vms);
+    }
+};
+
+void ROOP::VirtualMemoryMapping::printSegments() {
+    for (VirtualMemorySegment& s : this->segments) {
+        s.printSegment();
+    }
+}
