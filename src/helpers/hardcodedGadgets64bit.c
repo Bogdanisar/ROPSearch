@@ -18,7 +18,7 @@ Note: These functions are not supposed to be called in regular x86-64 code!
 ===================================== Terminal commands =====================================
 
 // Build object file
-gcc -O0 -c src/hardcodedGadgets64bit.c -o bin/hardcodedGadgets64bit.o
+gcc -O0 -c src/helpers/hardcodedGadgets64bit.c -o bin/hardcodedGadgets64bit.o
 
 // Check the assembly content of the output file
 objdump --disassemble --disassembler-options="intel" bin/hardcodedGadgets64bit.o
