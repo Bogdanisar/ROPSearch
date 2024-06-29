@@ -1,7 +1,6 @@
 #ifndef VIRTUAL_MEMORY_MAPPING_H
 #define VIRTUAL_MEMORY_MAPPING_H
 
-#include <cstdint>
 #include <string>
 #include <vector>
 

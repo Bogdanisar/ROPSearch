@@ -1,20 +1,8 @@
 #include "VirtualMemoryMapping.hpp"
 
 #include <fstream>
-#include <inttypes.h>
 #include <sstream>
 #include "utils.h"
-
-
-// // PRIu64 is a portable format string specifier for uint64_t when printing.
-// // PRIx64 is the same, but for a hexadecimal literal.
-// static const char *printSegmentFormat =
-//     PRIx64"-"PRIx64 " %s " PRIx64 " " PRIu64":"PRIu64 PRIu64 "   %s";
-
-// // SCNu64 is a portable format string specifier for uint64_t when scanning.
-// // SCNx64 is the same, but for a hexadecimal literal.
-// static const char *scanSegmentFormat =
-//     SCNx64"-"SCNx64 " %4c " SCNx64 " " SCNu64":"SCNu64 SCNu64 " ";
 
 
 void ROOP::VirtualMemorySegment::printSegment() {
