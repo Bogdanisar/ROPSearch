@@ -2,7 +2,7 @@
 
 #include <fstream>
 #include <sstream>
-#include "utils.hpp"
+#include "common/utils.hpp"
 
 
 void ROOP::VirtualMemorySegment::printSegment() const {
