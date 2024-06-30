@@ -8,7 +8,7 @@
 void ROOP::VirtualMemorySegment::printSegment() {
     printf("%llx-%llx %s %08llx %02llu:%02llu %-7llu %18c %s;",
            this->startAddress, this->endAddress, this->rights, this->offset,
-           this->deviceMajor, this->deviceMinor, this->inodeNumber, ' ', this->name.c_str());
+           this->deviceMajor, this->deviceMinor, this->inodeNumber, ' ', this->path.c_str());
     printf("\n");
 
     pv(this->rightsMask); pn;
@@ -43,7 +43,7 @@ ROOP::VirtualMemoryMapping::VirtualMemoryMapping(int processPid) {
         if (vms.rights[2] == 'x') { vms.rightsMask |= (unsigned int)ROOP::VirtualMemorySegment::SegmentRights::EXECUTE; }
         if (vms.rights[3] == 'p') { vms.rightsMask |= (unsigned int)ROOP::VirtualMemorySegment::SegmentRights::PRIVATE; }
 
-        vms.name = std::string(line.c_str() + readCharacters);
+        vms.path = std::string(line.c_str() + readCharacters);
 
         this->segments.push_back(vms);
     }

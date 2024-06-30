@@ -15,7 +15,7 @@ namespace ROOP {
         unsigned long long offset;
         unsigned long long deviceMajor, deviceMinor;
         unsigned long long inodeNumber;
-        std::string name;
+        std::string path;
 
         enum class SegmentRights {
             READ = 1<<0,
