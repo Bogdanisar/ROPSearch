@@ -28,7 +28,7 @@ namespace ROOP {
         ELFParser(const std::string& elfPath);
 
         std::map<instructionSequence, InstructionSequenceMatch>
-        matchInstructionSequencesInFile(std::vector<std::vector<unsigned char>> instructionSequences);
+        matchInstructionSequencesInFile(std::vector<instructionSequence> instructionSequences);
     };
 
 }
