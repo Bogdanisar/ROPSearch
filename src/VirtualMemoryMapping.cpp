@@ -26,7 +26,7 @@ ROOP::VirtualMemoryMapping::VirtualMemoryMapping(int processPid) {
     while (std::getline(fin, line)) {
 
         VirtualMemorySegment vms;
-        unsigned int readCharacters;
+        int readCharacters;
         int matched = sscanf(line.c_str(), "%llx-%llx %4c %llx %llu:%llu %llu %n",
                              &vms.startAddress, &vms.endAddress, vms.rights, &vms.offset,
                              &vms.deviceMajor, &vms.deviceMinor, &vms.inodeNumber, &readCharacters);
