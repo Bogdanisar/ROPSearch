@@ -8,5 +8,5 @@ bin/ROOP.o: src/common/*.hpp src/ROOP.cpp
 bin/VirtualMemoryMapping.o: src/common/*.hpp src/VirtualMemoryMapping.hpp src/VirtualMemoryMapping.cpp
 	g++ -Wall -Wextra -pedantic -c src/VirtualMemoryMapping.cpp -o bin/VirtualMemoryMapping.o
 
-bin/ELFParser.o: src/common/*.hpp src/ELFParser.cpp
+bin/ELFParser.o: src/common/*.hpp src/ELFParser.hpp src/ELFParser.cpp
 	g++ -Wall -Wextra -pedantic -c src/ELFParser.cpp -o bin/ELFParser.o
