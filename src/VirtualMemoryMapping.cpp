@@ -5,13 +5,13 @@
 #include "utils.hpp"
 
 
-void ROOP::VirtualMemorySegment::printSegment() {
+void ROOP::VirtualMemorySegment::printSegment() const {
     printf("%llx-%llx %s %08llx %02llu:%02llu %-7llu %18c %s;",
            this->startAddress, this->endAddress, this->rights, this->offset,
            this->deviceMajor, this->deviceMinor, this->inodeNumber, ' ', this->path.c_str());
     printf("\n");
 
-    pv(this->rightsMask); pn;
+    // pv(this->rightsMask); pn;
 }
 
 
@@ -49,8 +49,12 @@ ROOP::VirtualMemoryMapping::VirtualMemoryMapping(int processPid) {
     }
 };
 
-void ROOP::VirtualMemoryMapping::printSegments() {
-    for (VirtualMemorySegment& s : this->segments) {
+const std::vector<ROOP::VirtualMemorySegment>& ROOP::VirtualMemoryMapping::getSegments() const {
+    return this->segments;
+}
+
+void ROOP::VirtualMemoryMapping::printSegments() const {
+    for (const VirtualMemorySegment& s : this->segments) {
         s.printSegment();
     }
 }

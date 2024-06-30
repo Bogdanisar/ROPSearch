@@ -24,7 +24,7 @@ namespace ROOP {
             PRIVATE = 1<<3
         };
 
-        void printSegment();
+        void printSegment() const;
     };
 
     class VirtualMemoryMapping {
@@ -32,7 +32,8 @@ namespace ROOP {
 
         public:
         VirtualMemoryMapping(int processPid);
-        void printSegments();
+        const std::vector<VirtualMemorySegment>& getSegments() const;
+        void printSegments() const;
     };
 
 }
