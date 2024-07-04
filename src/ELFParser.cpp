@@ -59,6 +59,54 @@ void ROOP::ELFParser::readAndValidateFileHeader(std::ifstream& fin) {
     }
 }
 
+void ROOP::ELFParser::readSegments(std::ifstream& fin) {
+    Elf64_Off programHeaderTableOffset = this->fileHeader.e_phoff;
+    Elf64_Half programHeaderSize = this->fileHeader.e_phentsize;
+    Elf64_Half programHeaderNum = this->fileHeader.e_phnum;
+
+    fin.seekg(programHeaderTableOffset, std::ios_base::beg);
+    if (!fin) {
+        pv(this->elfPath); pn;
+        exiterror("Can't seek to the begining of the program header table in the ELF file...");
+    }
+
+    // Load the program/segment headers.
+    for (Elf64_Half i = 0; i < programHeaderNum; ++i) {
+        Elf64_Phdr currentProgHeader;
+        fin.read((char*)&currentProgHeader, programHeaderSize);
+        if (!fin) {
+            pv(this->elfPath); pn;
+            exiterror("Can't read the current program header in the ELF file...");
+        }
+
+        this->segmentHeaders.push_back(currentProgHeader);
+
+        bool isLoadType = (currentProgHeader.p_type == PT_LOAD);
+        bool isExecutable = ((currentProgHeader.p_flags & PF_X) != 0);
+        bool hasLoadableFileContent = (currentProgHeader.p_filesz != 0);
+        if (isLoadType && isExecutable && hasLoadableFileContent) {
+            this->codeSegmentHeaders.push_back(currentProgHeader);
+        }
+    }
+
+    // Now also load the bytes of the code segments.
+    for (const Elf64_Phdr& codeProgHeader : this->codeSegmentHeaders) {
+        auto segmentSizeInFile = codeProgHeader.p_filesz;
+
+        std::vector<byte> segmBytes;
+        segmBytes.reserve(segmentSizeInFile);
+
+        fin.seekg(codeProgHeader.p_offset, std::ios_base::beg);
+        fin.read((char*)segmBytes.data(), segmentSizeInFile);
+        if (!fin) {
+            pv(this->elfPath); pn;
+            exiterror("Can't read the bytes of the current code segment in the ELF file...");
+        }
+
+        this->codeSegmentBytes.push_back(segmBytes);
+    }
+}
+
 ROOP::ELFParser::ELFParser(const std::string& elfPath): elfPath(elfPath) {
     if (!ELFParser::elfPathIsAcceptable(this->elfPath)) {
         pv(this->elfPath); pn;
@@ -68,6 +116,7 @@ ROOP::ELFParser::ELFParser(const std::string& elfPath): elfPath(elfPath) {
     std::ifstream fin(elfPath, std::ifstream::binary);
     this->readEntireBinaryIntoMemory(fin);
     this->readAndValidateFileHeader(fin);
+    this->readSegments(fin);
 }
 
 const std::string& ROOP::ELFParser::getElfPath() const {
@@ -84,4 +133,12 @@ const Elf64_Ehdr& ROOP::ELFParser::getFileHeader() const {
 
 const std::vector<Elf64_Phdr>& ROOP::ELFParser::getSegmentHeaders() const {
     return this->segmentHeaders;
+}
+
+const std::vector<Elf64_Phdr>& ROOP::ELFParser::getCodeSegmentHeaders() const {
+    return this->codeSegmentHeaders;
+}
+
+const std::vector<std::vector<ROOP::byte>>& ROOP::ELFParser::getCodeSegmentBytes() const {
+    return this->codeSegmentBytes;
 }

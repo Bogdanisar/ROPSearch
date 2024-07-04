@@ -22,9 +22,12 @@ namespace ROOP {
         std::vector<byte> elfBytes;
         Elf64_Ehdr fileHeader;
         std::vector<Elf64_Phdr> segmentHeaders;
+        std::vector<Elf64_Phdr> codeSegmentHeaders;
+        std::vector<std::vector<byte>> codeSegmentBytes;
 
         void readEntireBinaryIntoMemory(std::ifstream& fin);
         void readAndValidateFileHeader(std::ifstream& fin);
+        void readSegments(std::ifstream& fin);
 
         public:
         static bool elfPathIsAcceptable(const std::string& elfPath);
@@ -34,6 +37,8 @@ namespace ROOP {
         const std::vector<byte>& getElfBytes() const;
         const Elf64_Ehdr& getFileHeader() const;
         const std::vector<Elf64_Phdr>& getSegmentHeaders() const;
+        const std::vector<Elf64_Phdr>& getCodeSegmentHeaders() const;
+        const std::vector<std::vector<byte>>& getCodeSegmentBytes() const;
 
         std::map<instructionSequence, InstructionSequenceMatch>
         matchInstructionSequencesInFile(std::vector<instructionSequence> instructionSequences);
