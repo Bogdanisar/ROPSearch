@@ -16,7 +16,7 @@ void testVirtualMemoryMapping(int argc, char* argv[]) {
     UNUSED(argc); UNUSED(argv);
 
     const VirtualMemoryMapping vmm(getpid());
-    vmm.printSegments();
+    vmm.printMapping();
 }
 
 void testPrintCodeSegmentsOfLoadedELFs(int argc, char* argv[]) {
@@ -25,7 +25,7 @@ void testPrintCodeSegmentsOfLoadedELFs(int argc, char* argv[]) {
     std::set<std::string> loadedELFs;
 
     const VirtualMemoryMapping vmm(getpid());
-    for (const VirtualMemorySegment& segm : vmm.getSegments()) {
+    for (const VirtualMemorySegmentMapping& segm : vmm.getSegmentMaps()) {
         if (ELFParser::elfPathIsAcceptable(segm.path)) {
             loadedELFs.insert(segm.path);
         }

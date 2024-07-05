@@ -7,7 +7,7 @@
 
 namespace ROOP {
 
-    struct VirtualMemorySegment {
+    struct VirtualMemorySegmentMapping {
         unsigned long long startAddress;
         unsigned long long endAddress;
         char rights[5];
@@ -24,16 +24,19 @@ namespace ROOP {
             PRIVATE = 1<<3
         };
 
+        // Will print it like in /proc/PID/maps
         void printSegment() const;
     };
 
     class VirtualMemoryMapping {
-        std::vector<VirtualMemorySegment> segments;
+        std::vector<VirtualMemorySegmentMapping> segmentMaps;
 
         public:
         VirtualMemoryMapping(int processPid);
-        const std::vector<VirtualMemorySegment>& getSegments() const;
-        void printSegments() const;
+        const std::vector<VirtualMemorySegmentMapping>& getSegmentMaps() const;
+
+        // Will print it like in /proc/PID/maps (all segments)
+        void printMapping() const;
     };
 
 }
