@@ -22,6 +22,11 @@ ROOP::VirtualMemoryMapping::VirtualMemoryMapping(int processPid) {
     std::string mapsPath = ss.str();
 
     std::ifstream fin(mapsPath);
+    if (!fin) {
+        pv(processPid); pv(mapsPath); pn;
+        exiterror("Got error when opening /proc/PID/maps file");
+    }
+
     std::string line;
     while (std::getline(fin, line)) {
 

@@ -87,8 +87,8 @@ void testPrintCodeSegmentsOfLoadedELFs(int argc, char* argv[]) {
 int main(int argc, char* argv[]) {
     UNUSED(argc); UNUSED(argv);
 
-    // testVirtualMemoryMapping(argc, argv);
-    testPrintCodeSegmentsOfLoadedELFs(argc, argv);
+    testVirtualMemoryMapping(argc, argv);
+    // testPrintCodeSegmentsOfLoadedELFs(argc, argv);
 
     return 0;
 }
