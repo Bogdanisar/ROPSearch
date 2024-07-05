@@ -111,6 +111,11 @@ void ROOP::ELFParser::readSegments(std::ifstream& fin) {
     }
 }
 
+ROOP::ELFParser::ELFParser() {
+    // We need the default constructor to exist if we want
+    // to be able to use std::map<key, ELFParser>.
+}
+
 ROOP::ELFParser::ELFParser(const std::string& elfPath): elfPath(elfPath) {
     if (!ELFParser::elfPathIsAcceptable(this->elfPath)) {
         pv(this->elfPath); pn;

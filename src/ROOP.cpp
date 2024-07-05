@@ -4,8 +4,9 @@
 #include <unistd.h>
 
 #include "common/utils.hpp"
-#include "VirtualMemoryMapping.hpp"
 #include "ELFParser.hpp"
+#include "VirtualMemoryExecutableBytes.hpp"
+#include "VirtualMemoryMapping.hpp"
 
 
 using namespace std;
@@ -84,12 +85,42 @@ void testPrintCodeSegmentsOfLoadedELFs(int argc, char* argv[]) {
     }
 }
 
+void testVirtualMemoryExecutableBytes(int argc, char* argv[]) {
+    UNUSED(argc); UNUSED(argv);
+
+    VirtualMemoryExecutableBytes vmBytes(getpid());
+    const std::vector<VirtualMemoryExecutableSegment>& executableSegments = vmBytes.getExecutableSegments();
+
+    for (const auto& execSegm : executableSegments) {
+
+        // As far as I can tell, the difference between "end" and "actualEnd"
+        // is that "end" must be a multiple of the page size.
+        unsigned long long start = execSegm.startVirtualAddress;
+        unsigned long long end = execSegm.endVirtualAddress;
+        unsigned long long actualEnd = start + (unsigned long long)execSegm.executableBytes.size();
+        printf("%llx-%llx (actual: %llx-%llx): ", start, end, start, actualEnd);
+
+        size_t bytesToPrint = std::min((size_t)10, execSegm.executableBytes.size());
+        for (size_t i = 0; i < bytesToPrint; ++i) {
+            printf("%02hhx ", execSegm.executableBytes[i]);
+        }
+        printf("...\n");
+    }
+
+    // TODO: Test getByteAtVAAddress
+}
+
 
 int main(int argc, char* argv[]) {
     UNUSED(argc); UNUSED(argv);
 
-    testVirtualMemoryMapping(argc, argv);
-    // testPrintCodeSegmentsOfLoadedELFs(argc, argv);
+    long pageSize = sysconf(_SC_PAGESIZE);
+    pv(pageSize); pn;
+    pv(getpid()); pn; pn;
+
+    testVirtualMemoryMapping(argc, argv); pn;
+    // testPrintCodeSegmentsOfLoadedELFs(argc, argv); pn;
+    testVirtualMemoryExecutableBytes(argc, argv); pn;
 
     return 0;
 }

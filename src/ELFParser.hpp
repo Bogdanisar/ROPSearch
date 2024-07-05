@@ -31,6 +31,7 @@ namespace ROOP {
 
         public:
         static bool elfPathIsAcceptable(const std::string& elfPath);
+        ELFParser(); // Empty parser. Don't use this.
         ELFParser(const std::string& elfPath);
 
         const std::string& getElfPath() const;
