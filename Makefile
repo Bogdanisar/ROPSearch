@@ -5,8 +5,8 @@ bin/ROOP.exe: bin/ROOP.o bin/VirtualMemoryMapping.o bin/ELFParser.o
 bin/ROOP.o: src/common/*.hpp src/ROOP.cpp
 	g++ -Wall -Wextra -pedantic -c src/ROOP.cpp -o bin/ROOP.o
 
-bin/VirtualMemoryMapping.o: src/common/*.hpp src/VirtualMemoryMapping.hpp src/VirtualMemoryMapping.cpp
+bin/VirtualMemoryMapping.o: src/common/*.hpp src/VirtualMemoryMapping.*
 	g++ -Wall -Wextra -pedantic -c src/VirtualMemoryMapping.cpp -o bin/VirtualMemoryMapping.o
 
-bin/ELFParser.o: src/common/*.hpp src/ELFParser.hpp src/ELFParser.cpp
+bin/ELFParser.o: src/common/*.hpp src/ELFParser.*
 	g++ -Wall -Wextra -pedantic -c src/ELFParser.cpp -o bin/ELFParser.o
