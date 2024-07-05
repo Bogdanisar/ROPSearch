@@ -61,12 +61,13 @@ void testPrintCodeSegmentsOfLoadedELFs(int argc, char* argv[]) {
 
         printf("Code segments:\nOffset             VirtAddr           PhysAddr           FileSiz            MemSiz             Flags  Align\n");
         auto codeSegmentHeaders = parser.getCodeSegmentHeaders();
-        for (const Elf64_Phdr& hdr : codeSegmentHeaders) {
+        for (size_t i = 0; i < codeSegmentHeaders.size(); ++i) {
+            const Elf64_Phdr& hdr = codeSegmentHeaders[i];
             bool isReadable = ((hdr.p_flags & PF_R) != 0);
             bool isWritable = ((hdr.p_flags & PF_W) != 0);
             bool isExecutable = ((hdr.p_flags & PF_X) != 0);
 
-            printf("%#018llx %#018llx %#018llx %#018llx %#018llx %c%c%c    %#018llx",
+            printf("%#018llx %#018llx %#018llx %#018llx %#018llx %c%c%c    %#018llx\n",
                    (unsigned long long)hdr.p_offset,
                    (unsigned long long)hdr.p_vaddr,
                    (unsigned long long)hdr.p_paddr,

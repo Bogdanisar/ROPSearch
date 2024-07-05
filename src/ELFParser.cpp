@@ -94,13 +94,17 @@ void ROOP::ELFParser::readSegments(std::ifstream& fin) {
         auto segmentSizeInFile = codeProgHeader.p_filesz;
 
         std::vector<byte> segmBytes;
-        segmBytes.reserve(segmentSizeInFile);
+        segmBytes.resize(segmentSizeInFile);
 
         fin.seekg(codeProgHeader.p_offset, std::ios_base::beg);
         fin.read((char*)segmBytes.data(), segmentSizeInFile);
         if (!fin) {
             pv(this->elfPath); pn;
             exiterror("Can't read the bytes of the current code segment in the ELF file...");
+        }
+
+        if ((unsigned long long)segmBytes.size() != (unsigned long long)codeProgHeader.p_filesz) {
+            printf("Warning: loadedBytes.size() != codePH.p_filesz!\n");
         }
 
         this->codeSegmentBytes.push_back(segmBytes);
