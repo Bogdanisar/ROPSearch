@@ -7,7 +7,7 @@
 
 
 void printUserMessageVulnerable(char *msg) {
-    char localBuffer[100] = {};
+    char localBuffer[100];
     strcpy(localBuffer, msg);
     printf("User message: %s\n", localBuffer);
 }

@@ -26,16 +26,16 @@ bin/VirtualMemoryExecutableBytes.o: src/common/*.hpp src/VirtualMemoryExecutable
 # Vulnerable executable
 
 bin/vulnerable.exe: bin/vulnerable.o
-	g++ bin/vulnerable.o -o bin/vulnerable.exe
+	gcc bin/vulnerable.o -o bin/vulnerable.exe
 
 bin/vulnerableHelped.exe: bin/vulnerable.o bin/hardcodedGadgets64bit.o
-	g++ bin/vulnerable.o bin/hardcodedGadgets64bit.o -o bin/vulnerableHelped.exe
+	gcc bin/vulnerable.o bin/hardcodedGadgets64bit.o -o bin/vulnerableHelped.exe
 
 bin/vulnerable.o: src/vulnerable/vulnerable.c
-	g++ $(wFlags) -O0 -c src/vulnerable/vulnerable.c -o bin/vulnerable.o
+	gcc $(wFlags) -O0 -c src/vulnerable/vulnerable.c -o bin/vulnerable.o
 
 bin/hardcodedGadgets64bit.o: src/vulnerable/hardcodedGadgets64bit.c
-	g++ $(wFlags) -O0 -c src/vulnerable/hardcodedGadgets64bit.c -o bin/hardcodedGadgets64bit.o
+	gcc $(wFlags) -O0 -c src/vulnerable/hardcodedGadgets64bit.c -o bin/hardcodedGadgets64bit.o
 
 
 .PHONY: clean
