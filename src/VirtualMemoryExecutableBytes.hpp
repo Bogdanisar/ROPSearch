@@ -29,6 +29,7 @@ namespace ROOP {
         const VirtualMemoryMapping& getVASegmMapping() const;
         const std::vector<VirtualMemoryExecutableSegment>& getExecutableSegments() const;
 
+        bool isValidVAAddressInExecutableSegment(unsigned long long vaAddress) const;
         byte getByteAtVAAddress(unsigned long long vaAddress) const;
     };
 

@@ -1,4 +1,6 @@
 #include <assert.h>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <set>
 #include <unistd.h>
@@ -126,7 +128,7 @@ void testVirtualMemoryExecutableBytes(int targetPid) {
         unsigned long long start = execSegm.startVirtualAddress;
         unsigned long long end = execSegm.endVirtualAddress;
         unsigned long long actualEnd = start + (unsigned long long)execSegm.executableBytes.size();
-        printf("%llx-%llx (actual: %llx-%llx): ", start, end, start, actualEnd);
+        printf("0x%llx-0x%llx (actual: 0x%llx-0x%llx): ", start, end, start, actualEnd);
 
         size_t bytesToPrint = std::min((size_t)20, execSegm.executableBytes.size());
         for (size_t i = 0; i < bytesToPrint; ++i) {
@@ -144,7 +146,81 @@ void testVirtualMemoryExecutableBytes(int targetPid) {
         printf("Testing VirtualMemoryExecutableBytes::getByteAtVAAddress():\n");
         for (unsigned long long addr = firstSegmStart; addr < firstSegmStart + bytesToPrint; ++addr) {
             ROOP::byte b = vmBytes.getByteAtVAAddress(addr);
-            printf("virtual_memory[%llx] = %02hhx\n", addr, b);
+            printf("virtual_memory[0x%llx] = %02hhx\n", addr, b);
+        }
+    }
+}
+
+int getPidOfExecutable(string executableName) {
+    string tempFile = "pidVulnerable.txt";
+    string command = ("pidof " + executableName + " > " + tempFile);
+    int ret = system(command.c_str());
+    if (ret != 0) {
+        printf("System(\"%s\") failed with ret %i\n", command.c_str(), ret);
+        exit(-1);
+    }
+
+    int pid;
+    ifstream fin(tempFile);
+    fin >> pid;
+    if (!fin) {
+        exiterror("Failed reading the temp file with the pid...");
+    }
+
+    return pid;
+}
+
+void testGetExecutableBytesInteractive(string targetExecutable) {
+    pv(targetExecutable); pn;
+
+    // You need to start the target executable (under GDB) before running this.
+    // And, while both are running, compare the output of this with the output of GDB:
+    // $> gdb ./vulnerable.exe
+    // (gdb) break main
+    // (gdb) start
+    // (gdb) x/20bx main
+    // (gdb) x/20bx printf
+    // ...
+    // (gdb) kill
+    // They should show the same bytes in memory for virtual addresses of executable(!) segments.
+
+    int targetPid = getPidOfExecutable(targetExecutable);
+    pv(targetPid); pn;
+
+    // Print the Virtual Memory ranges of executable bytes in the target process.
+    testVirtualMemoryMapping(targetPid); pn;
+    testVirtualMemoryExecutableBytes(targetPid); pn;
+
+    VirtualMemoryExecutableBytes vmBytes(targetPid);
+
+    printf("Interactive virtual memory inspector...\n");
+    while (true) {
+        long long addr;
+        printf("Please input a virtual memory address (or 0 to exit): ");
+        int numMatched = scanf("%lli", &addr);
+        if (numMatched != 1) {
+            printf("Bad input...\n");
+            char c;
+            while (scanf("%c", &c) == 1) {
+                if (c == '\n') {
+                    break;
+                }
+            }
+            continue;
+        }
+
+        if (addr == 0) {
+            printf("Done...\n");
+            break;
+        }
+
+        for (unsigned long long cAddr = addr; cAddr < (unsigned long long)addr + 20; ++cAddr) {
+            if (!vmBytes.isValidVAAddressInExecutableSegment(cAddr)) {
+                break;
+            }
+
+            ROOP::byte b = vmBytes.getByteAtVAAddress(cAddr);
+            printf("virtual_memory[0x%llx] = 0x%02hhx\n", cAddr, b);
         }
     }
 }
@@ -156,9 +232,10 @@ int main(int argc, char* argv[]) {
     printProcessInformation(argc, argv); pn;
     normalizeCWD(); pn;
 
-    testVirtualMemoryMapping(getpid()); pn;
+    // testVirtualMemoryMapping(getpid()); pn;
     // testPrintCodeSegmentsOfLoadedELFs(getpid()); pn;
     // testVirtualMemoryExecutableBytes(getpid()); pn;
+    testGetExecutableBytesInteractive("vulnerable.exe"); pn;
 
     return 0;
 }

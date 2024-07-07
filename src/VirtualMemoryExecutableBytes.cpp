@@ -62,6 +62,16 @@ const std::vector<ROOP::VirtualMemoryExecutableSegment>& ROOP::VirtualMemoryExec
     return this->executableSegments;
 }
 
+bool ROOP::VirtualMemoryExecutableBytes::isValidVAAddressInExecutableSegment(unsigned long long vaAddress) const {
+    for (const auto& execSegm : this->executableSegments) {
+        if (execSegm.startVirtualAddress <= vaAddress && vaAddress < execSegm.endVirtualAddress) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 ROOP::byte ROOP::VirtualMemoryExecutableBytes::getByteAtVAAddress(unsigned long long vaAddress) const {
     for (const auto& execSegm : this->executableSegments) {
 
@@ -79,6 +89,7 @@ ROOP::byte ROOP::VirtualMemoryExecutableBytes::getByteAtVAAddress(unsigned long 
         }
     }
 
-    pv(vaAddress); pn;
-    exiterror("Can't find the given virtual address in the loaded Virtual Memory of executable code...");
+    printf("Can't find the given virtual address in the loaded Virtual Memory of executable code!\n");
+    printf("Bad address = %llu (0x%llx)\n", vaAddress, vaAddress);
+    return (byte)0;
 }
