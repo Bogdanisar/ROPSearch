@@ -29,7 +29,7 @@ objdump --disassemble --disassembler-options="AT&T" bin/hardcodedGadgets64bit.o
 
 
 
-#pragma #region Assignment operations
+#pragma region Assignment operations
 #if false
 int ________Assignment_operations________;
 #endif
@@ -79,7 +79,7 @@ void assignVariableToVariableDereference(void) {
 
 
 
-#pragma #region Arithmetic operations
+#pragma region Arithmetic operations
 #if false
 int ________Arithmetic_operations________;
 #endif
@@ -249,7 +249,7 @@ void divideTwoVariablesAndGetRemainder(void) {
 
 
 
-#pragma #region Bitwise operations
+#pragma region Bitwise operations
 #if false
 int ________Bitwise_operations________;
 #endif
@@ -348,7 +348,7 @@ void rightShiftVariable(void) {
 
 
 
-#pragma #region Branching operations
+#pragma region Branching operations
 #if false
 int ________Branching_operations________;
 #endif
@@ -359,7 +359,7 @@ int ________Branching_operations________;
 
 
 
-#pragma #region Call operations
+#pragma region Call operations
 #if false
 int ________Call_operations________;
 #endif
