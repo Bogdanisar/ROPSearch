@@ -13,19 +13,46 @@ using namespace std;
 using namespace ROOP;
 
 
-void testVirtualMemoryMapping(int argc, char* argv[]) {
-    UNUSED(argc); UNUSED(argv);
+void printProcessInformation(int argc, char* argv[]) {
+    int myPID = getpid();
+    pv(myPID); pn;
 
-    const VirtualMemoryMapping vmm(getpid());
+    long pageSize = sysconf(_SC_PAGESIZE);
+    pv(pageSize); pn;
+
+    string execPath = getAbsPathToProcExecutable();
+    pv(execPath); pn;
+
+    for (int i = 0; i < argc; ++i) {
+        printf("arg[%i] = %s\n", i, argv[i]);
+    }
+}
+
+void normalizeCWD() {
+    string currentWorkingDirectory = std::filesystem::current_path();
+    pv(currentWorkingDirectory); pn;
+
+    printf("Setting CWD to the parent directory of the location of this binary...\n");
+    setCWDToExecutableLocation();
+
+    currentWorkingDirectory = std::filesystem::current_path();
+    pv(currentWorkingDirectory); pn;
+}
+
+void testVirtualMemoryMapping(int targetPid) {
+    pv(targetPid); pn; pn;
+
+    const VirtualMemoryMapping vmm(targetPid);
+    printf("Segment mapping:\n");
     vmm.printMapping();
 }
 
-void testPrintCodeSegmentsOfLoadedELFs(int argc, char* argv[]) {
-    UNUSED(argc); UNUSED(argv);
+void testPrintCodeSegmentsOfLoadedELFs(int targetPid) {
+    pv(targetPid); pn; pn;
 
     std::set<std::string> loadedELFs;
+    const VirtualMemoryMapping vmm(targetPid);
 
-    const VirtualMemoryMapping vmm(getpid());
     for (const VirtualMemorySegmentMapping& segm : vmm.getSegmentMaps()) {
         if (ELFParser::elfPathIsAcceptable(segm.path)) {
             loadedELFs.insert(segm.path);
@@ -85,10 +112,10 @@ void testPrintCodeSegmentsOfLoadedELFs(int argc, char* argv[]) {
     }
 }
 
-void testVirtualMemoryExecutableBytes(int argc, char* argv[]) {
-    UNUSED(argc); UNUSED(argv);
+void testVirtualMemoryExecutableBytes(int targetPid) {
+    pv(targetPid); pn; pn;
 
-    VirtualMemoryExecutableBytes vmBytes(getpid());
+    VirtualMemoryExecutableBytes vmBytes(targetPid);
     const std::vector<VirtualMemoryExecutableSegment>& executableSegments = vmBytes.getExecutableSegments();
 
     printf("Executable Virtual Memory ranges (plus a few bytes from the start of the segment):\n");
@@ -126,13 +153,12 @@ void testVirtualMemoryExecutableBytes(int argc, char* argv[]) {
 int main(int argc, char* argv[]) {
     UNUSED(argc); UNUSED(argv);
 
-    long pageSize = sysconf(_SC_PAGESIZE);
-    pv(pageSize); pn;
-    pv(getpid()); pn; pn;
+    printProcessInformation(argc, argv); pn;
+    normalizeCWD(); pn;
 
-    testVirtualMemoryMapping(argc, argv); pn;
-    // testPrintCodeSegmentsOfLoadedELFs(argc, argv); pn;
-    testVirtualMemoryExecutableBytes(argc, argv); pn;
+    testVirtualMemoryMapping(getpid()); pn;
+    // testPrintCodeSegmentsOfLoadedELFs(getpid()); pn;
+    // testVirtualMemoryExecutableBytes(getpid()); pn;
 
     return 0;
 }
