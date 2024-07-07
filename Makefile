@@ -34,3 +34,8 @@ bin/vulnerable.o: src/vulnerable/vulnerable.c
 
 bin/hardcodedGadgets64bit.o: src/vulnerable/hardcodedGadgets64bit.c
 	g++ -Wall -Wextra -pedantic -O0 -c src/vulnerable/hardcodedGadgets64bit.c -o bin/hardcodedGadgets64bit.o
+
+
+.PHONY: clean
+clean:
+	rm -rf bin/*
