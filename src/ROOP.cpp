@@ -91,6 +91,7 @@ void testVirtualMemoryExecutableBytes(int argc, char* argv[]) {
     VirtualMemoryExecutableBytes vmBytes(getpid());
     const std::vector<VirtualMemoryExecutableSegment>& executableSegments = vmBytes.getExecutableSegments();
 
+    printf("Executable Virtual Memory ranges (plus a few bytes from the start of the segment):\n");
     for (const auto& execSegm : executableSegments) {
 
         // As far as I can tell, the difference between "end" and "actualEnd"
@@ -100,14 +101,25 @@ void testVirtualMemoryExecutableBytes(int argc, char* argv[]) {
         unsigned long long actualEnd = start + (unsigned long long)execSegm.executableBytes.size();
         printf("%llx-%llx (actual: %llx-%llx): ", start, end, start, actualEnd);
 
-        size_t bytesToPrint = std::min((size_t)10, execSegm.executableBytes.size());
+        size_t bytesToPrint = std::min((size_t)20, execSegm.executableBytes.size());
         for (size_t i = 0; i < bytesToPrint; ++i) {
             printf("%02hhx ", execSegm.executableBytes[i]);
         }
         printf("...\n");
     }
+    printf("\n");
 
-    // TODO: Test getByteAtVAAddress
+    if (executableSegments.size() != 0) {
+        const auto& firstExecSegm = executableSegments[0];
+        unsigned long long firstSegmStart = firstExecSegm.startVirtualAddress;
+        size_t bytesToPrint = std::min((size_t)20, firstExecSegm.executableBytes.size());
+
+        printf("Testing VirtualMemoryExecutableBytes::getByteAtVAAddress():\n");
+        for (unsigned long long addr = firstSegmStart; addr < firstSegmStart + bytesToPrint; ++addr) {
+            ROOP::byte b = vmBytes.getByteAtVAAddress(addr);
+            printf("virtual_memory[%llx] = %02hhx\n", addr, b);
+        }
+    }
 }
 
 
