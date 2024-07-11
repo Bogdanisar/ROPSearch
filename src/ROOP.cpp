@@ -128,7 +128,8 @@ void testVirtualMemoryExecutableBytes(int targetPid) {
         unsigned long long start = execSegm.startVirtualAddress;
         unsigned long long end = execSegm.endVirtualAddress;
         unsigned long long actualEnd = start + (unsigned long long)execSegm.executableBytes.size();
-        printf("0x%llx-0x%llx (actual: 0x%llx-0x%llx): ", start, end, start, actualEnd);
+        printf("0x%llx-0x%llx (real: 0x%llx-0x%llx; sz: %7llu): ",
+               start, end, start, actualEnd, (unsigned long long)execSegm.executableBytes.size());
 
         size_t bytesToPrint = std::min((size_t)20, execSegm.executableBytes.size());
         for (size_t i = 0; i < bytesToPrint; ++i) {
@@ -232,10 +233,10 @@ int main(int argc, char* argv[]) {
     printProcessInformation(argc, argv); pn;
     normalizeCWD(); pn;
 
-    // testVirtualMemoryMapping(getpid()); pn;
+    testVirtualMemoryMapping(getpid()); pn;
     // testPrintCodeSegmentsOfLoadedELFs(getpid()); pn;
-    // testVirtualMemoryExecutableBytes(getpid()); pn;
-    testGetExecutableBytesInteractive("vulnerable.exe"); pn;
+    testVirtualMemoryExecutableBytes(getpid()); pn;
+    // testGetExecutableBytesInteractive("vulnerable.exe"); pn;
 
     return 0;
 }
