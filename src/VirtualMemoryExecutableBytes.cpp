@@ -93,3 +93,32 @@ ROOP::byte ROOP::VirtualMemoryExecutableBytes::getByteAtVAAddress(unsigned long 
     printf("Bad address = %llu (0x%llx)\n", vaAddress, vaAddress);
     return (byte)0;
 }
+
+std::vector<unsigned long long>
+ROOP::VirtualMemoryExecutableBytes::matchInstructionSequenceInVirtualMemory(ROOP::byteSequence instructionSequence) {
+    assertMessage(instructionSequence.size() == 0, "Got empty instruction sequence...");
+
+    std::vector<unsigned long long> matchedVirtualAddresses;
+
+    for (const VirtualMemoryExecutableSegment& execSegm : this->executableSegments) {
+        const byteSequence& segmentBytes = execSegm.executableBytes;
+        int sizeCodeBytes = (int)segmentBytes.size();
+        int sizeInsSeqBytes = (int)instructionSequence.size();
+
+        for (int low = 0, high = sizeInsSeqBytes - 1; high < sizeCodeBytes; ++low, ++high) {
+            bool match = true;
+            for (int idx = 0; idx < sizeInsSeqBytes; ++idx) {
+                if (instructionSequence[idx] != segmentBytes[low + idx]) {
+                    match = false;
+                    break;
+                }
+            }
+
+            if (match) {
+                matchedVirtualAddresses.push_back(execSegm.startVirtualAddress + low);
+            }
+        }
+    }
+
+    return matchedVirtualAddresses;
+}

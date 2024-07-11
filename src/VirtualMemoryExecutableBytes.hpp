@@ -31,6 +31,9 @@ namespace ROOP {
 
         bool isValidVAAddressInExecutableSegment(unsigned long long vaAddress) const;
         byte getByteAtVAAddress(unsigned long long vaAddress) const;
+
+        // Return a vector of addresses where the instruction sequence is found in virtual memory.
+        std::vector<unsigned long long> matchInstructionSequenceInVirtualMemory(byteSequence instructionSequence);
     };
 
 }
