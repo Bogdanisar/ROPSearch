@@ -109,6 +109,8 @@ void ROOP::ELFParser::readSegments(std::ifstream& fin) {
 
         this->codeSegmentBytes.push_back(segmBytes);
     }
+
+    assert(this->codeSegmentHeaders.size() == this->codeSegmentBytes.size());
 }
 
 ROOP::ELFParser::ELFParser() {
