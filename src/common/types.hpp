@@ -6,7 +6,7 @@
 
 namespace ROOP {
     using byte = unsigned char;
-    using instructionSequence = std::vector<byte>;
+    using byteSequence = std::vector<byte>;
 }
 
 

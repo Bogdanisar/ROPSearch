@@ -93,7 +93,7 @@ void ROOP::ELFParser::readSegments(std::ifstream& fin) {
     for (const Elf64_Phdr& codeProgHeader : this->codeSegmentHeaders) {
         auto segmentSizeInFile = codeProgHeader.p_filesz;
 
-        std::vector<byte> segmBytes;
+        byteSequence segmBytes;
         segmBytes.resize(segmentSizeInFile);
 
         fin.seekg(codeProgHeader.p_offset, std::ios_base::beg);
@@ -134,7 +134,7 @@ const std::string& ROOP::ELFParser::getElfPath() const {
     return this->elfPath;
 }
 
-const std::vector<ROOP::byte>& ROOP::ELFParser::getElfBytes() const {
+const ROOP::byteSequence& ROOP::ELFParser::getElfBytes() const {
     return this->elfBytes;
 }
 
@@ -150,6 +150,6 @@ const std::vector<Elf64_Phdr>& ROOP::ELFParser::getCodeSegmentHeaders() const {
     return this->codeSegmentHeaders;
 }
 
-const std::vector<std::vector<ROOP::byte>>& ROOP::ELFParser::getCodeSegmentBytes() const {
+const std::vector<ROOP::byteSequence>& ROOP::ELFParser::getCodeSegmentBytes() const {
     return this->codeSegmentBytes;
 }

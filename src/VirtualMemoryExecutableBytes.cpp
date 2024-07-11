@@ -29,10 +29,10 @@ ROOP::VirtualMemoryExecutableBytes::VirtualMemoryExecutableBytes(int processPid)
 
         ELFParser& elfParser = elfPathToELFParser[segmentMap.path];
         const std::vector<Elf64_Phdr>& elfCodeSegmentHdrs = elfParser.getCodeSegmentHeaders();
-        const std::vector<std::vector<byte>>& elfCodeSegmentBytes = elfParser.getCodeSegmentBytes();
+        const std::vector<byteSequence>& elfCodeSegmentBytes = elfParser.getCodeSegmentBytes();
         for (size_t i = 0; i < elfCodeSegmentHdrs.size(); ++i) {
             const Elf64_Phdr& codeSegmHdr = elfCodeSegmentHdrs[i];
-            const std::vector<byte>& codeSegmBytes = elfCodeSegmentBytes[i];
+            const byteSequence& codeSegmBytes = elfCodeSegmentBytes[i];
 
             if ((Elf64_Off)segmentMap.offset != codeSegmHdr.p_offset) {
                 continue;

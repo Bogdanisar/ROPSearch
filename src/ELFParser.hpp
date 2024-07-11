@@ -12,18 +12,18 @@
 namespace ROOP {
 
     struct InstructionSequenceMatch {
-        instructionSequence iSeq;
+        byteSequence iSeq;
         std::string iSeqAsm;
         std::vector<unsigned long long> matchedAddressesInVA;
     };
 
     class ELFParser {
         std::string elfPath;
-        std::vector<byte> elfBytes;
+        byteSequence elfBytes;
         Elf64_Ehdr fileHeader;
         std::vector<Elf64_Phdr> segmentHeaders;
         std::vector<Elf64_Phdr> codeSegmentHeaders;
-        std::vector<std::vector<byte>> codeSegmentBytes;
+        std::vector<byteSequence> codeSegmentBytes;
 
         void readEntireBinaryIntoMemory(std::ifstream& fin);
         void readAndValidateFileHeader(std::ifstream& fin);
@@ -35,14 +35,14 @@ namespace ROOP {
         ELFParser(const std::string& elfPath);
 
         const std::string& getElfPath() const;
-        const std::vector<byte>& getElfBytes() const;
+        const byteSequence& getElfBytes() const;
         const Elf64_Ehdr& getFileHeader() const;
         const std::vector<Elf64_Phdr>& getSegmentHeaders() const;
         const std::vector<Elf64_Phdr>& getCodeSegmentHeaders() const;
-        const std::vector<std::vector<byte>>& getCodeSegmentBytes() const;
+        const std::vector<byteSequence>& getCodeSegmentBytes() const;
 
-        std::map<instructionSequence, InstructionSequenceMatch>
-        matchInstructionSequencesInFile(std::vector<instructionSequence> instructionSequences);
+        std::map<byteSequence, InstructionSequenceMatch>
+        matchInstructionSequencesInFile(std::vector<byteSequence> instructionSequences);
     };
 
 }

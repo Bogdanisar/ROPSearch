@@ -16,7 +16,7 @@ namespace ROOP {
         // because of needing to be a multiple of the page size.
         unsigned long long startVirtualAddress;
         unsigned long long endVirtualAddress;
-        std::vector<byte> executableBytes;
+        byteSequence executableBytes;
     };
 
     class VirtualMemoryExecutableBytes {
