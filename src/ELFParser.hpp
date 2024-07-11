@@ -11,12 +11,6 @@
 
 namespace ROOP {
 
-    struct InstructionSequenceMatch {
-        byteSequence iSeq;
-        std::string iSeqAsm;
-        std::vector<unsigned long long> matchedAddressesInVA;
-    };
-
     class ELFParser {
         std::string elfPath;
         byteSequence elfBytes;
@@ -40,9 +34,6 @@ namespace ROOP {
         const std::vector<Elf64_Phdr>& getSegmentHeaders() const;
         const std::vector<Elf64_Phdr>& getCodeSegmentHeaders() const;
         const std::vector<byteSequence>& getCodeSegmentBytes() const;
-
-        std::map<byteSequence, InstructionSequenceMatch>
-        matchInstructionSequencesInFile(std::vector<byteSequence> instructionSequences);
     };
 
 }
