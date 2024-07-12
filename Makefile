@@ -3,12 +3,13 @@
 all: bin/ROOP.exe bin/vulnerable.exe bin/vulnerableHelped.exe
 
 wFlags := -Wall -Wextra -pedantic
+KEYSTONE_LDFLAGS = -lkeystone -lstdc++ -lm
 
 
 # Main code
 
 bin/ROOP.exe: bin/ROOP.o bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryExecutableBytes.o
-	g++ bin/ROOP.o bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryExecutableBytes.o -o bin/ROOP.exe
+	g++ bin/ROOP.o bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryExecutableBytes.o $(KEYSTONE_LDFLAGS) -o bin/ROOP.exe
 
 bin/ROOP.o: src/common/*.hpp src/ROOP.cpp
 	g++ $(wFlags) -c src/ROOP.cpp -o bin/ROOP.o

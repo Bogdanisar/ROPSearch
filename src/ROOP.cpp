@@ -226,6 +226,42 @@ void testGetExecutableBytesInteractive(string targetExecutable) {
     }
 }
 
+void testKeystoneFrameworkIntegration() {
+    // Note: AT&T syntax.
+    vector<string> instructionSequences = {
+        // First element
+        "xor %rcx, %rcx",
+
+        // Second element
+        "sub %rbx, %rcx",
+
+        // Third element
+        "mov (%r10), %r10; "
+        "mov (%r8), %r8; "
+        "mov (%r9), %r9",
+
+        // Fourth element
+        "nop; "
+        "pop %rax; "
+        "syscall; "
+        "pop %r10; "
+        "mov %rax, (%r10)",
+    };
+
+    for (const string& insSeq : instructionSequences) {
+        auto result = VirtualMemoryExecutableBytes::convertInstructionSequenceToBytes(insSeq, true);
+        const byteSequence& byteSeq = result.first;
+        unsigned numDecodedInstructions = result.second;
+
+        printf("Instructions: %s\n", insSeq.c_str());
+        printf("Decoded %u instructions into %u bytes: ", numDecodedInstructions, (unsigned)byteSeq.size());
+        for (const ROOP::byte& b : byteSeq) {
+            printf("%02hhX ", (unsigned char)b);
+        }
+        printf("\n\n");
+    }
+}
+
 
 int main(int argc, char* argv[]) {
     UNUSED(argc); UNUSED(argv);
@@ -233,10 +269,11 @@ int main(int argc, char* argv[]) {
     printProcessInformation(argc, argv); pn;
     normalizeCWD(); pn;
 
-    testVirtualMemoryMapping(getpid()); pn;
+    // testVirtualMemoryMapping(getpid()); pn;
     // testPrintCodeSegmentsOfLoadedELFs(getpid()); pn;
-    testVirtualMemoryExecutableBytes(getpid()); pn;
+    // testVirtualMemoryExecutableBytes(getpid()); pn;
     // testGetExecutableBytesInteractive("vulnerable.exe"); pn;
+    testKeystoneFrameworkIntegration(); pn;
 
     return 0;
 }

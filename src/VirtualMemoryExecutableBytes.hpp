@@ -32,6 +32,11 @@ namespace ROOP {
         bool isValidVAAddressInExecutableSegment(unsigned long long vaAddress) const;
         byte getByteAtVAAddress(unsigned long long vaAddress) const;
 
+        // Returns the converted instruction sequence and the number of parsed instructions.
+        // Note: A trailing ";" in the asm is counted as an additional instruction.
+        static std::pair<byteSequence, unsigned>
+        convertInstructionSequenceToBytes(std::string instructionSequenceAsm, bool useATTAssemblySyntax = false);
+
         // Return a vector of addresses where the instruction sequence is found in virtual memory.
         std::vector<unsigned long long> matchInstructionSequenceInVirtualMemory(byteSequence instructionSequence);
     };
