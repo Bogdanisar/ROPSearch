@@ -262,6 +262,59 @@ void testKeystoneFrameworkIntegration() {
     }
 }
 
+void testFindingInstructionSequenceInMemory(string targetExecutable) {
+    // You need to start the target executable (under GDB) before running this.
+    // And then compare the output of this function with the output of GDB:
+    // $> gdb ./vulnerable.exe
+    // (gdb) set disassembly-flavor intel
+    // (gdb) break main
+    // (gdb) start
+    // (gdb) x/10i yourAddressHere
+    // ...
+    // (gdb) kill
+    // You should see in gdb your instruction sequence at the virtual address(es) given by this function.
+
+    pv(targetExecutable); pn;
+    int targetPid = getPidOfExecutable(targetExecutable);
+    pv(targetPid); pn;
+
+    // Print the Virtual Memory mapping of the target process.
+    testVirtualMemoryMapping(targetPid); pn;
+
+    VirtualMemoryExecutableBytes vmBytes(targetPid);
+
+    // These are some sample instruction sequences found in libc.so.6
+    // Note: Intel syntax.
+    vector<string> instructionSequences = {
+        "add ch, cl ; ret",
+        "and word ptr [rdi], sp ; ret",
+        "dec dword ptr [rax - 0x77] ; ret 0x840f",
+        "mov ecx, eax ; mov eax, ecx ; ret",
+        "mov edx, 0xffffffff ; ret",
+        "or al, 0x7e ; ret",
+        "push 0 ; push 0 ; call 0x1515f0",
+        "sub eax, esi ; ret",
+        "xchg eax, ebp ; ret 0xffff",
+        "xor rax, rax ; ret"
+    };
+
+    printf("======= Searching for instruction sequences in virtual memory... =======\n");
+    for (const string& insSeq : instructionSequences) {
+        vector<unsigned long long> matchedAddresses = vmBytes.matchInstructionSequenceInVirtualMemory(insSeq);
+
+        printf("Instruction sequence: %s\n", insSeq.c_str());
+        if (matchedAddresses.size() != 0) {
+            for (unsigned long long addr : matchedAddresses) {
+                printf("Found at 0x%llx\n", addr);
+            }
+        }
+        else {
+            printf("Didn't find this instruction sequence in virtual memory...\n");
+        }
+        printf("\n");
+    }
+}
+
 
 int main(int argc, char* argv[]) {
     UNUSED(argc); UNUSED(argv);
@@ -273,7 +326,8 @@ int main(int argc, char* argv[]) {
     // testPrintCodeSegmentsOfLoadedELFs(getpid()); pn;
     // testVirtualMemoryExecutableBytes(getpid()); pn;
     // testGetExecutableBytesInteractive("vulnerable.exe"); pn;
-    testKeystoneFrameworkIntegration(); pn;
+    // testKeystoneFrameworkIntegration(); pn;
+    testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
 
     return 0;
 }

@@ -180,3 +180,10 @@ ROOP::VirtualMemoryExecutableBytes::matchInstructionSequenceInVirtualMemory(ROOP
 
     return matchedVirtualAddresses;
 }
+
+std::vector<unsigned long long>
+ROOP::VirtualMemoryExecutableBytes::matchInstructionSequenceInVirtualMemory(std::string instructionSequenceAsm, bool useATTAssemblySyntax) {
+    auto ret = VirtualMemoryExecutableBytes::convertInstructionSequenceToBytes(instructionSequenceAsm, useATTAssemblySyntax);
+    const byteSequence& instructionSequence = ret.first;
+    return this->matchInstructionSequenceInVirtualMemory(instructionSequence);
+}

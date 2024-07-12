@@ -38,7 +38,12 @@ namespace ROOP {
         convertInstructionSequenceToBytes(std::string instructionSequenceAsm, bool useATTAssemblySyntax = false);
 
         // Return a vector of addresses where the instruction sequence is found in virtual memory.
-        std::vector<unsigned long long> matchInstructionSequenceInVirtualMemory(byteSequence instructionSequence);
+        std::vector<unsigned long long>
+        matchInstructionSequenceInVirtualMemory(byteSequence instructionSequence);
+
+        // Return a vector of addresses where the instruction sequence is found in virtual memory.
+        std::vector<unsigned long long>
+        matchInstructionSequenceInVirtualMemory(std::string instructionSequenceAsm, bool useATTAssemblySyntax = false);
     };
 
 }
