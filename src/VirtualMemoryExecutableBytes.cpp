@@ -154,7 +154,7 @@ cleanup:
 
 std::vector<unsigned long long>
 ROOP::VirtualMemoryExecutableBytes::matchInstructionSequenceInVirtualMemory(ROOP::byteSequence instructionSequence) {
-    assertMessage(instructionSequence.size() == 0, "Got empty instruction sequence...");
+    assertMessage(instructionSequence.size() != 0, "Got empty instruction sequence...");
 
     std::vector<unsigned long long> matchedVirtualAddresses;
 
