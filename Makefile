@@ -7,12 +7,13 @@ KEYSTONE_LDFLAGS = -lkeystone -lstdc++ -lm
 
 
 # "$@" is an automatic variable for the target name.
+# "$^" is an automatic variable for all prerequisites.
 
 
 # Main code
 
 bin/ROOP.exe: bin/ROOP.o bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryExecutableBytes.o
-	g++ bin/ROOP.o bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryExecutableBytes.o $(KEYSTONE_LDFLAGS) -o $@
+	g++ $^ $(KEYSTONE_LDFLAGS) -o $@
 
 bin/ROOP.o: src/common/*.hpp src/ROOP.cpp
 	g++ $(wFlags) -c src/ROOP.cpp -o $@
@@ -30,10 +31,10 @@ bin/VirtualMemoryExecutableBytes.o: src/common/*.hpp src/VirtualMemoryExecutable
 # Vulnerable executable
 
 bin/vulnerable.exe: bin/vulnerable.o
-	gcc bin/vulnerable.o -o $@
+	gcc $^ -o $@
 
 bin/vulnerableHelped.exe: bin/vulnerable.o bin/hardcodedGadgets64bit.o
-	gcc bin/vulnerable.o bin/hardcodedGadgets64bit.o -o $@
+	gcc $^ -o $@
 
 bin/vulnerable.o: src/vulnerable/vulnerable.c
 	gcc $(wFlags) -O0 -c src/vulnerable/vulnerable.c -o $@
