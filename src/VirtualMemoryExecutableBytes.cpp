@@ -96,7 +96,7 @@ ROOP::byte ROOP::VirtualMemoryExecutableBytes::getByteAtVAAddress(unsigned long 
 }
 
 std::pair<ROOP::byteSequence, unsigned>
-ROOP::VirtualMemoryExecutableBytes::convertInstructionSequenceToBytes(std::string instructionSequenceAsm, bool useATTAssemblySyntax) {
+ROOP::VirtualMemoryExecutableBytes::convertInstructionSequenceToBytes(std::string instructionSequenceAsm, AssemblySyntax asmSyntax) {
     byteSequence instructionSequence;
 
     ks_err err;
@@ -105,6 +105,7 @@ ROOP::VirtualMemoryExecutableBytes::convertInstructionSequenceToBytes(std::strin
     unsigned char *insSeqEncoding = NULL;
     size_t insSeqEncodingSize;
     size_t numDecodedInstructions;
+    ks_opt_value syntaxValue;
 
     err = ks_open(KS_ARCH_X86, KS_MODE_64, &ksEngine);
     if (err != KS_ERR_OK) {
@@ -112,13 +113,12 @@ ROOP::VirtualMemoryExecutableBytes::convertInstructionSequenceToBytes(std::strin
         goto cleanup;
     }
 
-    if (useATTAssemblySyntax) {
-        // Convert the engine to use AT&T syntax
-        err = ks_option(ksEngine, KS_OPT_SYNTAX, KS_OPT_SYNTAX_ATT);
-        if (err != KS_ERR_OK) {
-            printf("Keystone: ks_option() failed with error %u!\n", (unsigned)err);
-            goto cleanup;
-        }
+    // Adjust the engine to use Intel or AT&T syntax.
+    syntaxValue = (asmSyntax == AssemblySyntax::Intel) ? KS_OPT_SYNTAX_INTEL : KS_OPT_SYNTAX_ATT;
+    err = ks_option(ksEngine, KS_OPT_SYNTAX, syntaxValue);
+    if (err != KS_ERR_OK) {
+        printf("Keystone: ks_option() failed with error %u!\n", (unsigned)err);
+        goto cleanup;
     }
 
     if (ks_asm(ksEngine, insSeqCString, 0, &insSeqEncoding, &insSeqEncodingSize, &numDecodedInstructions) != 0) {
@@ -182,8 +182,8 @@ ROOP::VirtualMemoryExecutableBytes::matchInstructionSequenceInVirtualMemory(ROOP
 }
 
 std::vector<unsigned long long>
-ROOP::VirtualMemoryExecutableBytes::matchInstructionSequenceInVirtualMemory(std::string instructionSequenceAsm, bool useATTAssemblySyntax) {
-    auto ret = VirtualMemoryExecutableBytes::convertInstructionSequenceToBytes(instructionSequenceAsm, useATTAssemblySyntax);
+ROOP::VirtualMemoryExecutableBytes::matchInstructionSequenceInVirtualMemory(std::string instructionSequenceAsm, AssemblySyntax asmSyntax) {
+    auto ret = VirtualMemoryExecutableBytes::convertInstructionSequenceToBytes(instructionSequenceAsm, asmSyntax);
     const byteSequence& instructionSequence = ret.first;
     return this->matchInstructionSequenceInVirtualMemory(instructionSequence);
 }

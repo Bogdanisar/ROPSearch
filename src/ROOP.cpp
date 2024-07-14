@@ -227,7 +227,10 @@ void testGetExecutableBytesInteractive(string targetExecutable) {
 }
 
 void testKeystoneFrameworkIntegration() {
-    // Note: AT&T syntax.
+    // Using AT&T syntax for the instructions below.
+    ROOP::AssemblySyntax syntax = ROOP::AssemblySyntax::ATT;
+
+    // A few arbitrary instructions.
     vector<string> instructionSequences = {
         // First element
         "xor %rcx, %rcx",
@@ -249,7 +252,7 @@ void testKeystoneFrameworkIntegration() {
     };
 
     for (const string& insSeq : instructionSequences) {
-        auto result = VirtualMemoryExecutableBytes::convertInstructionSequenceToBytes(insSeq, true);
+        auto result = VirtualMemoryExecutableBytes::convertInstructionSequenceToBytes(insSeq, syntax);
         const byteSequence& byteSeq = result.first;
         unsigned numDecodedInstructions = result.second;
 
@@ -284,7 +287,8 @@ void testFindingInstructionSequenceInMemory(string targetExecutable) {
     VirtualMemoryExecutableBytes vmBytes(targetPid);
 
     // These are some sample instruction sequences found in libc.so.6
-    // Note: Intel syntax.
+    // Note: Using Intel syntax here.
+    ROOP::AssemblySyntax syntax = ROOP::AssemblySyntax::Intel;
     vector<string> instructionSequences = {
         "add ch, cl ; ret",
         "and word ptr [rdi], sp ; ret",
@@ -300,7 +304,7 @@ void testFindingInstructionSequenceInMemory(string targetExecutable) {
 
     printf("======= Searching for instruction sequences in virtual memory... =======\n");
     for (const string& insSeq : instructionSequences) {
-        vector<unsigned long long> matchedAddresses = vmBytes.matchInstructionSequenceInVirtualMemory(insSeq);
+        vector<unsigned long long> matchedAddresses = vmBytes.matchInstructionSequenceInVirtualMemory(insSeq, syntax);
 
         printf("Instruction sequence: %s\n", insSeq.c_str());
         if (matchedAddresses.size() != 0) {
@@ -326,8 +330,8 @@ int main(int argc, char* argv[]) {
     // testPrintCodeSegmentsOfLoadedELFs(getpid()); pn;
     // testVirtualMemoryExecutableBytes(getpid()); pn;
     // testGetExecutableBytesInteractive("vulnerable.exe"); pn;
-    // testKeystoneFrameworkIntegration(); pn;
-    testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
+    testKeystoneFrameworkIntegration(); pn;
+    // testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
 
     return 0;
 }
