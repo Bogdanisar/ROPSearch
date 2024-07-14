@@ -8,6 +8,7 @@ KEYSTONE_LDFLAGS = -lkeystone -lstdc++ -lm
 
 # "$@" is an automatic variable for the target name.
 # "$^" is an automatic variable for all prerequisites.
+# "$<" is an automatic variable for the first prerequisite.
 
 
 # Main code
@@ -15,16 +16,16 @@ KEYSTONE_LDFLAGS = -lkeystone -lstdc++ -lm
 bin/ROOP.exe: bin/ROOP.o bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryExecutableBytes.o
 	g++ $^ $(KEYSTONE_LDFLAGS) -o $@
 
-bin/ROOP.o: src/common/*.hpp src/ROOP.cpp
-	g++ $(wFlags) -c src/ROOP.cpp -o $@
+bin/ROOP.o: src/ROOP.cpp src/common/*.hpp
+	g++ $(wFlags) -c $< -o $@
 
-bin/VirtualMemoryMapping.o: src/common/*.hpp src/VirtualMemoryMapping.*
+bin/VirtualMemoryMapping.o: src/VirtualMemoryMapping.* src/common/*.hpp
 	g++ $(wFlags) -c src/VirtualMemoryMapping.cpp -o $@
 
-bin/ELFParser.o: src/common/*.hpp src/ELFParser.*
+bin/ELFParser.o: src/ELFParser.* src/common/*.hpp
 	g++ $(wFlags) -c src/ELFParser.cpp -o $@
 
-bin/VirtualMemoryExecutableBytes.o: src/common/*.hpp src/VirtualMemoryExecutableBytes.*
+bin/VirtualMemoryExecutableBytes.o: src/VirtualMemoryExecutableBytes.* src/common/*.hpp
 	g++ $(wFlags) -c src/VirtualMemoryExecutableBytes.cpp -o $@
 
 
@@ -37,10 +38,10 @@ bin/vulnerableHelped.exe: bin/vulnerable.o bin/hardcodedGadgets64bit.o
 	gcc $^ -o $@
 
 bin/vulnerable.o: src/vulnerable/vulnerable.c
-	gcc $(wFlags) -O0 -c src/vulnerable/vulnerable.c -o $@
+	gcc $(wFlags) -O0 -c $< -o $@
 
 bin/hardcodedGadgets64bit.o: src/vulnerable/hardcodedGadgets64bit.c
-	gcc $(wFlags) -O0 -c src/vulnerable/hardcodedGadgets64bit.c -o $@
+	gcc $(wFlags) -O0 -c $< -o $@
 
 
 .PHONY: clean
