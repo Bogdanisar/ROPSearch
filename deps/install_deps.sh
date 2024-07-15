@@ -47,6 +47,8 @@ cd "$DEPS_FOLDER"/capstone
 
 sudo ./make.sh install
 
+sudo ldconfig
+
 echo
 
 ################### Install the Capstone framework for a *nix OS. ###################
