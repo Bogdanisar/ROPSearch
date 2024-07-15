@@ -13,7 +13,7 @@ KEYSTONE_LDFLAGS = -lkeystone -lstdc++ -lm
 
 # Main code
 
-bin/ROOP.exe: bin/ROOP.o bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryExecutableBytes.o
+bin/ROOP.exe: bin/ROOP.o bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryExecutableBytes.o bin/InstructionConverter.o
 	g++ $^ $(KEYSTONE_LDFLAGS) -o $@
 
 bin/ROOP.o: src/ROOP.cpp src/common/*.hpp
@@ -27,6 +27,9 @@ bin/ELFParser.o: src/ELFParser.* src/common/*.hpp
 
 bin/VirtualMemoryExecutableBytes.o: src/VirtualMemoryExecutableBytes.* src/common/*.hpp
 	g++ $(wFlags) -c src/VirtualMemoryExecutableBytes.cpp -o $@
+
+bin/InstructionConverter.o: src/InstructionConverter.* src/common/*.hpp
+	g++ $(wFlags) -c src/InstructionConverter.cpp -o $@
 
 
 # Vulnerable executable

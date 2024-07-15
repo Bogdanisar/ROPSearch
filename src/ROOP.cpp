@@ -7,6 +7,7 @@
 
 #include "common/utils.hpp"
 #include "ELFParser.hpp"
+#include "InstructionConverter.hpp"
 #include "VirtualMemoryExecutableBytes.hpp"
 #include "VirtualMemoryMapping.hpp"
 
@@ -252,7 +253,7 @@ void testKeystoneFrameworkIntegration() {
     };
 
     for (const string& insSeq : instructionSequences) {
-        auto result = VirtualMemoryExecutableBytes::convertInstructionSequenceToBytes(insSeq, syntax);
+        auto result = InstructionConverter::convertInstructionSequenceToBytes(insSeq, syntax);
         const byteSequence& byteSeq = result.first;
         unsigned numDecodedInstructions = result.second;
 
