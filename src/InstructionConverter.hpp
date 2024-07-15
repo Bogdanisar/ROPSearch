@@ -16,6 +16,11 @@ namespace ROOP {
         // Note: A trailing ";" in the asm is counted as an additional instruction.
         static std::pair<byteSequence, unsigned>
         convertInstructionSequenceToBytes(std::string instructionSequenceAsm, AssemblySyntax asmSyntax);
+
+        // Returns the converted instructions, as strings;
+        // The syntax of the returned instructions is given in the second argument.
+        static std::vector<std::string>
+        convertInstructionSequenceToString(byteSequence instructionSequence, AssemblySyntax asmSyntax);
     };
 
 }

@@ -4,6 +4,7 @@ all: bin/ROOP.exe bin/vulnerable.exe bin/vulnerableHelped.exe
 
 wFlags := -Wall -Wextra -pedantic
 KEYSTONE_LDFLAGS = -lkeystone -lstdc++ -lm
+CAPSTONE_LDFLAGS = -l:libcapstone.a
 
 
 # "$@" is an automatic variable for the target name.
@@ -14,7 +15,7 @@ KEYSTONE_LDFLAGS = -lkeystone -lstdc++ -lm
 # Main code
 
 bin/ROOP.exe: bin/ROOP.o bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryExecutableBytes.o bin/InstructionConverter.o
-	g++ $^ $(KEYSTONE_LDFLAGS) -o $@
+	g++ $^ $(KEYSTONE_LDFLAGS) $(CAPSTONE_LDFLAGS) -o $@
 
 bin/ROOP.o: src/ROOP.cpp src/common/*.hpp
 	g++ $(wFlags) -c $< -o $@

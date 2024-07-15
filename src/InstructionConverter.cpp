@@ -36,7 +36,7 @@ ROOP::InstructionConverter::convertInstructionSequenceToBytes(std::string instru
         goto cleanup;
     }
 
-    for (size_t i = 0; i < insSeqEncodingSize; i++) {
+    for (size_t i = 0; i < insSeqEncodingSize; ++i) {
         instructionSequence.push_back((byte)insSeqEncoding[i]);
     }
 
@@ -59,4 +59,58 @@ cleanup:
     }
 
     return {instructionSequence, numDecodedInstructions};
+}
+
+std::vector<std::string>
+ROOP::InstructionConverter::convertInstructionSequenceToString(byteSequence instructionSequence, AssemblySyntax asmSyntax) {
+    const uint8_t *instrSeqBytes = (const uint8_t *)instructionSequence.data();
+    const size_t instrSeqBytesCount = instructionSequence.size();
+
+    cs_err err;
+    bool handleInitialized = false;
+    csh capstoneHandle;
+	cs_insn *decodedInstructions = NULL;
+	size_t decodedInstructionsCount;
+    size_t syntaxValue;
+    size_t idx;
+    std::vector<std::string> ret;
+
+	err = cs_open(CS_ARCH_X86, CS_MODE_64, &capstoneHandle);
+    if (err != CS_ERR_OK) {
+        printf("Capstone: cs_open() failed with error %i!\n", (int)err);
+		goto cleanup;
+    }
+    handleInitialized = true;
+
+    syntaxValue = (asmSyntax == AssemblySyntax::Intel) ? CS_OPT_SYNTAX_INTEL : CS_OPT_SYNTAX_ATT;
+    err = cs_option(capstoneHandle, CS_OPT_SYNTAX, syntaxValue);
+    if (err != CS_ERR_OK) {
+        printf("Capstone: cs_option() failed with error %i!\n", (int)err);
+		goto cleanup;
+    }
+
+	decodedInstructionsCount = cs_disasm(capstoneHandle, instrSeqBytes, instrSeqBytesCount, 0x1000, 0, &decodedInstructions);
+    if (decodedInstructionsCount == 0) {
+        printf("Capstone: cs_disasm() failed with error %i", (int)cs_errno(capstoneHandle));
+        goto cleanup;
+    }
+
+    for (idx = 0; idx < decodedInstructionsCount; ++idx) {
+        std::string mnemonic = std::string(decodedInstructions[idx].mnemonic);
+        std::string operands = std::string(decodedInstructions[idx].op_str);
+        std::string instructionAsm = mnemonic + " " + operands;
+        ret.push_back(instructionAsm);
+    }
+
+cleanup:
+    if (decodedInstructions != NULL) {
+        cs_free(decodedInstructions, decodedInstructionsCount);
+    }
+
+    if (handleInitialized) {
+	    cs_close(&capstoneHandle);
+    }
+
+// Final
+    return ret;
 }

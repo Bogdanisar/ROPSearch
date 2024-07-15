@@ -320,6 +320,79 @@ void testFindingInstructionSequenceInMemory(string targetExecutable) {
     }
 }
 
+void testCapstoneFrameworkIntegration() {
+    // Using AT&T syntax for the instructions below.
+    ROOP::AssemblySyntax syntax = ROOP::AssemblySyntax::ATT;
+
+    // A few arbitrary instructions.
+    vector<string> instructionSequences = {
+        // First element
+        "xor %rcx, %rcx",
+
+        // Second element
+        "sub %rbx, %rcx",
+
+        // Third element
+        "mov (%r10), %r10; "
+        "mov (%r8), %r8; "
+        "mov (%r9), %r9",
+
+        // Fourth element
+        "nop; "
+        "pop %rax; "
+        "syscall; "
+        "pop %r10; "
+        "mov %rax, (%r10)",
+
+        // 5th element
+        "add %cl, %ch; ret",
+    };
+
+    for (const string& originalInsSeq : instructionSequences) {
+        printf("Original instructions: %s\n", originalInsSeq.c_str());
+
+
+        // Decode the original instruction sequence (string) into bytes;
+        auto originalResult = InstructionConverter::convertInstructionSequenceToBytes(originalInsSeq, syntax);
+        const byteSequence& originalByteSeq = originalResult.first;
+        unsigned originalNumDecodedInstructions = originalResult.second;
+
+        printf("Decoded %u instructions into %u bytes: ", originalNumDecodedInstructions, (unsigned)originalByteSeq.size());
+        for (const ROOP::byte& b : originalByteSeq) {
+            printf("%02hhX ", (unsigned char)b);
+        }
+        printf("\n");
+
+
+        // Encode these bytes back into instructions as strings;
+        vector<string> newInstructions = InstructionConverter::convertInstructionSequenceToString(originalByteSeq, syntax);
+        printf("Re-encoded instructions:\n");
+        for (size_t i = 0; i < newInstructions.size(); ++i) {
+            printf("    instr[%i] = %s\n", (int)i, newInstructions[i].c_str());
+        }
+
+
+        // Decode the new instruction string back into bytes;
+        std::string newInstructionSequenceAsm = "";
+        for (size_t i = 0; i < newInstructions.size(); ++i) {
+            newInstructionSequenceAsm += newInstructions[i];
+            if (i != newInstructions.size() - 1) {
+                newInstructionSequenceAsm += "; ";
+            }
+        }
+
+        auto newResult = InstructionConverter::convertInstructionSequenceToBytes(newInstructionSequenceAsm, syntax);
+        const byteSequence& newByteSeq = newResult.first;
+        unsigned newNumDecodedInstructions = newResult.second;
+
+        printf("Re-decoded %u instructions into %u bytes: ", newNumDecodedInstructions, (unsigned)newByteSeq.size());
+        for (const ROOP::byte& b : newByteSeq) {
+            printf("%02hhX ", (unsigned char)b);
+        }
+        printf("\n\n");
+    }
+}
+
 
 int main(int argc, char* argv[]) {
     UNUSED(argc); UNUSED(argv);
@@ -331,8 +404,9 @@ int main(int argc, char* argv[]) {
     // testPrintCodeSegmentsOfLoadedELFs(getpid()); pn;
     // testVirtualMemoryExecutableBytes(getpid()); pn;
     // testGetExecutableBytesInteractive("vulnerable.exe"); pn;
-    testKeystoneFrameworkIntegration(); pn;
+    // testKeystoneFrameworkIntegration(); pn;
     // testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
+    testCapstoneFrameworkIntegration(); pn;
 
     return 0;
 }
