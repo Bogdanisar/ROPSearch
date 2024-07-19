@@ -20,6 +20,11 @@ namespace ROOP {
         // Returns the converted instructions, as strings;
         // The syntax of the returned instructions is given in the second argument.
         static std::vector<std::string>
+        convertInstructionSequenceToString(const byte * const instrSeqBytes, const size_t instrSeqBytesCount, AssemblySyntax asmSyntax);
+
+        // Returns the converted instructions, as strings;
+        // The syntax of the returned instructions is given in the second argument.
+        static std::vector<std::string>
         convertInstructionSequenceToString(byteSequence instructionSequence, AssemblySyntax asmSyntax);
     };
 
