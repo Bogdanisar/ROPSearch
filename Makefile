@@ -14,7 +14,7 @@ CAPSTONE_LDFLAGS = -l:libcapstone.a
 
 # Main code
 
-bin/ROOP.exe: bin/ROOP.o bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryExecutableBytes.o bin/InstructionConverter.o bin/InsSeqTrie.o
+bin/ROOP.exe: bin/ROOP.o bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryInfo.o bin/InstructionConverter.o bin/InsSeqTrie.o
 	g++ $^ $(KEYSTONE_LDFLAGS) $(CAPSTONE_LDFLAGS) -o $@
 
 bin/ROOP.o: src/ROOP.cpp src/common/*.hpp
@@ -26,8 +26,8 @@ bin/VirtualMemoryMapping.o: src/VirtualMemoryMapping.* src/common/*.hpp
 bin/ELFParser.o: src/ELFParser.* src/common/*.hpp
 	g++ $(wFlags) -c src/ELFParser.cpp -o $@
 
-bin/VirtualMemoryExecutableBytes.o: src/VirtualMemoryExecutableBytes.* src/common/*.hpp
-	g++ $(wFlags) -c src/VirtualMemoryExecutableBytes.cpp -o $@
+bin/VirtualMemoryInfo.o: src/VirtualMemoryInfo.* src/common/*.hpp
+	g++ $(wFlags) -c src/VirtualMemoryInfo.cpp -o $@
 
 bin/InstructionConverter.o: src/InstructionConverter.* src/common/*.hpp
 	g++ $(wFlags) -c src/InstructionConverter.cpp -o $@

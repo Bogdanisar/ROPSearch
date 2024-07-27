@@ -8,7 +8,7 @@
 #include "common/utils.hpp"
 #include "ELFParser.hpp"
 #include "InstructionConverter.hpp"
-#include "VirtualMemoryExecutableBytes.hpp"
+#include "VirtualMemoryInfo.hpp"
 #include "VirtualMemoryMapping.hpp"
 
 
@@ -118,7 +118,7 @@ void testPrintCodeSegmentsOfLoadedELFs(int targetPid) {
 void testVirtualMemoryExecutableBytes(int targetPid) {
     pv(targetPid); pn; pn;
 
-    VirtualMemoryExecutableBytes vmBytes(targetPid);
+    VirtualMemoryInfo vmBytes(targetPid);
     const std::vector<VirtualMemoryExecutableSegment>& executableSegments = vmBytes.getExecutableSegments();
 
     printf("Executable Virtual Memory ranges (plus a few bytes from the start of the segment):\n");
@@ -145,7 +145,7 @@ void testVirtualMemoryExecutableBytes(int targetPid) {
         unsigned long long firstSegmStart = firstExecSegm.startVirtualAddress;
         size_t bytesToPrint = std::min((size_t)20, firstExecSegm.executableBytes.size());
 
-        printf("Testing VirtualMemoryExecutableBytes::getByteAtVAAddress():\n");
+        printf("Testing VirtualMemoryInfo::getByteAtVAAddress():\n");
         for (unsigned long long addr = firstSegmStart; addr < firstSegmStart + bytesToPrint; ++addr) {
             ROOP::byte b = vmBytes.getByteAtVAAddress(addr);
             printf("virtual_memory[0x%llx] = %02hhx\n", addr, b);
@@ -193,7 +193,7 @@ void testGetExecutableBytesInteractive(string targetExecutable) {
     testVirtualMemoryMapping(targetPid); pn;
     testVirtualMemoryExecutableBytes(targetPid); pn;
 
-    VirtualMemoryExecutableBytes vmBytes(targetPid);
+    VirtualMemoryInfo vmBytes(targetPid);
 
     printf("Interactive virtual memory inspector...\n");
     while (true) {
@@ -285,7 +285,7 @@ void testFindingInstructionSequenceInMemory(string targetExecutable) {
     // Print the Virtual Memory mapping of the target process.
     testVirtualMemoryMapping(targetPid); pn;
 
-    VirtualMemoryExecutableBytes vmBytes(targetPid);
+    VirtualMemoryInfo vmBytes(targetPid);
 
     // These are some sample instruction sequences found in libc.so.6
     // Note: Using Intel syntax here.

@@ -1,4 +1,4 @@
-#include "VirtualMemoryExecutableBytes.hpp"
+#include "VirtualMemoryInfo.hpp"
 
 #include <algorithm>
 #include <map>
@@ -7,7 +7,7 @@
 #include "InstructionConverter.hpp"
 
 
-ROOP::VirtualMemoryExecutableBytes::VirtualMemoryExecutableBytes(int processPid)
+ROOP::VirtualMemoryInfo::VirtualMemoryInfo(int processPid)
 : vaSegmMapping(processPid) {
     // This is used as an optimization in case there are multiple executable segments for the same ELF path.
     // (Otherwise, we would need to create an ELFParser multiple times for the same path).
@@ -55,15 +55,15 @@ ROOP::VirtualMemoryExecutableBytes::VirtualMemoryExecutableBytes(int processPid)
     std::sort(this->executableSegments.begin(), this->executableSegments.end(), comparator);
 }
 
-const ROOP::VirtualMemoryMapping& ROOP::VirtualMemoryExecutableBytes::getVASegmMapping() const {
+const ROOP::VirtualMemoryMapping& ROOP::VirtualMemoryInfo::getVASegmMapping() const {
     return this->vaSegmMapping;
 }
 
-const std::vector<ROOP::VirtualMemoryExecutableSegment>& ROOP::VirtualMemoryExecutableBytes::getExecutableSegments() const {
+const std::vector<ROOP::VirtualMemoryExecutableSegment>& ROOP::VirtualMemoryInfo::getExecutableSegments() const {
     return this->executableSegments;
 }
 
-bool ROOP::VirtualMemoryExecutableBytes::isValidVAAddressInExecutableSegment(unsigned long long vaAddress) const {
+bool ROOP::VirtualMemoryInfo::isValidVAAddressInExecutableSegment(unsigned long long vaAddress) const {
     for (const auto& execSegm : this->executableSegments) {
         if (execSegm.startVirtualAddress <= vaAddress && vaAddress < execSegm.endVirtualAddress) {
             return true;
@@ -73,7 +73,7 @@ bool ROOP::VirtualMemoryExecutableBytes::isValidVAAddressInExecutableSegment(uns
     return false;
 }
 
-ROOP::byte ROOP::VirtualMemoryExecutableBytes::getByteAtVAAddress(unsigned long long vaAddress) const {
+ROOP::byte ROOP::VirtualMemoryInfo::getByteAtVAAddress(unsigned long long vaAddress) const {
     for (const auto& execSegm : this->executableSegments) {
 
         // As far as I can tell, the difference between "end" and "actualEnd"
@@ -96,7 +96,7 @@ ROOP::byte ROOP::VirtualMemoryExecutableBytes::getByteAtVAAddress(unsigned long 
 }
 
 std::vector<unsigned long long>
-ROOP::VirtualMemoryExecutableBytes::matchInstructionSequenceInVirtualMemory(ROOP::byteSequence instructionSequence) {
+ROOP::VirtualMemoryInfo::matchInstructionSequenceInVirtualMemory(ROOP::byteSequence instructionSequence) {
     assertMessage(instructionSequence.size() != 0, "Got empty instruction sequence...");
 
     std::vector<unsigned long long> matchedVirtualAddresses;
@@ -125,7 +125,7 @@ ROOP::VirtualMemoryExecutableBytes::matchInstructionSequenceInVirtualMemory(ROOP
 }
 
 std::vector<unsigned long long>
-ROOP::VirtualMemoryExecutableBytes::matchInstructionSequenceInVirtualMemory(std::string instructionSequenceAsm, AssemblySyntax asmSyntax) {
+ROOP::VirtualMemoryInfo::matchInstructionSequenceInVirtualMemory(std::string instructionSequenceAsm, AssemblySyntax asmSyntax) {
     auto ret = InstructionConverter::convertInstructionSequenceToBytes(instructionSequenceAsm, asmSyntax);
     const byteSequence& instructionSequence = ret.first;
     return this->matchInstructionSequenceInVirtualMemory(instructionSequence);

@@ -1,5 +1,5 @@
-#ifndef VIRTUAL_MEMORY_EXECUTABLE_BYTES_H
-#define VIRTUAL_MEMORY_EXECUTABLE_BYTES_H
+#ifndef VIRTUAL_MEMORY_INFO_H
+#define VIRTUAL_MEMORY_INFO_H
 
 #include <string>
 #include <vector>
@@ -19,12 +19,12 @@ namespace ROOP {
         byteSequence executableBytes;
     };
 
-    class VirtualMemoryExecutableBytes {
+    class VirtualMemoryInfo {
         VirtualMemoryMapping vaSegmMapping;
         std::vector<VirtualMemoryExecutableSegment> executableSegments;
 
         public:
-        VirtualMemoryExecutableBytes(int processPid);
+        VirtualMemoryInfo(int processPid);
 
         const VirtualMemoryMapping& getVASegmMapping() const;
         const std::vector<VirtualMemoryExecutableSegment>& getExecutableSegments() const;
@@ -44,4 +44,4 @@ namespace ROOP {
 }
 
 
-#endif // VIRTUAL_MEMORY_EXECUTABLE_BYTES_H
+#endif // VIRTUAL_MEMORY_INFO_H
