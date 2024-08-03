@@ -266,7 +266,33 @@ void testKeystoneFrameworkIntegration() {
     }
 }
 
-void testCapstoneFrameworkIntegration() {
+void testCapstoneFrameworkIntegrationBadBytes() {
+    byteSequence bytes = {
+        // "endbr64" instruction:
+        (ROOP::byte)'\xF3',
+        (ROOP::byte)'\x0F',
+        (ROOP::byte)'\x1E',
+        (ROOP::byte)'\xFA',
+
+        // junk:
+        (ROOP::byte)'\xFF',
+        (ROOP::byte)'\xFF',
+    };
+
+    // Disassemble these bytes into assembly instructions as strings;
+    auto p = InstructionConverter::convertInstructionSequenceToString(bytes, ROOP::AssemblySyntax::Intel);
+    vector<string> instructions = p.first;
+
+    printf("Number of input bytes: %u\n", (unsigned)bytes.size());
+    printf("Number of disassembled bytes: %u\n", (unsigned)p.second);
+
+    printf("Disassembled instructions:\n");
+    for (size_t i = 0; i < instructions.size(); ++i) {
+        printf("instr[%i] = %s\n", (int)i, instructions[i].c_str());
+    }
+}
+
+void testKeystoneCapstoneFrameworkIntegration() {
     // Using AT&T syntax for the instructions below.
     ROOP::AssemblySyntax syntax = ROOP::AssemblySyntax::ATT;
 
@@ -311,7 +337,8 @@ void testCapstoneFrameworkIntegration() {
 
 
         // Encode these bytes back into instructions as strings;
-        vector<string> newInstructions = InstructionConverter::convertInstructionSequenceToString(originalByteSeq, syntax);
+        auto p = InstructionConverter::convertInstructionSequenceToString(originalByteSeq, syntax);
+        vector<string> newInstructions = p.first;
         printf("Re-encoded instructions:\n");
         for (size_t i = 0; i < newInstructions.size(); ++i) {
             printf("    instr[%i] = %s\n", (int)i, newInstructions[i].c_str());
@@ -466,8 +493,9 @@ int main(int argc, char* argv[]) {
     // testVirtualMemoryExecutableBytes(getpid()); pn;
     // testGetExecutableBytesInteractive("vulnerable.exe"); pn;
     // testKeystoneFrameworkIntegration(); pn;
-    // testCapstoneFrameworkIntegration(); pn;
-    testInstructionNormalization(); pn;
+    testCapstoneFrameworkIntegrationBadBytes(); pn;
+    // testKeystoneCapstoneFrameworkIntegration(); pn;
+    // testInstructionNormalization(); pn;
     // testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
 
     return 0;

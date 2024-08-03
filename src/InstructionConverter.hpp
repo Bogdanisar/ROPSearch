@@ -17,14 +17,16 @@ namespace ROOP {
         static std::pair<byteSequence, unsigned>
         convertInstructionSequenceToBytes(std::string instructionSequenceAsm, AssemblySyntax asmSyntax);
 
-        // Returns the converted instructions, as strings;
+        // Returns { The converted instructions (as strings); The number of disassembled bytes };
         // The syntax of the returned instructions is given in the second argument.
-        static std::vector<std::string>
+        // The number of disassembled bytes will be smaller than the size of the input if there's a parsing error.
+        static std::pair<std::vector<std::string>, unsigned>
         convertInstructionSequenceToString(const byte * const instrSeqBytes, const size_t instrSeqBytesCount, AssemblySyntax asmSyntax);
 
-        // Returns the converted instructions, as strings;
+        // Returns { The converted instructions (as strings); The number of disassembled bytes };
         // The syntax of the returned instructions is given in the second argument.
-        static std::vector<std::string>
+        // The number of disassembled bytes will be smaller than the size of the input if there's a parsing error.
+        static std::pair<std::vector<std::string>, unsigned>
         convertInstructionSequenceToString(byteSequence instructionSequence, AssemblySyntax asmSyntax);
 
         // Takes instruction(s) given as strings

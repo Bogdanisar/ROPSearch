@@ -61,7 +61,7 @@ cleanup:
     return {instructionSequence, numDecodedInstructions};
 }
 
-std::vector<std::string>
+std::pair<std::vector<std::string>, unsigned>
 ROOP::InstructionConverter::convertInstructionSequenceToString(const byte * const instrSeqBytes, const size_t instrSeqBytesCount, AssemblySyntax asmSyntax) {
     cs_err err;
     bool handleInitialized = false;
@@ -70,7 +70,8 @@ ROOP::InstructionConverter::convertInstructionSequenceToString(const byte * cons
 	size_t decodedInstructionsCount;
     size_t syntaxValue;
     size_t idx;
-    std::vector<std::string> ret;
+    std::vector<std::string> decodedInstructionsAsm;
+    unsigned totalDecodedBytes = 0;
 
 	err = cs_open(CS_ARCH_X86, CS_MODE_64, &capstoneHandle);
     if (err != CS_ERR_OK) {
@@ -87,8 +88,9 @@ ROOP::InstructionConverter::convertInstructionSequenceToString(const byte * cons
     }
 
 	decodedInstructionsCount = cs_disasm(capstoneHandle, (const uint8_t *)instrSeqBytes, instrSeqBytesCount, 0x1000, 0, &decodedInstructions);
-    if (decodedInstructionsCount == 0) {
-        printf("Capstone: cs_disasm() failed with error %i", (int)cs_errno(capstoneHandle));
+    err = cs_errno(capstoneHandle);
+    if (decodedInstructionsCount == 0 && err != CS_ERR_OK) {
+        printf("Capstone: cs_disasm() failed with error %i", (int)err);
         goto cleanup;
     }
 
@@ -101,7 +103,8 @@ ROOP::InstructionConverter::convertInstructionSequenceToString(const byte * cons
             instructionAsm += " " + operands;
         }
 
-        ret.push_back(instructionAsm);
+        decodedInstructionsAsm.push_back(instructionAsm);
+        totalDecodedBytes += decodedInstructions[idx].size;
     }
 
 cleanup:
@@ -114,10 +117,10 @@ cleanup:
     }
 
 // Final
-    return ret;
+    return { decodedInstructionsAsm, totalDecodedBytes };
 }
 
-std::vector<std::string>
+std::pair<std::vector<std::string>, unsigned>
 ROOP::InstructionConverter::convertInstructionSequenceToString(byteSequence instructionSequence, AssemblySyntax asmSyntax) {
     const byte *instrSeqBytes = (const byte *)instructionSequence.data();
     const size_t instrSeqBytesCount = instructionSequence.size();
@@ -128,9 +131,11 @@ std::vector<std::string>
 ROOP::InstructionConverter::normalizeInstructionAsm(std::string origInsSequenceAsm, ROOP::AssemblySyntax inputAsmSyntax) {
     const byteSequence& insSeqBytes = InstructionConverter::convertInstructionSequenceToBytes(origInsSequenceAsm, inputAsmSyntax).first;
 
-    std::vector<std::string> instructions;
     AssemblySyntax roopSyntax = ROOPConsts::InstructionASMSyntax;
-    instructions = InstructionConverter::convertInstructionSequenceToString(insSeqBytes, roopSyntax);
+    auto p = InstructionConverter::convertInstructionSequenceToString(insSeqBytes, roopSyntax);
+
+    std::vector<std::string> instructions = p.first;
+    assert(p.second == insSeqBytes.size());
 
     return instructions;
 }
