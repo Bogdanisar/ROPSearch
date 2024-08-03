@@ -95,7 +95,12 @@ ROOP::InstructionConverter::convertInstructionSequenceToString(const byte * cons
     for (idx = 0; idx < decodedInstructionsCount; ++idx) {
         std::string mnemonic = std::string(decodedInstructions[idx].mnemonic);
         std::string operands = std::string(decodedInstructions[idx].op_str);
-        std::string instructionAsm = mnemonic + " " + operands;
+
+        std::string instructionAsm = mnemonic;
+        if (operands.size() != 0) {
+            instructionAsm += " " + operands;
+        }
+
         ret.push_back(instructionAsm);
     }
 
