@@ -123,3 +123,28 @@ ROOP::InstructionConverter::convertInstructionSequenceToString(byteSequence inst
     const size_t instrSeqBytesCount = instructionSequence.size();
     return InstructionConverter::convertInstructionSequenceToString(instrSeqBytes, instrSeqBytesCount, asmSyntax);
 }
+
+std::vector<std::string>
+ROOP::InstructionConverter::normalizeInstructionAsm(std::string origInsSequenceAsm, ROOP::AssemblySyntax inputAsmSyntax) {
+    const byteSequence& insSeqBytes = InstructionConverter::convertInstructionSequenceToBytes(origInsSequenceAsm, inputAsmSyntax).first;
+
+    std::vector<std::string> instructions;
+    AssemblySyntax roopSyntax = ROOPConsts::InstructionASMSyntax;
+    instructions = InstructionConverter::convertInstructionSequenceToString(insSeqBytes, roopSyntax);
+
+    return instructions;
+}
+
+std::string
+ROOP::InstructionConverter::concatenateInstructionsAsm(std::vector<std::string> instructionsAsm) {
+    std::string ret = "";
+
+    for (size_t i = 0; i < instructionsAsm.size(); ++i) {
+        ret = (ret + instructionsAsm[i]);
+        if (i != instructionsAsm.size() - 1) {
+            ret += "; ";
+        }
+    }
+
+    return ret;
+}

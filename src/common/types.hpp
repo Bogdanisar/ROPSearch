@@ -12,6 +12,12 @@ namespace ROOP {
         Intel, // The assembly instructions are written in Intel syntax.
         ATT, // The assembly instructions are written in AT&T syntax.
     };
+
+    struct ROOPConsts {
+        static const int MaxInstructionBytesCount = 24;
+        static const int MaxInstructionSequenceSize = 24;
+        static const AssemblySyntax InstructionASMSyntax = AssemblySyntax::Intel;
+    };
 }
 
 

@@ -26,6 +26,17 @@ namespace ROOP {
         // The syntax of the returned instructions is given in the second argument.
         static std::vector<std::string>
         convertInstructionSequenceToString(byteSequence instructionSequence, AssemblySyntax asmSyntax);
+
+        // Takes instruction(s) given as strings
+        // and normalizes them according to the same syntax we use internally in ROOP.
+        // - The first argument may contain multiple instructions separated by ";".
+        // - The syntax of the input instructions is given in the second argument.
+        static std::vector<std::string>
+        normalizeInstructionAsm(std::string origInsSequenceAsm, AssemblySyntax inputAsmSyntax);
+
+        // Concatenates instructions with "; " between them.
+        static std::string
+        concatenateInstructionsAsm(std::vector<std::string> instructionsAsm);
     };
 
 }

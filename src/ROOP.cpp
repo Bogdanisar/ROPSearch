@@ -266,60 +266,6 @@ void testKeystoneFrameworkIntegration() {
     }
 }
 
-void testFindingInstructionSequenceInMemory(string targetExecutable) {
-    // You need to start the target executable (under GDB) before running this.
-    // And then compare the output of this function with the output of GDB:
-    // $> gdb ./vulnerable.exe
-    // (gdb) set disassembly-flavor intel
-    // (gdb) break main
-    // (gdb) start
-    // (gdb) x/10i yourAddressHere
-    // ...
-    // (gdb) kill
-    // You should see in gdb your instruction sequence at the virtual address(es) given by this function.
-
-    pv(targetExecutable); pn;
-    int targetPid = getPidOfExecutable(targetExecutable);
-    pv(targetPid); pn;
-
-    // Print the Virtual Memory mapping of the target process.
-    testVirtualMemoryMapping(targetPid); pn;
-
-    VirtualMemoryInfo vmBytes(targetPid);
-
-    // These are some sample instruction sequences found in libc.so.6
-    // Note: Using Intel syntax here.
-    ROOP::AssemblySyntax syntax = ROOP::AssemblySyntax::Intel;
-    vector<string> instructionSequences = {
-        "add ch, cl ; ret",
-        "and word ptr [rdi], sp ; ret",
-        "dec dword ptr [rax - 0x77] ; ret 0x840f",
-        "mov ecx, eax ; mov eax, ecx ; ret",
-        "mov edx, 0xffffffff ; ret",
-        "or al, 0x7e ; ret",
-        "push 0 ; push 0 ; call 0x1515f0",
-        "sub eax, esi ; ret",
-        "xchg eax, ebp ; ret 0xffff",
-        "xor rax, rax ; ret"
-    };
-
-    printf("======= Searching for instruction sequences in virtual memory... =======\n");
-    for (const string& insSeq : instructionSequences) {
-        vector<unsigned long long> matchedAddresses = vmBytes.matchInstructionSequenceInVirtualMemory(insSeq, syntax);
-
-        printf("Instruction sequence: %s\n", insSeq.c_str());
-        if (matchedAddresses.size() != 0) {
-            for (unsigned long long addr : matchedAddresses) {
-                printf("Found at 0x%llx\n", addr);
-            }
-        }
-        else {
-            printf("Didn't find this instruction sequence in virtual memory...\n");
-        }
-        printf("\n");
-    }
-}
-
 void testCapstoneFrameworkIntegration() {
     // Using AT&T syntax for the instructions below.
     ROOP::AssemblySyntax syntax = ROOP::AssemblySyntax::ATT;
@@ -393,6 +339,121 @@ void testCapstoneFrameworkIntegration() {
     }
 }
 
+void testInstructionNormalization() {
+    // These are some sample instruction sequences found in libc.so.6
+    // Note: Using Intel syntax for the instructions below.
+    vector<string> instructionSequencesIntel = {
+        "add CH, CL ; ret",
+        "and WORD PTR [RDI], SP ; ret",
+        "dec DWORD PTR [RAX - 0X77] ; ret 0X840F",
+        "mov ECX, EAX ; mov EAX, ECX ; ret",
+        "mov EDX, 0XFFFFFFFF ; ret",
+        "or AL, 0X7E ; ret",
+        "push 0 ; push 0 ; call 0X1515F0",
+        "sub EAX, ESI ; ret",
+        "xchg EAX, EBP ; ret 0XFFFF",
+        "xor RAX, RAX ; ret"
+    };
+
+    printf("//////////////////// Normalizing Intel-assembly instructions ////////////////////\n");
+    for (const string& insAsm : instructionSequencesIntel) {
+        const vector<string>& normalizedInstructions = InstructionConverter::normalizeInstructionAsm(insAsm, ROOP::AssemblySyntax::Intel);
+        const string& normalizedInsAsm = InstructionConverter::concatenateInstructionsAsm(normalizedInstructions);
+        printf("insAsm = %s\n", insAsm.c_str());
+        printf("normalizedInsAsm = %s\n", normalizedInsAsm.c_str());
+    }
+
+
+    // A few arbitrary instructions.
+    // Note: Using AT&T syntax for the instructions below.
+    vector<string> instructionSequencesATT = {
+        // First element
+        "xor %rcx, %rcx",
+
+        // Second element
+        "sub %rbx, %rcx",
+
+        // Third element
+        "mov (%r10), %r10; "
+        "mov (%r8), %r8; "
+        "mov (%r9), %r9",
+
+        // Fourth element
+        "nop; "
+        "pop %rax; "
+        "syscall; "
+        "pop %r10; "
+        "mov %rax, (%r10)",
+
+        // 5th element
+        "add %cl, %ch; ret",
+    };
+
+    printf("\n");
+
+    printf("//////////////////// Normalizing AT&T-assembly instructions ////////////////////\n");
+    for (const string& insAsm : instructionSequencesATT) {
+        const vector<string>& normalizedInstructions = InstructionConverter::normalizeInstructionAsm(insAsm, ROOP::AssemblySyntax::ATT);
+        const string& normalizedInsAsm = InstructionConverter::concatenateInstructionsAsm(normalizedInstructions);
+        printf("insAsm = %s\n", insAsm.c_str());
+        printf("normalizedInsAsm = %s\n", normalizedInsAsm.c_str());
+    }
+}
+
+void testFindingInstructionSequenceInMemory(string targetExecutable) {
+    // You need to start the target executable (under GDB) before running this.
+    // And then compare the output of this function with the output of GDB:
+    // $> gdb ./vulnerable.exe
+    // (gdb) set disassembly-flavor intel
+    // (gdb) break main
+    // (gdb) start
+    // (gdb) x/10i yourAddressHere
+    // ...
+    // (gdb) kill
+    // You should see in gdb your instruction sequence at the virtual address(es) given by this function.
+
+    pv(targetExecutable); pn;
+    int targetPid = getPidOfExecutable(targetExecutable);
+    pv(targetPid); pn;
+
+    // Print the Virtual Memory mapping of the target process.
+    testVirtualMemoryMapping(targetPid); pn;
+
+    VirtualMemoryInfo vmBytes(targetPid);
+
+    // These are some sample instruction sequences found in libc.so.6
+    // Note: Using Intel syntax here.
+    ROOP::AssemblySyntax syntax = ROOP::AssemblySyntax::Intel;
+    vector<string> instructionSequences = {
+        "add ch, cl ; ret",
+        "and word ptr [rdi], sp ; ret",
+        "dec dword ptr [rax - 0x77] ; ret 0x840f",
+        "mov ecx, eax ; mov eax, ecx ; ret",
+        "mov edx, 0xffffffff ; ret",
+        "or al, 0x7e ; ret",
+        "push 0 ; push 0 ; call 0x1515f0",
+        "sub eax, esi ; ret",
+        "xchg eax, ebp ; ret 0xffff",
+        "xor rax, rax ; ret"
+    };
+
+    printf("======= Searching for instruction sequences in virtual memory... =======\n");
+    for (const string& insSeq : instructionSequences) {
+        vector<unsigned long long> matchedAddresses = vmBytes.matchInstructionSequenceInVirtualMemory(insSeq, syntax);
+
+        printf("Instruction sequence: %s\n", insSeq.c_str());
+        if (matchedAddresses.size() != 0) {
+            for (unsigned long long addr : matchedAddresses) {
+                printf("Found at 0x%llx\n", addr);
+            }
+        }
+        else {
+            printf("Didn't find this instruction sequence in virtual memory...\n");
+        }
+        printf("\n");
+    }
+}
+
 
 int main(int argc, char* argv[]) {
     UNUSED(argc); UNUSED(argv);
@@ -405,8 +466,9 @@ int main(int argc, char* argv[]) {
     // testVirtualMemoryExecutableBytes(getpid()); pn;
     // testGetExecutableBytesInteractive("vulnerable.exe"); pn;
     // testKeystoneFrameworkIntegration(); pn;
+    // testCapstoneFrameworkIntegration(); pn;
+    testInstructionNormalization(); pn;
     // testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
-    testCapstoneFrameworkIntegration(); pn;
 
     return 0;
 }
