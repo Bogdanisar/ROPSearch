@@ -1,11 +1,14 @@
 #ifndef VIRTUAL_MEMORY_INFO_H
 #define VIRTUAL_MEMORY_INFO_H
 
+#include <map>
+#include <set>
 #include <string>
 #include <vector>
 
 #include "common/types.hpp"
 #include "common/utils.hpp"
+#include "InsSeqTrie.hpp"
 #include "VirtualMemoryMapping.hpp"
 
 
@@ -22,6 +25,26 @@ namespace ROOP {
     class VirtualMemoryInfo {
         VirtualMemoryMapping vaSegmMapping;
         std::vector<VirtualMemoryExecutableSegment> executableSegments;
+        InsSeqTrie instructionTrie;
+
+        void buildExecutableSegments();
+
+
+        // Used as an optimization (through memoization) when building the inner trie;
+        std::set<std::pair<int,int>> disassembledSegments;
+        std::map<std::pair<int,int>, std::string> segmentToInstruction;
+
+        void disassembleSegmentBytes(const VirtualMemoryExecutableSegment& segm, const int first, const int last);
+
+        void buildInstructionTrie(
+            const VirtualMemoryExecutableSegment& segm,
+            const int currRightSegmentIdx,
+            InsSeqTrie::Node *currNode,
+            const int currInstrSeqLength
+        );
+
+        void buildInstructionTrie();
+
 
         public:
         VirtualMemoryInfo(int processPid);

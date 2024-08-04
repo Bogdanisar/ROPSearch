@@ -1,14 +1,12 @@
 #include "VirtualMemoryInfo.hpp"
 
 #include <algorithm>
-#include <map>
 
 #include "ELFParser.hpp"
 #include "InstructionConverter.hpp"
 
 
-ROOP::VirtualMemoryInfo::VirtualMemoryInfo(int processPid)
-: vaSegmMapping(processPid) {
+void ROOP::VirtualMemoryInfo::buildExecutableSegments() {
     // This is used as an optimization in case there are multiple executable segments for the same ELF path.
     // (Otherwise, we would need to create an ELFParser multiple times for the same path).
     std::map<std::string, ELFParser> elfPathToELFParser;
@@ -54,6 +52,96 @@ ROOP::VirtualMemoryInfo::VirtualMemoryInfo(int processPid)
     // They come sorted by default (from /proc/PID/maps), but just in case.
     std::sort(this->executableSegments.begin(), this->executableSegments.end(), comparator);
 }
+
+
+void ROOP::VirtualMemoryInfo::disassembleSegmentBytes(
+    const VirtualMemoryExecutableSegment& segm,
+    const int first,
+    const int last
+) {
+    std::pair<int,int> segment = {first, last};
+
+    if (this->disassembledSegments.count(segment) == 1) {
+        // We have already analyzed this segment.
+        // The information is available in the inner data structures.
+        return;
+    }
+
+    AssemblySyntax syntax = ROOPConsts::InstructionASMSyntax;
+    const byte *firstPtr = segm.executableBytes.data() + first;
+    int segmentSize = (last - first + 1);
+
+    auto p = InstructionConverter::convertInstructionSequenceToString(firstPtr, segmentSize, syntax);
+    std::vector<std::string>& instructions = p.first;
+    unsigned totalDisassembledBytes = p.second;
+    bool allBytesWereParsedSuccessfully = ((unsigned)segmentSize == totalDisassembledBytes);
+
+    if (instructions.size() == 1 && allBytesWereParsedSuccessfully) {
+        // Perfect. We want a segment to disassemble into exactly one instruction.
+        this->segmentToInstruction[segment] = instructions[0];
+    }
+
+    this->disassembledSegments.insert(segment);
+}
+
+void ROOP::VirtualMemoryInfo::buildInstructionTrie(
+    const VirtualMemoryExecutableSegment& segm,
+    const int currRightSegmentIdx,
+    ROOP::InsSeqTrie::Node *currNode,
+    const int currInstrSeqLength
+) {
+    if (currRightSegmentIdx < 0) {
+        return;
+    }
+    if (currInstrSeqLength >= ROOPConsts::MaxInstructionSequenceSize) {
+        return;
+    }
+
+    const int maxInstructionSize = ROOPConsts::MaxInstructionBytesCount;
+    int first = currRightSegmentIdx;
+    int last = currRightSegmentIdx;
+
+    for (; first >= 0 && (last - first + 1) <= maxInstructionSize; --first) {
+        std::pair<int,int> segment = {first, last};
+        this->disassembleSegmentBytes(segm, first, last);
+
+        if (this->segmentToInstruction.count(segment) == 1) {
+            const std::string& instruction = segmentToInstruction[segment];
+
+            // Insert the instruction at this segment into the trie;
+            unsigned long long vaAddress = segm.startVirtualAddress + first;
+            auto nextNode = this->instructionTrie.addInstruction(instruction, vaAddress, currNode);
+
+            // And then recurse.
+            this->buildInstructionTrie(segm, first - 1, nextNode, currInstrSeqLength + 1);
+        }
+        else {
+            // The byte sequence between [first, last] is bad (no instructions, too many instructions or bad bytes);
+            continue;
+        }
+    }
+}
+
+void ROOP::VirtualMemoryInfo::buildInstructionTrie() {
+    for (const VirtualMemoryExecutableSegment& segm : this->executableSegments) {
+        this->disassembledSegments.clear();
+        this->segmentToInstruction.clear();
+
+        for (int rightIdx = (int)segm.executableBytes.size()-1; rightIdx >= 0; --rightIdx) {
+            if (segm.executableBytes[rightIdx] == (byte)'\xC3') {
+                // Start only if the last instruction in the sequence is a "ret";
+                this->buildInstructionTrie(segm, rightIdx, this->instructionTrie.root, 0);
+            }
+        }
+    }
+}
+
+ROOP::VirtualMemoryInfo::VirtualMemoryInfo(int processPid)
+: vaSegmMapping(processPid) {
+    this->buildExecutableSegments();
+    this->buildInstructionTrie();
+}
+
 
 const ROOP::VirtualMemoryMapping& ROOP::VirtualMemoryInfo::getVASegmMapping() const {
     return this->vaSegmMapping;
@@ -125,8 +213,10 @@ ROOP::VirtualMemoryInfo::matchInstructionSequenceInVirtualMemory(ROOP::byteSeque
 }
 
 std::vector<unsigned long long>
-ROOP::VirtualMemoryInfo::matchInstructionSequenceInVirtualMemory(std::string instructionSequenceAsm, AssemblySyntax asmSyntax) {
-    auto ret = InstructionConverter::convertInstructionSequenceToBytes(instructionSequenceAsm, asmSyntax);
-    const byteSequence& instructionSequence = ret.first;
-    return this->matchInstructionSequenceInVirtualMemory(instructionSequence);
+ROOP::VirtualMemoryInfo::matchInstructionSequenceInVirtualMemory(std::string origInstructionSequenceAsm, AssemblySyntax origSyntax) {
+    // Normalize the instruction sequence,
+    // so that we are sure it looks exactly like what we have in the internal Trie.
+    std::vector<std::string> instructions = InstructionConverter::normalizeInstructionAsm(origInstructionSequenceAsm, origSyntax);
+
+    return this->instructionTrie.hasInstructionSequence(instructions);
 }

@@ -11,7 +11,7 @@ namespace ROOP {
     // A class that efficiently stores, through a Trie structure, all the instruction sequences
     // decoded from the executable bytes present in the virtual address space of a process.
     class InsSeqTrie {
-
+        public:
         // A given instruction sequence is codified in the Trie
         // by a path from the root node to a descendant node
         // (from the last instruction in the sequence to the first instruction).
@@ -22,12 +22,13 @@ namespace ROOP {
             std::map<std::string, Node *> children;
         };
 
-        // The root node, corresponding to the empty instruction sequence.
-        Node *root;
-
+        private:
         void recursiveFree(Node *currentNode);
 
         public:
+        // The root node, corresponding to the empty instruction sequence.
+        Node *root;
+
         InsSeqTrie();
 
         Node* addInstruction(const std::string& instruction, unsigned long long vaAddress);

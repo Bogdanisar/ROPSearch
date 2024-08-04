@@ -493,10 +493,10 @@ int main(int argc, char* argv[]) {
     // testVirtualMemoryExecutableBytes(getpid()); pn;
     // testGetExecutableBytesInteractive("vulnerable.exe"); pn;
     // testKeystoneFrameworkIntegration(); pn;
-    testCapstoneFrameworkIntegrationBadBytes(); pn;
+    // testCapstoneFrameworkIntegrationBadBytes(); pn;
     // testKeystoneCapstoneFrameworkIntegration(); pn;
     // testInstructionNormalization(); pn;
-    // testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
+    testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
 
     return 0;
 }

@@ -15,7 +15,7 @@ namespace ROOP {
 
     struct ROOPConsts {
         static const int MaxInstructionBytesCount = 24;
-        static const int MaxInstructionSequenceSize = 24;
+        static const int MaxInstructionSequenceSize = 10;
         static const AssemblySyntax InstructionASMSyntax = AssemblySyntax::Intel;
     };
 }
