@@ -446,7 +446,8 @@ void testFindingInstructionSequenceInMemory(string targetExecutable) {
     // Print the Virtual Memory mapping of the target process.
     testVirtualMemoryMapping(targetPid); pn;
 
-    VirtualMemoryInfo vmBytes(targetPid);
+    VirtualMemoryInfo vmInfo(targetPid);
+    printf("Finished initializing vmInfo object!\n\n");
 
     // These are some sample instruction sequences found in libc.so.6
     // Note: Using Intel syntax here.
@@ -466,7 +467,7 @@ void testFindingInstructionSequenceInMemory(string targetExecutable) {
 
     printf("======= Searching for instruction sequences in virtual memory... =======\n");
     for (const string& insSeq : instructionSequences) {
-        vector<unsigned long long> matchedAddresses = vmBytes.matchInstructionSequenceInVirtualMemory(insSeq, syntax);
+        vector<unsigned long long> matchedAddresses = vmInfo.matchInstructionSequenceInVirtualMemory(insSeq, syntax);
 
         printf("Instruction sequence: %s\n", insSeq.c_str());
         if (matchedAddresses.size() != 0) {

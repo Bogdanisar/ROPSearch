@@ -78,7 +78,7 @@ void ROOP::VirtualMemoryInfo::disassembleSegmentBytes(
 
     if (instructions.size() == 1 && allBytesWereParsedSuccessfully) {
         // Perfect. We want a segment to disassemble into exactly one instruction.
-        this->segmentToInstruction[segment] = instructions[0];
+        this->segmentToInstruction[first][last] = instructions[0];
     }
 
     this->disassembledSegments.insert(segment);
@@ -102,11 +102,12 @@ void ROOP::VirtualMemoryInfo::buildInstructionTrie(
     int last = currRightSegmentIdx;
 
     for (; first >= 0 && (last - first + 1) <= maxInstructionSize; --first) {
-        std::pair<int,int> segment = {first, last};
         this->disassembleSegmentBytes(segm, first, last);
 
-        if (this->segmentToInstruction.count(segment) == 1) {
-            const std::string& instruction = segmentToInstruction[segment];
+        bool segmentIsGood = (this->segmentToInstruction.count(first) == 1) &&
+                             (this->segmentToInstruction[first].count(last) == 1);
+        if (segmentIsGood) {
+            const std::string& instruction = segmentToInstruction[first][last];
 
             // Insert the instruction at this segment into the trie;
             unsigned long long vaAddress = segm.startVirtualAddress + first;
@@ -124,8 +125,6 @@ void ROOP::VirtualMemoryInfo::buildInstructionTrie(
 
 void ROOP::VirtualMemoryInfo::buildInstructionTrie() {
     for (const VirtualMemoryExecutableSegment& segm : this->executableSegments) {
-        this->disassembledSegments.clear();
-        this->segmentToInstruction.clear();
 
         for (int rightIdx = (int)segm.executableBytes.size()-1; rightIdx >= 0; --rightIdx) {
             if (segm.executableBytes[rightIdx] == (byte)'\xC3') {
@@ -133,6 +132,9 @@ void ROOP::VirtualMemoryInfo::buildInstructionTrie() {
                 this->buildInstructionTrie(segm, rightIdx, this->instructionTrie.root, 0);
             }
         }
+
+        this->disassembledSegments.clear();
+        this->segmentToInstruction.clear();
     }
 }
 

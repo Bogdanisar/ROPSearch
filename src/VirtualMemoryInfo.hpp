@@ -3,6 +3,8 @@
 
 #include <map>
 #include <set>
+#include <unordered_map>
+#include <unordered_set>
 #include <string>
 #include <vector>
 
@@ -30,9 +32,14 @@ namespace ROOP {
         void buildExecutableSegments();
 
 
-        // Used as an optimization (through memoization) when building the inner trie;
-        std::set<std::pair<int,int>> disassembledSegments;
-        std::map<std::pair<int,int>, std::string> segmentToInstruction;
+        // These data structures are used for optimizing (through memoization) the construction of the inner trie.
+        struct IntPairHasher {
+            inline std::size_t operator()(const std::pair<int,int>& v) const {
+                return 31*v.first + v.second;
+            }
+        };
+        std::unordered_set<std::pair<int,int>, IntPairHasher> disassembledSegments;
+        std::unordered_map<int, std::unordered_map<int, std::string>> segmentToInstruction;
 
         void disassembleSegmentBytes(const VirtualMemoryExecutableSegment& segm, const int first, const int last);
 
