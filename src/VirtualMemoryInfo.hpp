@@ -11,6 +11,7 @@
 #include "common/types.hpp"
 #include "common/utils.hpp"
 #include "InsSeqTrie.hpp"
+#include "InstructionConverter.hpp"
 #include "VirtualMemoryMapping.hpp"
 
 
@@ -27,6 +28,7 @@ namespace ROOP {
     class VirtualMemoryInfo {
         VirtualMemoryMapping vaSegmMapping;
         std::vector<VirtualMemoryExecutableSegment> executableSegments;
+        InstructionConverter ic;
         InsSeqTrie instructionTrie;
 
         void buildExecutableSegments();

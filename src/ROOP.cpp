@@ -252,8 +252,9 @@ void testKeystoneFrameworkIntegration() {
         "mov %rax, (%r10)",
     };
 
+    InstructionConverter ic;
     for (const string& insSeq : instructionSequences) {
-        auto result = InstructionConverter::convertInstructionSequenceToBytes(insSeq, syntax);
+        auto result = ic.convertInstructionSequenceToBytes(insSeq, syntax);
         const byteSequence& byteSeq = result.first;
         unsigned numDecodedInstructions = result.second;
 
@@ -280,7 +281,8 @@ void testCapstoneFrameworkIntegrationBadBytes() {
     };
 
     // Disassemble these bytes into assembly instructions as strings;
-    auto p = InstructionConverter::convertInstructionSequenceToString(bytes, ROOP::AssemblySyntax::Intel);
+    InstructionConverter ic;
+    auto p = ic.convertInstructionSequenceToString(bytes, ROOP::AssemblySyntax::Intel);
     vector<string> instructions = p.first;
 
     printf("Number of input bytes: %u\n", (unsigned)bytes.size());
@@ -320,12 +322,13 @@ void testKeystoneCapstoneFrameworkIntegration() {
         "add %cl, %ch; ret",
     };
 
+    InstructionConverter ic;
     for (const string& originalInsSeq : instructionSequences) {
         printf("Original instructions: %s\n", originalInsSeq.c_str());
 
 
         // Decode the original instruction sequence (string) into bytes;
-        auto originalResult = InstructionConverter::convertInstructionSequenceToBytes(originalInsSeq, syntax);
+        auto originalResult = ic.convertInstructionSequenceToBytes(originalInsSeq, syntax);
         const byteSequence& originalByteSeq = originalResult.first;
         unsigned originalNumDecodedInstructions = originalResult.second;
 
@@ -337,7 +340,7 @@ void testKeystoneCapstoneFrameworkIntegration() {
 
 
         // Encode these bytes back into instructions as strings;
-        auto p = InstructionConverter::convertInstructionSequenceToString(originalByteSeq, syntax);
+        auto p = ic.convertInstructionSequenceToString(originalByteSeq, syntax);
         vector<string> newInstructions = p.first;
         printf("Re-encoded instructions:\n");
         for (size_t i = 0; i < newInstructions.size(); ++i) {
@@ -354,7 +357,7 @@ void testKeystoneCapstoneFrameworkIntegration() {
             }
         }
 
-        auto newResult = InstructionConverter::convertInstructionSequenceToBytes(newInstructionSequenceAsm, syntax);
+        auto newResult = ic.convertInstructionSequenceToBytes(newInstructionSequenceAsm, syntax);
         const byteSequence& newByteSeq = newResult.first;
         unsigned newNumDecodedInstructions = newResult.second;
 
@@ -367,6 +370,8 @@ void testKeystoneCapstoneFrameworkIntegration() {
 }
 
 void testInstructionNormalization() {
+    InstructionConverter ic;
+
     // These are some sample instruction sequences found in libc.so.6
     // Note: Using Intel syntax for the instructions below.
     vector<string> instructionSequencesIntel = {
@@ -384,8 +389,8 @@ void testInstructionNormalization() {
 
     printf("//////////////////// Normalizing Intel-assembly instructions ////////////////////\n");
     for (const string& insAsm : instructionSequencesIntel) {
-        const vector<string>& normalizedInstructions = InstructionConverter::normalizeInstructionAsm(insAsm, ROOP::AssemblySyntax::Intel);
-        const string& normalizedInsAsm = InstructionConverter::concatenateInstructionsAsm(normalizedInstructions);
+        const vector<string>& normalizedInstructions = ic.normalizeInstructionAsm(insAsm, ROOP::AssemblySyntax::Intel);
+        const string& normalizedInsAsm = ic.concatenateInstructionsAsm(normalizedInstructions);
         printf("insAsm = %s\n", insAsm.c_str());
         printf("normalizedInsAsm = %s\n", normalizedInsAsm.c_str());
     }
@@ -420,8 +425,8 @@ void testInstructionNormalization() {
 
     printf("//////////////////// Normalizing AT&T-assembly instructions ////////////////////\n");
     for (const string& insAsm : instructionSequencesATT) {
-        const vector<string>& normalizedInstructions = InstructionConverter::normalizeInstructionAsm(insAsm, ROOP::AssemblySyntax::ATT);
-        const string& normalizedInsAsm = InstructionConverter::concatenateInstructionsAsm(normalizedInstructions);
+        const vector<string>& normalizedInstructions = ic.normalizeInstructionAsm(insAsm, ROOP::AssemblySyntax::ATT);
+        const string& normalizedInsAsm = ic.concatenateInstructionsAsm(normalizedInstructions);
         printf("insAsm = %s\n", insAsm.c_str());
         printf("normalizedInsAsm = %s\n", normalizedInsAsm.c_str());
     }

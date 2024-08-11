@@ -3,7 +3,6 @@
 #include <algorithm>
 
 #include "ELFParser.hpp"
-#include "InstructionConverter.hpp"
 
 
 void ROOP::VirtualMemoryInfo::buildExecutableSegments() {
@@ -71,7 +70,7 @@ void ROOP::VirtualMemoryInfo::disassembleSegmentBytes(
     const byte *firstPtr = segm.executableBytes.data() + first;
     int segmentSize = (last - first + 1);
 
-    auto p = InstructionConverter::convertInstructionSequenceToString(firstPtr, segmentSize, syntax);
+    auto p = this->ic.convertInstructionSequenceToString(firstPtr, segmentSize, syntax);
     std::vector<std::string>& instructions = p.first;
     unsigned totalDisassembledBytes = p.second;
     bool allBytesWereParsedSuccessfully = ((unsigned)segmentSize == totalDisassembledBytes);
@@ -218,7 +217,7 @@ std::vector<unsigned long long>
 ROOP::VirtualMemoryInfo::matchInstructionSequenceInVirtualMemory(std::string origInstructionSequenceAsm, AssemblySyntax origSyntax) {
     // Normalize the instruction sequence,
     // so that we are sure it looks exactly like what we have in the internal Trie.
-    std::vector<std::string> instructions = InstructionConverter::normalizeInstructionAsm(origInstructionSequenceAsm, origSyntax);
+    std::vector<std::string> instructions = this->ic.normalizeInstructionAsm(origInstructionSequenceAsm, origSyntax);
 
     return this->instructionTrie.hasInstructionSequence(instructions);
 }
