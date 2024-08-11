@@ -53,34 +53,35 @@ void ROOP::VirtualMemoryInfo::buildExecutableSegments() {
 }
 
 
-void ROOP::VirtualMemoryInfo::disassembleSegmentBytes(
-    const VirtualMemoryExecutableSegment& segm,
-    const int first,
-    const int last
-) {
-    std::pair<int,int> segment = {first, last};
+void ROOP::VirtualMemoryInfo::disassembleSegmentBytes(const VirtualMemoryExecutableSegment& segm, const int first) {
+    assert(first < (int)segm.executableBytes.size());
 
-    if (this->disassembledSegments.count(segment) == 1) {
-        // We have already analyzed this segment.
-        // The information is available in the inner data structures.
+    if (this->disassembledSegment.count(first) == 1) {
+        // We have already analyzed the segment(s) starting at "first".
         return;
     }
 
     AssemblySyntax syntax = ROOPConsts::InstructionASMSyntax;
+    const int maxInstructionSize = ROOPConsts::MaxInstructionBytesCount;
+
     const byte *firstPtr = segm.executableBytes.data() + first;
-    int segmentSize = (last - first + 1);
+    int segmentSize = std::min(maxInstructionSize, (int)segm.executableBytes.size() - first);
 
     auto p = this->ic.convertInstructionSequenceToString(firstPtr, segmentSize, syntax, 1);
     std::vector<std::string>& instructions = p.first;
     unsigned totalDisassembledBytes = p.second;
-    bool allBytesWereParsedSuccessfully = ((unsigned)segmentSize == totalDisassembledBytes);
 
-    if (instructions.size() == 1 && allBytesWereParsedSuccessfully) {
-        // Perfect. We want a segment to disassemble into exactly one instruction.
-        this->segmentToInstruction[first][last] = instructions[0];
+    if (instructions.size() == 1) {
+        int last = first + totalDisassembledBytes - 1;
+
+        // The left-side index "first" corresponds uniquely to the [first, last] segment.
+        // The segment disassembles into the "instructions[0]" instruction.
+        this->disassembledSegment[first] = {last, instructions[0]};
     }
-
-    this->disassembledSegments.insert(segment);
+    else {
+        // There is no "last" index such that [first, last] is a valid instruction.
+        this->disassembledSegment[first] = {-1, ""};
+    }
 }
 
 void ROOP::VirtualMemoryInfo::buildInstructionTrie(
@@ -101,12 +102,13 @@ void ROOP::VirtualMemoryInfo::buildInstructionTrie(
     int last = currRightSegmentIdx;
 
     for (; first >= 0 && (last - first + 1) <= maxInstructionSize; --first) {
-        this->disassembleSegmentBytes(segm, first, last);
+        this->disassembleSegmentBytes(segm, first);
+        const auto& p = this->disassembledSegment[first];
+        int actualLastIndex = p.first;
 
-        bool segmentIsGood = (this->segmentToInstruction.count(first) == 1) &&
-                             (this->segmentToInstruction[first].count(last) == 1);
-        if (segmentIsGood) {
-            const std::string& instruction = segmentToInstruction[first][last];
+        bool currSegmentIsGood = (actualLastIndex != -1 && last == actualLastIndex);
+        if (currSegmentIsGood) {
+            const std::string& instruction = p.second;
 
             // Insert the instruction at this segment into the trie;
             unsigned long long vaAddress = segm.startVirtualAddress + first;
@@ -132,8 +134,7 @@ void ROOP::VirtualMemoryInfo::buildInstructionTrie() {
             }
         }
 
-        this->disassembledSegments.clear();
-        this->segmentToInstruction.clear();
+        this->disassembledSegment.clear();
     }
 }
 

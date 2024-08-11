@@ -34,16 +34,18 @@ namespace ROOP {
         void buildExecutableSegments();
 
 
-        // These data structures are used for optimizing (through memoization) the construction of the inner trie.
-        struct IntPairHasher {
-            inline std::size_t operator()(const std::pair<int,int>& v) const {
-                return 31*v.first + v.second;
-            }
-        };
-        std::unordered_set<std::pair<int,int>, IntPairHasher> disassembledSegments;
-        std::unordered_map<int, std::unordered_map<int, std::string>> segmentToInstruction;
+        /*
+        This data structure is used for optimizing (through memoization) the construction of the inner trie.
+        - disassembledSegment[first] == {last, instruction},
+          if [first, last] is a valid bytes segment that disassembles into "instruction".
+        - disassembledSegment[first] == {-1, ""},
+          if there is no valid [first, last] bytes segment (for the purpose of disassembly).
+        */
+        std::unordered_map<int, std::pair<int, std::string>> disassembledSegment;
 
-        void disassembleSegmentBytes(const VirtualMemoryExecutableSegment& segm, const int first, const int last);
+        // Check if there is an index "last" such that [first, last] can be disassembled into a valid instruction.
+        // Note: Since x86 is a prefix-free architecture, this "last" index is unique (if it exists).
+        void disassembleSegmentBytes(const VirtualMemoryExecutableSegment& segm, const int first);
 
         void buildInstructionTrie(
             const VirtualMemoryExecutableSegment& segm,
