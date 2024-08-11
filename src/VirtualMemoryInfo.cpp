@@ -70,7 +70,7 @@ void ROOP::VirtualMemoryInfo::disassembleSegmentBytes(
     const byte *firstPtr = segm.executableBytes.data() + first;
     int segmentSize = (last - first + 1);
 
-    auto p = this->ic.convertInstructionSequenceToString(firstPtr, segmentSize, syntax);
+    auto p = this->ic.convertInstructionSequenceToString(firstPtr, segmentSize, syntax, 1);
     std::vector<std::string>& instructions = p.first;
     unsigned totalDisassembledBytes = p.second;
     bool allBytesWereParsedSuccessfully = ((unsigned)segmentSize == totalDisassembledBytes);

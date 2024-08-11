@@ -35,14 +35,21 @@ namespace ROOP {
         // Returns { The converted instructions (as strings); The number of disassembled bytes };
         // The syntax of the returned instructions is given in the second argument.
         // The number of disassembled bytes will be smaller than the size of the input if there's a parsing error.
+        // "parseCount": The maximum number of assembly instructions to parse from the bytes. Pass "0" for "all of them".
         std::pair<std::vector<std::string>, unsigned>
-        convertInstructionSequenceToString(const byte * const instrSeqBytes, const size_t instrSeqBytesCount, AssemblySyntax asmSyntax);
+        convertInstructionSequenceToString(const byte * const instrSeqBytes,
+                                           const size_t instrSeqBytesCount,
+                                           AssemblySyntax asmSyntax,
+                                           const size_t parseCount = 0);
 
         // Returns { The converted instructions (as strings); The number of disassembled bytes };
         // The syntax of the returned instructions is given in the second argument.
         // The number of disassembled bytes will be smaller than the size of the input if there's a parsing error.
+        // "parseCount": The maximum number of assembly instructions to parse from the bytes. Pass "0" for "all of them".
         std::pair<std::vector<std::string>, unsigned>
-        convertInstructionSequenceToString(byteSequence instructionSequence, AssemblySyntax asmSyntax);
+        convertInstructionSequenceToString(byteSequence instructionSequence,
+                                           AssemblySyntax asmSyntax,
+                                           const size_t parseCount = 0);
 
         // Takes instruction(s) given as strings
         // and normalizes them according to the same syntax we use internally in ROOP.

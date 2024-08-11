@@ -54,7 +54,6 @@ ROOP::InstructionConverter::convertInstructionSequenceToBytes(std::string instru
     size_t insSeqEncodingSize;
     size_t numDecodedInstructions;
 
-
     // Adjust the engine (if needed) to use Intel or AT&T syntax.
     if (this->ksEngineSyntax != asmSyntax) {
         newSyntaxValue = (asmSyntax == AssemblySyntax::Intel) ? KS_OPT_SYNTAX_INTEL : KS_OPT_SYNTAX_ATT;
@@ -94,7 +93,12 @@ cleanup:
 }
 
 std::pair<std::vector<std::string>, unsigned>
-ROOP::InstructionConverter::convertInstructionSequenceToString(const byte * const instrSeqBytes, const size_t instrSeqBytesCount, AssemblySyntax asmSyntax) {
+ROOP::InstructionConverter::convertInstructionSequenceToString(
+    const byte * const instrSeqBytes,
+    const size_t instrSeqBytesCount,
+    AssemblySyntax asmSyntax,
+    const size_t parseCount
+) {
     cs_err err;
     size_t newSyntaxValue;
 	cs_insn *decodedInstructions = NULL;
@@ -102,7 +106,6 @@ ROOP::InstructionConverter::convertInstructionSequenceToString(const byte * cons
     size_t idx;
     std::vector<std::string> decodedInstructionsAsm;
     unsigned totalDecodedBytes = 0;
-
 
     // Adjust the handle (if needed) to use Intel or AT&T syntax.
     if (this->csHandleSyntax != asmSyntax) {
@@ -116,7 +119,12 @@ ROOP::InstructionConverter::convertInstructionSequenceToString(const byte * cons
         this->csHandleSyntax = asmSyntax;
     }
 
-	decodedInstructionsCount = cs_disasm(this->capstoneHandle, (const uint8_t *)instrSeqBytes, instrSeqBytesCount, 0x1000, 0, &decodedInstructions);
+	decodedInstructionsCount = cs_disasm(this->capstoneHandle,
+                                         (const uint8_t *)instrSeqBytes,
+                                         instrSeqBytesCount,
+                                         0x1000,
+                                         parseCount,
+                                         &decodedInstructions);
     err = cs_errno(this->capstoneHandle);
     if (decodedInstructionsCount == 0 && err != CS_ERR_OK) {
         printf("Capstone: cs_disasm() failed with error %u\n", (unsigned)err);
@@ -146,10 +154,14 @@ cleanup:
 }
 
 std::pair<std::vector<std::string>, unsigned>
-ROOP::InstructionConverter::convertInstructionSequenceToString(byteSequence instructionSequence, AssemblySyntax asmSyntax) {
+ROOP::InstructionConverter::convertInstructionSequenceToString(
+    byteSequence instructionSequence,
+    AssemblySyntax asmSyntax,
+    const size_t parseCount
+) {
     const byte *instrSeqBytes = (const byte *)instructionSequence.data();
     const size_t instrSeqBytesCount = instructionSequence.size();
-    return this->convertInstructionSequenceToString(instrSeqBytes, instrSeqBytesCount, asmSyntax);
+    return this->convertInstructionSequenceToString(instrSeqBytes, instrSeqBytesCount, asmSyntax, parseCount);
 }
 
 std::vector<std::string>
