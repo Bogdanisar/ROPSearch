@@ -470,11 +470,18 @@ void testFindingInstructionSequenceInMemory(string targetExecutable) {
         "xor rax, rax ; ret"
     };
 
+    InstructionConverter ic;
+
     printf("======= Searching for instruction sequences in virtual memory... =======\n");
     for (const string& insSeq : instructionSequences) {
         vector<unsigned long long> matchedAddresses = vmInfo.matchInstructionSequenceInVirtualMemory(insSeq, syntax);
 
         printf("Instruction sequence: %s\n", insSeq.c_str());
+
+        auto normalizedArray = ic.normalizeInstructionAsm(insSeq, AssemblySyntax::Intel);
+        auto normalizedString = ic.concatenateInstructionsAsm(normalizedArray);
+        printf("Normalized instruction sequence: %s\n", normalizedString.c_str());
+
         if (matchedAddresses.size() != 0) {
             for (unsigned long long addr : matchedAddresses) {
                 printf("Found at 0x%llx\n", addr);
