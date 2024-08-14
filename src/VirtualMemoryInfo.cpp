@@ -65,9 +65,10 @@ void ROOP::VirtualMemoryInfo::disassembleSegmentBytes(const VirtualMemoryExecuta
     const int maxInstructionSize = ROOPConsts::MaxInstructionBytesCount;
 
     const byte *firstPtr = segm.executableBytes.data() + first;
+    const unsigned long long firstAddr = segm.startVirtualAddress + first;
     int segmentSize = std::min(maxInstructionSize, (int)segm.executableBytes.size() - first);
 
-    auto p = this->ic.convertInstructionSequenceToString(firstPtr, segmentSize, syntax, 1);
+    auto p = this->ic.convertInstructionSequenceToString(firstPtr, segmentSize, syntax, firstAddr, 1);
     std::vector<std::string>& instructions = p.first;
     unsigned totalDisassembledBytes = p.second;
 

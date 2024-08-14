@@ -44,7 +44,11 @@ ROOP::InstructionConverter::InstructionConverter() {
 }
 
 std::pair<ROOP::byteSequence, unsigned>
-ROOP::InstructionConverter::convertInstructionSequenceToBytes(std::string instructionSequenceAsm, AssemblySyntax asmSyntax) {
+ROOP::InstructionConverter::convertInstructionSequenceToBytes(
+    std::string instructionSequenceAsm,
+    AssemblySyntax asmSyntax,
+    unsigned long long addr
+) {
     byteSequence instructionSequence;
 
     ks_err err;
@@ -66,7 +70,7 @@ ROOP::InstructionConverter::convertInstructionSequenceToBytes(std::string instru
         this->ksEngineSyntax = asmSyntax;
     }
 
-    if (ks_asm(this->ksEngine, insSeqCString, 0, &insSeqEncoding, &insSeqEncodingSize, &numDecodedInstructions) != 0) {
+    if (ks_asm(this->ksEngine, insSeqCString, addr, &insSeqEncoding, &insSeqEncodingSize, &numDecodedInstructions) != 0) {
         printf("Keystone: ks_asm() failed with error %u; Number of decoded instructions = %u;\n",
                (unsigned)ks_errno(this->ksEngine), (unsigned)numDecodedInstructions);
         goto cleanup;
@@ -97,6 +101,7 @@ ROOP::InstructionConverter::convertInstructionSequenceToString(
     const byte * const instrSeqBytes,
     const size_t instrSeqBytesCount,
     AssemblySyntax asmSyntax,
+    unsigned long long addr,
     const size_t parseCount
 ) {
     cs_err err;
@@ -122,7 +127,7 @@ ROOP::InstructionConverter::convertInstructionSequenceToString(
 	decodedInstructionsCount = cs_disasm(this->capstoneHandle,
                                          (const uint8_t *)instrSeqBytes,
                                          instrSeqBytesCount,
-                                         0x1000,
+                                         addr, // Address of first instruction
                                          parseCount,
                                          &decodedInstructions);
     err = cs_errno(this->capstoneHandle);
@@ -157,11 +162,12 @@ std::pair<std::vector<std::string>, unsigned>
 ROOP::InstructionConverter::convertInstructionSequenceToString(
     byteSequence instructionSequence,
     AssemblySyntax asmSyntax,
+    unsigned long long addr,
     const size_t parseCount
 ) {
     const byte *instrSeqBytes = (const byte *)instructionSequence.data();
     const size_t instrSeqBytesCount = instructionSequence.size();
-    return this->convertInstructionSequenceToString(instrSeqBytes, instrSeqBytesCount, asmSyntax, parseCount);
+    return this->convertInstructionSequenceToString(instrSeqBytes, instrSeqBytesCount, asmSyntax, addr, parseCount);
 }
 
 std::vector<std::string>
