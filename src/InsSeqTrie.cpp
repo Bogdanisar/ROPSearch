@@ -1,5 +1,8 @@
 #include "InsSeqTrie.hpp"
 
+#include <algorithm>
+#include <cassert>
+
 
 ROOP::InsSeqTrie::InsSeqTrie() {
     this->root = new Node;
@@ -32,6 +35,46 @@ std::vector<unsigned long long> ROOP::InsSeqTrie::hasInstructionSequence(const s
     }
 
     return currentNode->matchingVirtualAddresses;
+}
+
+void ROOP::InsSeqTrie::getTrieContent(Node *currentNode,
+                                      const std::vector<std::string>& currInstrSeq,
+                                      std::vector< std::pair<unsigned long long, std::vector<std::string>> >& content) const
+{
+    assert(currentNode == this->root || currentNode->matchingVirtualAddresses.size() != 0);
+    if (currentNode->matchingVirtualAddresses.size() != 0) {
+        for (unsigned long long addr : currentNode->matchingVirtualAddresses) {
+            content.push_back({addr, currInstrSeq});
+        }
+    }
+
+    for (const auto& c : currentNode->children) {
+        const std::string& nextInstr = c.first;
+        Node *nextNode = c.second;
+
+        auto nextInstrSeq = currInstrSeq;
+        nextInstrSeq.push_back(nextInstr);
+
+        this->getTrieContent(nextNode, nextInstrSeq, content);
+    }
+}
+
+std::vector< std::pair<unsigned long long, std::vector<std::string>> >
+ROOP::InsSeqTrie::getTrieContent() const
+{
+    std::vector< std::pair<unsigned long long, std::vector<std::string>> > content;
+    this->getTrieContent(this->root, {}, content);
+
+    // The Instruction Sequence vectors need to be reversed.
+    for (auto &p : content) {
+        std::vector<std::string>& instrSeq = p.second;
+        std::reverse(instrSeq.begin(), instrSeq.end());
+    }
+
+    // Sort the pairs increasingly. First, by address. Second, by instruction sequence.
+    std::sort(content.begin(), content.end());
+
+    return content;
 }
 
 void ROOP::InsSeqTrie::recursiveFree(Node *currentNode) {

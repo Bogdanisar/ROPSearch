@@ -73,6 +73,9 @@ namespace ROOP {
         // Return a vector of addresses where the instruction sequence is found in virtual memory.
         std::vector<unsigned long long>
         matchInstructionSequenceInVirtualMemory(std::string instructionSequenceAsm, AssemblySyntax asmSyntax);
+
+        // Return a vector of pairs of (virtual memory address, instruction sequence).
+        std::vector< std::pair<unsigned long long, std::vector<std::string>> > getInstructionSequences() const;
     };
 
 }

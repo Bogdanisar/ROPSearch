@@ -474,14 +474,13 @@ void testFindingInstructionSequenceInMemory(string targetExecutable) {
 
     printf("======= Searching for instruction sequences in virtual memory... =======\n");
     for (const string& insSeq : instructionSequences) {
-        vector<unsigned long long> matchedAddresses = vmInfo.matchInstructionSequenceInVirtualMemory(insSeq, syntax);
-
         printf("Instruction sequence: %s\n", insSeq.c_str());
 
         auto normalizedArray = ic.normalizeInstructionAsm(insSeq, AssemblySyntax::Intel);
         auto normalizedString = ic.concatenateInstructionsAsm(normalizedArray);
         printf("Normalized instruction sequence: %s\n", normalizedString.c_str());
 
+        vector<unsigned long long> matchedAddresses = vmInfo.matchInstructionSequenceInVirtualMemory(insSeq, syntax);
         if (matchedAddresses.size() != 0) {
             for (unsigned long long addr : matchedAddresses) {
                 printf("Found at 0x%llx\n", addr);
@@ -491,6 +490,28 @@ void testFindingInstructionSequenceInMemory(string targetExecutable) {
             printf("Didn't find this instruction sequence in virtual memory...\n");
         }
         printf("\n");
+    }
+}
+
+void printVMInstructionSequences(string targetExecutable) {
+    pv(targetExecutable); pn;
+    int targetPid = getPidOfExecutable(targetExecutable);
+    pv(targetPid); pn;
+
+    // Print the Virtual Memory mapping of the target process.
+    testVirtualMemoryMapping(targetPid); pn;
+
+    VirtualMemoryInfo vmInfo(targetPid);
+    printf("Finished initializing vmInfo object!\n\n");
+
+    InstructionConverter ic;
+
+    printf("Found instruction sequences:\n");
+    auto instrSeqs = vmInfo.getInstructionSequences();
+    for (const auto& p : instrSeqs) {
+        unsigned long long addr = p.first;
+        string fullSequence = ic.concatenateInstructionsAsm(p.second);
+        printf("0x%10llx: %s\n", addr, fullSequence.c_str());
     }
 }
 
@@ -509,7 +530,8 @@ int main(int argc, char* argv[]) {
     // testCapstoneFrameworkIntegrationBadBytes(); pn;
     // testKeystoneCapstoneFrameworkIntegration(); pn;
     // testInstructionNormalization(); pn;
-    testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
+    // testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
+    printVMInstructionSequences("vulnerable.exe"); pn;
 
     return 0;
 }

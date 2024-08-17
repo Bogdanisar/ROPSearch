@@ -223,3 +223,8 @@ ROOP::VirtualMemoryInfo::matchInstructionSequenceInVirtualMemory(std::string ori
 
     return this->instructionTrie.hasInstructionSequence(instructions);
 }
+
+std::vector< std::pair<unsigned long long, std::vector<std::string>> >
+ROOP::VirtualMemoryInfo::getInstructionSequences() const {
+    return this->instructionTrie.getTrieContent();
+}

@@ -25,6 +25,10 @@ namespace ROOP {
         private:
         void recursiveFree(Node *currentNode);
 
+        void getTrieContent(Node *currentNode,
+                            const std::vector<std::string>& currInstrSeq,
+                            std::vector< std::pair<unsigned long long, std::vector<std::string>> >& content) const;
+
         public:
         // The root node, corresponding to the empty instruction sequence.
         Node *root;
@@ -35,6 +39,9 @@ namespace ROOP {
         Node* addInstruction(const std::string& instruction, unsigned long long vaAddress, Node *node);
 
         std::vector<unsigned long long> hasInstructionSequence(const std::vector<std::string>& instructionSequence) const;
+
+        // Return a vector of pairs of (virtual memory address, instruction sequence).
+        std::vector< std::pair<unsigned long long, std::vector<std::string>> > getTrieContent() const;
 
         ~InsSeqTrie();
     };
