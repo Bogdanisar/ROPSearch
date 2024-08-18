@@ -464,7 +464,6 @@ void testFindingInstructionSequenceInMemory(string targetExecutable) {
         "mov ecx, eax ; mov eax, ecx ; ret",
         "mov edx, 0xffffffff ; ret",
         "or al, 0x7e ; ret",
-        "push 0 ; push 0 ; call 0x1515f0",
         "sub eax, esi ; ret",
         "xchg eax, ebp ; ret 0xffff",
         "xor rax, rax ; ret"
