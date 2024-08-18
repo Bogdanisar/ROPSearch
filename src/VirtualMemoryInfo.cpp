@@ -85,6 +85,26 @@ void ROOP::VirtualMemoryInfo::disassembleSegmentBytes(const VirtualMemoryExecuta
     }
 }
 
+// Check if the given instruction is useful as the ending instruction of an instruction sequence.
+static bool IsInstructionUsefulAsInstructionSequenceEnd(const ROOP::byteSequence& bSeq, int first, int last) {
+    assert(0 <= first && first < (int)bSeq.size());
+    assert(0 <= last && last < (int)bSeq.size());
+    assert(first <= last);
+
+    const int numBytes = (last - first + 1);
+
+    // "ret" instruction.
+    if (numBytes == 1 && bSeq[first] == 0xC3) { return true; }
+
+    // "ret imm16" instruction.
+    if (numBytes == 3 && bSeq[first] == 0xC2) { return true; }
+
+    // // Relative "call" instruction.
+    // if (numBytes == 5 && bSeq[first] == 0xE8) { return true; }
+
+    return false;
+}
+
 void ROOP::VirtualMemoryInfo::buildInstructionTrie(
     const VirtualMemoryExecutableSegment& segm,
     const int currRightSegmentIdx,
@@ -103,36 +123,38 @@ void ROOP::VirtualMemoryInfo::buildInstructionTrie(
     int last = currRightSegmentIdx;
 
     for (; first >= 0 && (last - first + 1) <= maxInstructionSize; --first) {
+        if (currInstrSeqLength == 0 && !IsInstructionUsefulAsInstructionSequenceEnd(segm.executableBytes, first, last)) {
+            // This segment might represent a valid instruction but we don't consider it
+            // to be useful as the ending instruction of an instruction sequence.
+            continue;
+        }
+
         this->disassembleSegmentBytes(segm, first);
         const auto& p = this->disassembledSegment[first];
         int actualLastIndex = p.first;
 
+        // Check if the byte sequence between [first, last] is good.
+        // (check if it disassembles into exactly one instruction)
         bool currSegmentIsGood = (actualLastIndex != -1 && last == actualLastIndex);
-        if (currSegmentIsGood) {
-            const std::string& instruction = p.second;
-
-            // Insert the instruction at this segment into the trie;
-            unsigned long long vaAddress = segm.startVirtualAddress + first;
-            auto nextNode = this->instructionTrie.addInstruction(instruction, vaAddress, currNode);
-
-            // And then recurse.
-            this->buildInstructionTrie(segm, first - 1, nextNode, currInstrSeqLength + 1);
-        }
-        else {
-            // The byte sequence between [first, last] is bad (no instructions, too many instructions or bad bytes);
+        if (!currSegmentIsGood) {
+            // Bad segment (no instructions, too many instructions or bad bytes).
             continue;
         }
+
+        // Insert the instruction at this segment into the trie;
+        const std::string& instruction = p.second;
+        unsigned long long vaAddress = segm.startVirtualAddress + first;
+        auto nextNode = this->instructionTrie.addInstruction(instruction, vaAddress, currNode);
+
+        // And then recurse.
+        this->buildInstructionTrie(segm, first - 1, nextNode, currInstrSeqLength + 1);
     }
 }
 
 void ROOP::VirtualMemoryInfo::buildInstructionTrie() {
     for (const VirtualMemoryExecutableSegment& segm : this->executableSegments) {
-
         for (int rightIdx = (int)segm.executableBytes.size()-1; rightIdx >= 0; --rightIdx) {
-            if (segm.executableBytes[rightIdx] == (byte)'\xC3') {
-                // Start only if the last instruction in the sequence is a "ret";
-                this->buildInstructionTrie(segm, rightIdx, this->instructionTrie.root, 0);
-            }
+            this->buildInstructionTrie(segm, rightIdx, this->instructionTrie.root, 0);
         }
 
         this->disassembledSegment.clear();

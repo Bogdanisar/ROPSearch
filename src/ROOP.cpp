@@ -529,8 +529,8 @@ int main(int argc, char* argv[]) {
     // testCapstoneFrameworkIntegrationBadBytes(); pn;
     // testKeystoneCapstoneFrameworkIntegration(); pn;
     // testInstructionNormalization(); pn;
-    // testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
-    printVMInstructionSequences("vulnerable.exe"); pn;
+    testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
+    // printVMInstructionSequences("vulnerable.exe"); pn;
 
     return 0;
 }
