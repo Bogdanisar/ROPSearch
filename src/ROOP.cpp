@@ -5,6 +5,9 @@
 #include <set>
 #include <unistd.h>
 
+#define PUGIXML_HEADER_ONLY
+#include "../deps/pugixml/src/pugixml.hpp"
+
 #include "common/utils.hpp"
 #include "ELFParser.hpp"
 #include "InstructionConverter.hpp"
@@ -514,6 +517,34 @@ void printVMInstructionSequences(string targetExecutable) {
     }
 }
 
+void testXMLReading() {
+    using namespace pugi;
+
+    const char * const source =
+        "<shape name='square'>"
+            "<size>5</size>"
+            "<lower-left x='3' y='10'></lower-left>"
+        "</shape>";
+    xml_document doc;
+    xml_parse_result loadResult = doc.load_string(source);
+    if (!loadResult) {
+        exiterror("Got error loading the XML string: %s", loadResult.description());
+    }
+
+    printf("XML document loaded!\n");
+    xml_node shape = doc.child("shape");
+
+    const char * const name = shape.attribute("name").value();
+    int size = shape.child("size").text().as_int();
+    pv(name);pn;
+    pv(size);pn;
+
+    int lowerLeftX = shape.child("lower-left").attribute("x").as_int();
+    int lowerLeftY = shape.child("lower-left").attribute("y").as_int();
+    pv(lowerLeftX);pn;
+    pv(lowerLeftY);pn;
+}
+
 
 int main(int argc, char* argv[]) {
     UNUSED(argc); UNUSED(argv);
@@ -529,8 +560,9 @@ int main(int argc, char* argv[]) {
     // testCapstoneFrameworkIntegrationBadBytes(); pn;
     // testKeystoneCapstoneFrameworkIntegration(); pn;
     // testInstructionNormalization(); pn;
-    testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
+    // testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
     // printVMInstructionSequences("vulnerable.exe"); pn;
+    testXMLReading();pn;
 
     return 0;
 }
