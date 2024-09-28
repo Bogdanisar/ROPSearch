@@ -13,9 +13,9 @@
 #define pn std::cout<<std::endl
 
 #define exiterror(format, ...) fprintf(stderr, (format "\n" "exit(-1);"), ##__VA_ARGS__); fflush(stderr); exit(-1)
-#define assertMessage(condition, msg) \
+#define assertMessage(condition, format, ...) \
     do { \
-        if (!(condition)) { exiterror(msg); } \
+        if (!(condition)) { exiterror(format, ##__VA_ARGS__); } \
     } while(0)
 
 #define UNUSED(variable) do { (void)(variable); } while (0)
