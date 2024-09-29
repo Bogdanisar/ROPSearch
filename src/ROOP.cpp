@@ -578,11 +578,13 @@ void testGadgetMouldConfiguration(string targetExecutable) {
         printf("Found '%s' gadget: \n%s\n",
                gadgetXML.attribute("name").as_string(), xmlNodeToString(gadgetXML).c_str());
 
-        const char * const targetGadget = "AssignConstant";
-        if (strcmp(gadgetXML.attribute("name").as_string(), targetGadget) != 0) {
-            continue;
-        }
+        // const char * const targetGadget = "AssignConstant";
+        // if (strcmp(gadgetXML.attribute("name").as_string(), targetGadget) != 0) {
+        //     continue;
+        // }
 
+
+        // Configure the mould according to the XML and the Virtual Memory of the target process.
         GadgetMould gm;
         gm.configureMould(gadgetXML, vmInfo);
         printf("Bytes of stack template of gadget mould:\n");
@@ -591,20 +593,37 @@ void testGadgetMouldConfiguration(string targetExecutable) {
         }
         printf("\n");
 
-        for (std::string arg : {"dest", "const"}) {
+        // Print the stack position of each argument.
+        for (xml_node argNode : gadgetXML.child("variant").child("stack").children("arg")) {
+            const char * const argName = argNode.attribute("name").as_string();
+
             printf("Stack position for argument '%s' is [%u, %u]\n",
-                    arg.c_str(),
-                    gm.stackPositionForArgument[arg].first,
-                    gm.stackPositionForArgument[arg].second);
+                    argName,
+                    gm.stackPositionForArgument[argName].first,
+                    gm.stackPositionForArgument[argName].second);
         }
 
-        std::map<std::string, byteSequence> arguments;
-        arguments["const"] = {0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF};
-        arguments["dest"] = {0xCA, 0xFE, 0xCA, 0xFE, 0xCA, 0xFE, 0xCA, 0xFE};
-        auto bytes = gm.getConcreteGadget(arguments);
+        // Set some dummy example bytes for each argument of the gadget.
+        std::map<std::string, byteSequence> argumentBytes;
+        int argIndex = 0;
+        for (xml_node argNode : gadgetXML.child("variant").child("stack").children("arg")) {
+            const char * const argName = argNode.attribute("name").as_string();
+            ++argIndex;
 
+            byteSequence bytes;
+            for (int i = 0; i < 8; ++i) {
+                bytes.push_back(argIndex);
+            }
+
+            argumentBytes[argName] = bytes;
+        }
+
+        // Get the concrete gadget.
+        auto gadgetBytes = gm.getConcreteGadget(argumentBytes);
+
+        // Print the gadget bytes.
         printf("Bytes of concrete gadget:\n");
-        for (auto byte : bytes) {
+        for (auto byte : gadgetBytes) {
             printf("0x%02X ", byte);
         }
         printf("\n\n\n");
