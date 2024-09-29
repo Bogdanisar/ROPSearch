@@ -10,6 +10,7 @@
 
 #include "common/utils.hpp"
 #include "ELFParser.hpp"
+#include "GadgetMould.hpp"
 #include "InstructionConverter.hpp"
 #include "VirtualMemoryInfo.hpp"
 #include "VirtualMemoryMapping.hpp"
@@ -532,6 +533,8 @@ void testXMLReading() {
     }
 
     printf("XML document loaded!\n");
+    printf("Value of entire XML document: \n%s\n", xmlNodeToString(doc).c_str());
+
     xml_node shape = doc.child("shape");
 
     const char * const name = shape.attribute("name").value();
@@ -543,6 +546,69 @@ void testXMLReading() {
     int lowerLeftY = shape.child("lower-left").attribute("y").as_int();
     pv(lowerLeftX);pn;
     pv(lowerLeftY);pn;
+}
+
+void testGadgetMouldConfiguration(string targetExecutable) {
+    pv(targetExecutable); pn;
+    int targetPid = getPidOfExecutable(targetExecutable);
+
+    // Print the Virtual Memory mapping of the target process.
+    testVirtualMemoryMapping(targetPid); pn;
+
+    VirtualMemoryInfo vmInfo(targetPid);
+    printf("Finished initializing vmInfo object!\n\n");
+
+
+    using namespace pugi;
+
+    xml_document doc;
+    xml_parse_result loadResult = doc.load_file("../src/data/catalogHelped.xml");
+    if (!loadResult) {
+        exiterror("Got error '%s' at offset %llu loading the XML string",
+                  loadResult.description(), (unsigned long long)loadResult.offset);
+    }
+
+    printf("XML document loaded!\n");
+    // printf("Value of entire XML document: \n%s\n", xmlNodeToString(doc).c_str());
+    printf("\n");
+
+    xml_node catalog = doc.child("catalog");
+
+    for (xml_node gadgetXML : catalog.children("gadget")) {
+        printf("Found '%s' gadget: \n%s\n",
+               gadgetXML.attribute("name").as_string(), xmlNodeToString(gadgetXML).c_str());
+
+        const char * const targetGadget = "AssignConstant";
+        if (strcmp(gadgetXML.attribute("name").as_string(), targetGadget) != 0) {
+            continue;
+        }
+
+        GadgetMould gm;
+        gm.configureMould(gadgetXML, vmInfo);
+        printf("Bytes of stack template of gadget mould:\n");
+        for (auto byte : gm.stackTemplate) {
+            printf("0x%02X ", byte);
+        }
+        printf("\n");
+
+        for (std::string arg : {"dest", "const"}) {
+            printf("Stack position for argument '%s' is [%u, %u]\n",
+                    arg.c_str(),
+                    gm.stackPositionForArgument[arg].first,
+                    gm.stackPositionForArgument[arg].second);
+        }
+
+        std::map<std::string, byteSequence> arguments;
+        arguments["const"] = {0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF};
+        arguments["dest"] = {0xCA, 0xFE, 0xCA, 0xFE, 0xCA, 0xFE, 0xCA, 0xFE};
+        auto bytes = gm.getConcreteGadget(arguments);
+
+        printf("Bytes of concrete gadget:\n");
+        for (auto byte : bytes) {
+            printf("0x%02X ", byte);
+        }
+        printf("\n\n\n");
+    }
 }
 
 
@@ -562,7 +628,8 @@ int main(int argc, char* argv[]) {
     // testInstructionNormalization(); pn;
     // testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
     // printVMInstructionSequences("vulnerable.exe"); pn;
-    testXMLReading();pn;
+    // testXMLReading();pn;
+    testGadgetMouldConfiguration("vulnerableHelped.exe"); pn;
 
     return 0;
 }

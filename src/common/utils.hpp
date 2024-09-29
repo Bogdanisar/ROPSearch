@@ -8,11 +8,13 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "../../deps/pugixml/src/pugixml.hpp"
+
 
 #define pv(x) std::cout<<#x<<" = "<<(x)<<"; ";std::cout.flush()
 #define pn std::cout<<std::endl
 
-#define exiterror(format, ...) fprintf(stderr, (format "\n" "exit(-1);"), ##__VA_ARGS__); fflush(stderr); exit(-1)
+#define exiterror(format, ...) fprintf(stderr, (format "\n" "exit(-1);\n"), ##__VA_ARGS__); fflush(stderr); exit(-1)
 #define assertMessage(condition, format, ...) \
     do { \
         if (!(condition)) { exiterror(format, ##__VA_ARGS__); } \
@@ -44,6 +46,24 @@ static inline void setCWDToExecutableLocation() {
 
     // Set Current Working Directory
     std::filesystem::current_path(parentDirPath);
+}
+
+static std::string xmlNodeToString(pugi::xml_node node) {
+
+    // Declare helper class;
+    struct xml_string_writer : pugi::xml_writer {
+        std::string result;
+
+        virtual void write(const void *data, size_t size)
+        {
+            result.append((const char *)data, size);
+        }
+    };
+
+    xml_string_writer writer;
+    node.print(writer);
+
+    return writer.result;
 }
 
 #pragma GCC diagnostic pop
