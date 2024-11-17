@@ -52,6 +52,65 @@ static ROOP::byteSequence convertAddressToByteSequence(unsigned long long addres
     return ret;
 }
 
+void ROOP::GadgetMould::addArgElemToMould(unsigned &currentTotalBytes, pugi::xml_node stackElement) {
+    pugi::xml_attribute nameAttr = stackElement.attribute("name");
+    const char * const argName = nameAttr.as_string();
+    assertMessage(!nameAttr.empty() && strcmp(argName, "") != 0,
+                    "[Gadget %s]: Attribute 'name' of 'arg' XML node is malformed: \n%s",
+                    this->gadgetName.c_str(), xmlNodeToString(stackElement).c_str());
+
+    pugi::xml_attribute sizeAttr = stackElement.attribute("size");
+    int argSize = sizeAttr.as_int(-1);
+    assertMessage(!sizeAttr.empty() && argSize > 0,
+                    "[Gadget %s]: Attribute 'size' of 'arg' XML node is malformed: \n%s",
+                    this->gadgetName.c_str(), xmlNodeToString(stackElement).c_str());
+
+    // Note the current [left, right] interval for this argument in the instance variable map.
+    unsigned left = currentTotalBytes;
+    unsigned right = left + argSize - 1;
+    this->stackPositionForArgument[argName] = {left, right};
+
+    // Insert some dummy bytes for this argument in the stack representation
+    // (They will be replaced when the gadget mould becomes concrete).
+    this->stackTemplate.insert(this->stackTemplate.end(), argSize, 0x00);
+
+    currentTotalBytes += argSize;
+}
+
+void ROOP::GadgetMould::addInsSeqElemToMould(unsigned &currentTotalBytes,
+                                             pugi::xml_node stackElement,
+                                             VirtualMemoryInfo& vmInfo) {
+    pugi::xml_attribute syntaxAttr = stackElement.attribute("syntax");
+    const char * const syntax = syntaxAttr.as_string();
+    assertMessage(!syntaxAttr.empty() && strcmp(syntax, "") != 0,
+                    "[Gadget %s]: Attribute 'syntax' of 'insSeq' XML node is malformed: \n%s",
+                    this->gadgetName.c_str(), xmlNodeToString(stackElement).c_str());
+
+    const char * const instructionsString = stackElement.child_value();
+    const std::string instructionsAsm(instructionsString);
+    printf("[Gadget %s]: Found instructions in XML: %s\n",
+            this->gadgetName.c_str(), instructionsString); // TODO: Remove
+
+    ROOP::AssemblySyntax asmSyntax = ROOP::AssemblySyntax::Intel;
+    if (strcmp(syntax, "att") == 0) {
+        asmSyntax = ROOP::AssemblySyntax::ATT;
+    }
+
+    auto addressList = vmInfo.matchInstructionSequenceInVirtualMemory(std::string(instructionsString), asmSyntax);
+    assertMessage(addressList.size() > 0,
+                    "[Gadget %s]: Can't find the in the virtual memory of the target program this instruction sequence: %s",
+                    this->gadgetName.c_str(), instructionsString);
+
+    unsigned long long insSeqAddress = addressList[0];
+    printf("[Gadget %s]: Found the instructions at this virtual memory address: 0x%016llX\n\n",
+            this->gadgetName.c_str(), insSeqAddress); // TODO: Remove
+
+    byteSequence addressBytes = convertAddressToByteSequence(insSeqAddress);
+    this->stackTemplate.insert(this->stackTemplate.end(), addressBytes.begin(), addressBytes.end());
+
+    currentTotalBytes += addressBytes.size();
+}
+
 void ROOP::GadgetMould::configureMould(pugi::xml_node configDict, VirtualMemoryInfo& vmInfo) {
     assertMessage(configDict.attribute("name"),
                   "'name' attribute doesn't exist in gadget XML: %s", xmlNodeToString(configDict).c_str());
@@ -97,59 +156,10 @@ void ROOP::GadgetMould::configureMould(pugi::xml_node configDict, VirtualMemoryI
             const char * const elemName = stackElement.name();
 
             if (strcmp(elemName, "arg") == 0) {
-                pugi::xml_attribute nameAttr = stackElement.attribute("name");
-                const char * const argName = nameAttr.as_string();
-                assertMessage(!nameAttr.empty() && strcmp(argName, "") != 0,
-                              "[Gadget %s]: Attribute 'name' of 'arg' XML node is malformed: \n%s",
-                              this->gadgetName.c_str(), xmlNodeToString(stackElement).c_str());
-
-                pugi::xml_attribute sizeAttr = stackElement.attribute("size");
-                int argSize = sizeAttr.as_int(-1);
-                assertMessage(!sizeAttr.empty() && argSize > 0,
-                              "[Gadget %s]: Attribute 'size' of 'arg' XML node is malformed: \n%s",
-                              this->gadgetName.c_str(), xmlNodeToString(stackElement).c_str());
-
-                // Note the current [left, right] interval for this argument in the instance variable map.
-                unsigned left = currentTotalBytes;
-                unsigned right = left + argSize - 1;
-                this->stackPositionForArgument[argName] = {left, right};
-
-                // Insert some dummy bytes for this argument in the stack representation
-                // (They will be replaced when the gadget mould becomes concrete).
-                this->stackTemplate.insert(this->stackTemplate.end(), argSize, 0x00);
-
-                currentTotalBytes += argSize;
+                this->addArgElemToMould(currentTotalBytes, stackElement);
             }
             else if (strcmp(elemName, "insSeq") == 0) {
-                pugi::xml_attribute syntaxAttr = stackElement.attribute("syntax");
-                const char * const syntax = syntaxAttr.as_string();
-                assertMessage(!syntaxAttr.empty() && strcmp(syntax, "") != 0,
-                              "[Gadget %s]: Attribute 'syntax' of 'insSeq' XML node is malformed: \n%s",
-                              this->gadgetName.c_str(), xmlNodeToString(stackElement).c_str());
-
-                const char * const instructionsString = stackElement.child_value();
-                const std::string instructionsAsm(instructionsString);
-                printf("[Gadget %s]: Found instructions in XML: %s\n",
-                       this->gadgetName.c_str(), instructionsString); // TODO: Remove
-
-                ROOP::AssemblySyntax asmSyntax = ROOP::AssemblySyntax::Intel;
-                if (strcmp(syntax, "att") == 0) {
-                    asmSyntax = ROOP::AssemblySyntax::ATT;
-                }
-
-                auto addressList = vmInfo.matchInstructionSequenceInVirtualMemory(std::string(instructionsString), asmSyntax);
-                assertMessage(addressList.size() > 0,
-                              "[Gadget %s]: Can't find the in the virtual memory of the target program this instruction sequence: %s",
-                              this->gadgetName.c_str(), instructionsString);
-
-                unsigned long long insSeqAddress = addressList[0];
-                printf("[Gadget %s]: Found the instructions at this virtual memory address: 0x%016llX\n\n",
-                       this->gadgetName.c_str(), insSeqAddress); // TODO: Remove
-
-                byteSequence addressBytes = convertAddressToByteSequence(insSeqAddress);
-                this->stackTemplate.insert(this->stackTemplate.end(), addressBytes.begin(), addressBytes.end());
-
-                currentTotalBytes += addressBytes.size();
+                this->addInsSeqElemToMould(currentTotalBytes, stackElement, vmInfo);
             }
             else {
                 exiterror("[Gadget %s]: Found unexpected child node (%s) in this <stack> node: \n%s",

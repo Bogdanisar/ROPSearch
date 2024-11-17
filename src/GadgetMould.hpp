@@ -29,9 +29,23 @@ namespace ROOP {
         // The pair represents an inclusive [left, right] index interval.
         std::map<std::string, std::pair<unsigned,unsigned>> stackPositionForArgument;
 
+
         void checkMouldFormatIsCoherent() const;
 
+        /* Add an "arg" element from the XML to the mould when configuring it.
+         * @param stackElement The "arg" stack element retrieved from the XML config document.
+        */
+        void addArgElemToMould(unsigned &currentTotalBytes, pugi::xml_node stackElement);
+
+        /* Add an "insSeq" element from the XML to the mould when configuring it.
+         * @param stackElement The "insSeq" stack element retrieved from the XML config document.
+         * @param vmInfo The object representing the active virtual memory of the target process.
+         *               This will be used to get the address of the instruction sequence.
+        */
+        void addInsSeqElemToMould(unsigned &currentTotalBytes, pugi::xml_node stackElement, VirtualMemoryInfo& vmInfo);
+
         void configureMould(pugi::xml_node configDictionary, VirtualMemoryInfo& vmInfo);
+
         void checkArgumentsFormatMatchesMouldFormat(const std::map<std::string, byteSequence>& arguments) const;
         byteSequence getConcreteGadget(const std::map<std::string, byteSequence>& arguments) const;
     };
