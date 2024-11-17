@@ -41,9 +41,13 @@ namespace ROOP {
          * @param stackElement The "insSeq" stack element retrieved from the XML config document.
          * @param vmInfo The object representing the active virtual memory of the target process.
          *               This will be used to get the address of the instruction sequence.
+         * @return If the operation was successful. This can fail if we can't find the instruction seq in the virtual memory.
         */
         bool addInsSeqElemToMould(pugi::xml_node stackElement, VirtualMemoryInfo& vmInfo);
 
+        /*
+         * @return If the operation was successful.
+         */
         bool configureMould(pugi::xml_node configDictionary, VirtualMemoryInfo& vmInfo);
 
         void checkArgumentsFormatMatchesMouldFormat(const std::map<std::string, byteSequence>& arguments) const;
