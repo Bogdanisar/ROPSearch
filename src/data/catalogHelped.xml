@@ -89,5 +89,25 @@ Note: This gadget catalog configuration uses Instruction Sequences
                 </insSeq>
             </stack>
         </variant>
+
+        <!--
+            RAX - address of memory location (variable)
+            RBX - working register
+            RCX - 0
+            *RAX <- (0 - *RAX)
+         -->
+        <variant>
+            <stack stack-top="last">
+                <arg name="var" size="8"></arg>
+                <insSeq syntax="att">
+                    pop %rax;
+                    mov (%rax), %rbx;
+                    xor %rcx, %rcx;
+                    sub %rbx, %rcx;
+                    mov %rcx, (%rax);
+                    ret;
+                </insSeq>
+            </stack>
+        </variant>
     </gadget>
 </catalog>

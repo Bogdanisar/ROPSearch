@@ -75,7 +75,7 @@ void ROOP::GadgetMould::addArgElemToMould(pugi::xml_node stackElement) {
     this->stackTemplate.insert(this->stackTemplate.end(), argSize, 0x00);
 }
 
-void ROOP::GadgetMould::addInsSeqElemToMould(pugi::xml_node stackElement, VirtualMemoryInfo& vmInfo) {
+bool ROOP::GadgetMould::addInsSeqElemToMould(pugi::xml_node stackElement, VirtualMemoryInfo& vmInfo) {
     pugi::xml_attribute syntaxAttr = stackElement.attribute("syntax");
     const char * const syntax = syntaxAttr.as_string();
     assertMessage(!syntaxAttr.empty() && strcmp(syntax, "") != 0,
@@ -93,9 +93,11 @@ void ROOP::GadgetMould::addInsSeqElemToMould(pugi::xml_node stackElement, Virtua
     }
 
     auto addressList = vmInfo.matchInstructionSequenceInVirtualMemory(std::string(instructionsString), asmSyntax);
-    assertMessage(addressList.size() > 0,
-                  "[Gadget %s]: Can't find in the virtual memory of the target program this instruction sequence: %s",
-                  this->gadgetName.c_str(), instructionsString);
+    if (addressList.size() == 0) {
+        printf("[Gadget %s]: Can't find in the virtual memory of the target program this instruction sequence: %s\n",
+               this->gadgetName.c_str(), instructionsString);
+        return false;
+    }
 
     unsigned long long insSeqAddress = addressList[0];
     printf("[Gadget %s]: Found the instructions at this virtual memory address: 0x%016llX\n\n",
@@ -103,9 +105,11 @@ void ROOP::GadgetMould::addInsSeqElemToMould(pugi::xml_node stackElement, Virtua
 
     byteSequence addressBytes = convertAddressToByteSequence(insSeqAddress);
     this->stackTemplate.insert(this->stackTemplate.end(), addressBytes.begin(), addressBytes.end());
+
+    return true;
 }
 
-void ROOP::GadgetMould::configureMould(pugi::xml_node configDict, VirtualMemoryInfo& vmInfo) {
+bool ROOP::GadgetMould::configureMould(pugi::xml_node configDict, VirtualMemoryInfo& vmInfo) {
     assertMessage(configDict.attribute("name"),
                   "'name' attribute doesn't exist in gadget XML: %s", xmlNodeToString(configDict).c_str());
     this->gadgetName = std::string(configDict.attribute("name").value());
@@ -141,6 +145,7 @@ void ROOP::GadgetMould::configureMould(pugi::xml_node configDict, VirtualMemoryI
             std::reverse(allStackElements.begin(), allStackElements.end());
         }
 
+        bool variantConfigWorked = true;
 
         // Iterate through the child nodes of this <stack> node
         // and update the mould information for each child we process.
@@ -151,18 +156,36 @@ void ROOP::GadgetMould::configureMould(pugi::xml_node configDict, VirtualMemoryI
                 this->addArgElemToMould(stackElement);
             }
             else if (strcmp(elemName, "insSeq") == 0) {
-                this->addInsSeqElemToMould(stackElement, vmInfo);
+                if (!this->addInsSeqElemToMould(stackElement, vmInfo)) {
+                    variantConfigWorked = false;
+                    break;
+                }
             }
             else {
                 exiterror("[Gadget %s]: Found unexpected child node (%s) in this <stack> node: \n%s",
                           this->gadgetName.c_str(), elemName, xmlNodeToString(stackNode).c_str());
             }
         }
+
+        if (variantConfigWorked) {
+            this->isConfigured = true;
+            break;
+        }
+        else {
+            // Reset state and try again with the next variant.
+            this->isConfigured = false;
+            this->stackTemplate = {};
+            this->stackPositionForArgument = {};
+        }
     }
 
-    this->isConfigured = true;
-
-    this->checkMouldFormatIsCoherent();
+    if (this->isConfigured) {
+        this->checkMouldFormatIsCoherent();
+        return true;
+    }
+    else {
+        return false;
+    }
 }
 
 void ROOP::GadgetMould::checkArgumentsFormatMatchesMouldFormat(const std::map<std::string, byteSequence>& arguments) const {

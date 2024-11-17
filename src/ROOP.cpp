@@ -586,7 +586,9 @@ void testGadgetMouldConfiguration(string targetExecutable) {
 
         // Configure the mould according to the XML and the Virtual Memory of the target process.
         GadgetMould gm;
-        gm.configureMould(gadgetXML, vmInfo);
+        bool configured = gm.configureMould(gadgetXML, vmInfo);
+        assert(configured);
+
         printf("Bytes of stack template of gadget mould:\n");
         for (auto byte : gm.stackTemplate) {
             printf("0x%02X ", byte);

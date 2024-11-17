@@ -42,9 +42,9 @@ namespace ROOP {
          * @param vmInfo The object representing the active virtual memory of the target process.
          *               This will be used to get the address of the instruction sequence.
         */
-        void addInsSeqElemToMould(pugi::xml_node stackElement, VirtualMemoryInfo& vmInfo);
+        bool addInsSeqElemToMould(pugi::xml_node stackElement, VirtualMemoryInfo& vmInfo);
 
-        void configureMould(pugi::xml_node configDictionary, VirtualMemoryInfo& vmInfo);
+        bool configureMould(pugi::xml_node configDictionary, VirtualMemoryInfo& vmInfo);
 
         void checkArgumentsFormatMatchesMouldFormat(const std::map<std::string, byteSequence>& arguments) const;
         byteSequence getConcreteGadget(const std::map<std::string, byteSequence>& arguments) const;
