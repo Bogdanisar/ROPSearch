@@ -320,4 +320,46 @@ Note: This gadget catalog configuration uses Instruction Sequences
             </stack>
         </variant>
     </gadget>
+    <gadget name="makeSystemCallWithRegisterArguments">
+        <variant>
+            <stack stack-top="last">
+
+                <arg name="destForReturnValue" size="8"></arg>
+                <arg name="syscallNumber" size="8"></arg>
+                <insSeq syntax="att">
+                    pop %rax;
+                    syscall;
+                    pop %r10;
+                    mov %rax, (%r10);
+                    ret;
+                </insSeq>
+
+                <insSeq syntax="att">
+                    mov (%rdi), %rdi;
+                    mov (%rsi), %rsi;
+                    mov (%rdx), %rdx;
+                    mov (%r10), %r10;
+                    mov (%r8), %r8;
+                    mov (%r9), %r9;
+                    ret;
+                </insSeq>
+
+                <arg name="param6" size="8"></arg>
+                <arg name="param5" size="8"></arg>
+                <arg name="param4" size="8"></arg>
+                <arg name="param3" size="8"></arg>
+                <arg name="param2" size="8"></arg>
+                <arg name="param1" size="8"></arg>
+                <insSeq syntax="att">
+                    pop %rdi;
+                    pop %rsi;
+                    pop %rdx;
+                    pop %r10;
+                    pop %r8;
+                    pop %r9;
+                    ret;
+                </insSeq>
+            </stack>
+        </variant>
+    </gadget>
 </catalog>
