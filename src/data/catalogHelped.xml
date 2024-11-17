@@ -232,4 +232,50 @@ Note: This gadget catalog configuration uses Instruction Sequences
             </stack>
         </variant>
     </gadget>
+    <gadget name="divideTwoVariablesAndGetQuotient">
+        <variant>
+            <stack stack-top="last">
+                <arg name="dest" size="8"></arg>
+                <arg name="src2" size="8"></arg>
+                <arg name="src1" size="8"></arg>
+
+                <!--
+                    Note: When doing "idivq (%rbx)", we get:
+                          RAX = RAX / *RBX (quotient); RDX = RAX % *RBX (remainder)
+                -->
+                <insSeq syntax="att">
+                    pop %rax;
+                    pop %rbx;
+                    pop %rcx;
+                    mov (%rax), %rax;
+                    idivq (%rbx);
+                    mov %rax, (%rcx);
+                    ret;
+                </insSeq>
+            </stack>
+        </variant>
+    </gadget>
+    <gadget name="divideTwoVariablesAndGetRemainder">
+        <variant>
+            <stack stack-top="last">
+                <arg name="dest" size="8"></arg>
+                <arg name="src2" size="8"></arg>
+                <arg name="src1" size="8"></arg>
+
+                <!--
+                    Note: When doing "idivq (%rbx)", we get:
+                          RAX = RAX / *RBX (quotient); RDX = RAX % *RBX (remainder)
+                -->
+                <insSeq syntax="att">
+                    pop %rax;
+                    pop %rbx;
+                    pop %rcx;
+                    mov (%rax), %rax;
+                    idivq (%rbx);
+                    mov %rdx, (%rcx);
+                    ret;
+                </insSeq>
+            </stack>
+        </variant>
+    </gadget>
 </catalog>
