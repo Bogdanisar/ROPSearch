@@ -90,7 +90,7 @@ void storeVariableIntoPointerDereference(void) {
     );
 }
 
-#pragma endregion Arithmetic operations
+#pragma endregion Assignment operations
 
 
 
