@@ -207,4 +207,29 @@ Note: This gadget catalog configuration uses Instruction Sequences
             </stack>
         </variant>
     </gadget>
+    <gadget name="multiplyTwoVariables">
+        <variant>
+            <stack stack-top="last">
+                <insSeq syntax="att">
+                    mov (%rax), %rax;
+                    mov (%rbx), %rbx;
+                    imul %rbx, %rax;
+                    mov %rax, (%rcx);
+                    ret;
+                </insSeq>
+                <arg name="dest" size="8"></arg>
+                <insSeq syntax="att">
+                    pop %rcx;
+                    ret;
+                </insSeq>
+                <arg name="src2" size="8"></arg>
+                <arg name="src1" size="8"></arg>
+                <insSeq syntax="att">
+                    pop %rax;
+                    pop %rbx;
+                    ret;
+                </insSeq>
+            </stack>
+        </variant>
+    </gadget>
 </catalog>
