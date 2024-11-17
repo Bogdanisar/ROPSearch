@@ -52,7 +52,7 @@ static ROOP::byteSequence convertAddressToByteSequence(unsigned long long addres
     return ret;
 }
 
-void ROOP::GadgetMould::addArgElemToMould(unsigned &currentTotalBytes, pugi::xml_node stackElement) {
+void ROOP::GadgetMould::addArgElemToMould(pugi::xml_node stackElement) {
     pugi::xml_attribute nameAttr = stackElement.attribute("name");
     const char * const argName = nameAttr.as_string();
     assertMessage(!nameAttr.empty() && strcmp(argName, "") != 0,
@@ -66,20 +66,16 @@ void ROOP::GadgetMould::addArgElemToMould(unsigned &currentTotalBytes, pugi::xml
                     this->gadgetName.c_str(), xmlNodeToString(stackElement).c_str());
 
     // Note the current [left, right] interval for this argument in the instance variable map.
-    unsigned left = currentTotalBytes;
+    unsigned left = this->stackTemplate.size();
     unsigned right = left + argSize - 1;
     this->stackPositionForArgument[argName] = {left, right};
 
     // Insert some dummy bytes for this argument in the stack representation
     // (They will be replaced when the gadget mould becomes concrete).
     this->stackTemplate.insert(this->stackTemplate.end(), argSize, 0x00);
-
-    currentTotalBytes += argSize;
 }
 
-void ROOP::GadgetMould::addInsSeqElemToMould(unsigned &currentTotalBytes,
-                                             pugi::xml_node stackElement,
-                                             VirtualMemoryInfo& vmInfo) {
+void ROOP::GadgetMould::addInsSeqElemToMould(pugi::xml_node stackElement, VirtualMemoryInfo& vmInfo) {
     pugi::xml_attribute syntaxAttr = stackElement.attribute("syntax");
     const char * const syntax = syntaxAttr.as_string();
     assertMessage(!syntaxAttr.empty() && strcmp(syntax, "") != 0,
@@ -107,8 +103,6 @@ void ROOP::GadgetMould::addInsSeqElemToMould(unsigned &currentTotalBytes,
 
     byteSequence addressBytes = convertAddressToByteSequence(insSeqAddress);
     this->stackTemplate.insert(this->stackTemplate.end(), addressBytes.begin(), addressBytes.end());
-
-    currentTotalBytes += addressBytes.size();
 }
 
 void ROOP::GadgetMould::configureMould(pugi::xml_node configDict, VirtualMemoryInfo& vmInfo) {
@@ -148,18 +142,16 @@ void ROOP::GadgetMould::configureMould(pugi::xml_node configDict, VirtualMemoryI
         }
 
 
-        unsigned currentTotalBytes = 0;
-
         // Iterate through the child nodes of this <stack> node
         // and update the mould information for each child we process.
         for (pugi::xml_node stackElement : allStackElements) {
             const char * const elemName = stackElement.name();
 
             if (strcmp(elemName, "arg") == 0) {
-                this->addArgElemToMould(currentTotalBytes, stackElement);
+                this->addArgElemToMould(stackElement);
             }
             else if (strcmp(elemName, "insSeq") == 0) {
-                this->addInsSeqElemToMould(currentTotalBytes, stackElement, vmInfo);
+                this->addInsSeqElemToMould(stackElement, vmInfo);
             }
             else {
                 exiterror("[Gadget %s]: Found unexpected child node (%s) in this <stack> node: \n%s",
