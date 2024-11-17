@@ -578,7 +578,7 @@ void testGadgetMouldConfiguration(string targetExecutable) {
         printf("Found '%s' gadget: \n%s\n",
                gadgetXML.attribute("name").as_string(), xmlNodeToString(gadgetXML).c_str());
 
-        // const char * const targetGadget = "AssignConstant";
+        // const char * const targetGadget = "assignConstant";
         // if (strcmp(gadgetXML.attribute("name").as_string(), targetGadget) != 0) {
         //     continue;
         // }

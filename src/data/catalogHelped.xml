@@ -11,7 +11,7 @@ Note: This gadget catalog configuration uses Instruction Sequences
         Each "variant" is one such valid instantiation. Each gadget needs at least one variant.
     -->
 
-    <gadget name="AssignConstant">
+    <gadget name="assignConstant">
         <!--
             RAX - Address of memory location (variable)
             RBX - Constant value
@@ -30,7 +30,7 @@ Note: This gadget catalog configuration uses Instruction Sequences
             </stack>
         </variant>
     </gadget>
-    <gadget name="AssignVarToVar">
+    <gadget name="assignVarToVar">
         <!--
             RAX - address of first memory location (variable)
             RBX - address of second memory location (variable)

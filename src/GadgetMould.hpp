@@ -16,7 +16,7 @@ namespace ROOP {
     struct GadgetMould {
         bool isConfigured;
 
-        // The name of the gadget, e.g. "AssignConstant"
+        // The name of the gadget, e.g. "assignConstant"
         std::string gadgetName;
 
         // The bytes that will end up on the payload stack when this gadget is instantiated.
