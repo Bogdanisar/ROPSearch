@@ -56,14 +56,14 @@ void ROOP::GadgetMould::addArgElemToMould(pugi::xml_node stackElement) {
     pugi::xml_attribute nameAttr = stackElement.attribute("name");
     const char * const argName = nameAttr.as_string();
     assertMessage(!nameAttr.empty() && strcmp(argName, "") != 0,
-                    "[Gadget %s]: Attribute 'name' of 'arg' XML node is malformed: \n%s",
-                    this->gadgetName.c_str(), xmlNodeToString(stackElement).c_str());
+                  "[Gadget %s]: Attribute 'name' of 'arg' XML node is malformed: \n%s",
+                  this->gadgetName.c_str(), xmlNodeToString(stackElement).c_str());
 
     pugi::xml_attribute sizeAttr = stackElement.attribute("size");
     int argSize = sizeAttr.as_int(-1);
     assertMessage(!sizeAttr.empty() && argSize > 0,
-                    "[Gadget %s]: Attribute 'size' of 'arg' XML node is malformed: \n%s",
-                    this->gadgetName.c_str(), xmlNodeToString(stackElement).c_str());
+                  "[Gadget %s]: Attribute 'size' of 'arg' XML node is malformed: \n%s",
+                  this->gadgetName.c_str(), xmlNodeToString(stackElement).c_str());
 
     // Note the current [left, right] interval for this argument in the instance variable map.
     unsigned left = this->stackTemplate.size();
@@ -79,8 +79,8 @@ void ROOP::GadgetMould::addInsSeqElemToMould(pugi::xml_node stackElement, Virtua
     pugi::xml_attribute syntaxAttr = stackElement.attribute("syntax");
     const char * const syntax = syntaxAttr.as_string();
     assertMessage(!syntaxAttr.empty() && strcmp(syntax, "") != 0,
-                    "[Gadget %s]: Attribute 'syntax' of 'insSeq' XML node is malformed: \n%s",
-                    this->gadgetName.c_str(), xmlNodeToString(stackElement).c_str());
+                  "[Gadget %s]: Attribute 'syntax' of 'insSeq' XML node is malformed: \n%s",
+                  this->gadgetName.c_str(), xmlNodeToString(stackElement).c_str());
 
     const char * const instructionsString = stackElement.child_value();
     const std::string instructionsAsm(instructionsString);
@@ -94,8 +94,8 @@ void ROOP::GadgetMould::addInsSeqElemToMould(pugi::xml_node stackElement, Virtua
 
     auto addressList = vmInfo.matchInstructionSequenceInVirtualMemory(std::string(instructionsString), asmSyntax);
     assertMessage(addressList.size() > 0,
-                    "[Gadget %s]: Can't find the in the virtual memory of the target program this instruction sequence: %s",
-                    this->gadgetName.c_str(), instructionsString);
+                  "[Gadget %s]: Can't find the in the virtual memory of the target program this instruction sequence: %s",
+                  this->gadgetName.c_str(), instructionsString);
 
     unsigned long long insSeqAddress = addressList[0];
     printf("[Gadget %s]: Found the instructions at this virtual memory address: 0x%016llX\n\n",
