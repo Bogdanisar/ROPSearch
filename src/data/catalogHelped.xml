@@ -5,12 +5,17 @@ Note: This gadget catalog configuration uses Instruction Sequences
       that correspond to those that we have in "hardcodedGadgets64bit.c" / "vulnerableHelped.exe"
 -->
 <catalog>
+    <!--
+        Each gadget could be expressed in different ways,
+        according to what instruction sequences are available.
+        Each "variant" is one such valid instantiation. Each gadget needs at least one variant.
+    -->
+
     <gadget name="AssignConstant">
         <!--
-            Each gadget could be expressed in different ways,
-            according to what instruction sequences are available.
-            Each "variant" is one such valid instantiation. Each gadget needs at least one variant.
-        -->
+            RAX - Address of memory location (variable)
+            RBX - Constant value
+         -->
         <variant>
             <stack stack-top="last">
                 <!-- 'size' is the number of bytes -->
@@ -26,6 +31,11 @@ Note: This gadget catalog configuration uses Instruction Sequences
         </variant>
     </gadget>
     <gadget name="AssignVarToVar">
+        <!--
+            RAX - address of first memory location (variable)
+            RBX - address of second memory location (variable)
+            *RBX <- *RAX
+        -->
         <variant>
             <stack stack-top="last">
                 <arg name="dest" size="8"></arg>
@@ -41,6 +51,11 @@ Note: This gadget catalog configuration uses Instruction Sequences
         </variant>
     </gadget>
     <gadget name="storePointerDereferenceIntoVariable">
+        <!--
+            RAX - address of first memory location (pointer variable)
+            RBX - address of second memory location (variable)
+            *RBX <- **RAX (i.e. Variable1 <- *Variable2)
+         -->
         <variant>
             <stack stack-top="last">
                 <arg name="dest" size="8"></arg>
@@ -57,6 +72,11 @@ Note: This gadget catalog configuration uses Instruction Sequences
         </variant>
     </gadget>
     <gadget name="storeVariableIntoPointerDereference">
+        <!--
+            RAX - address of first memory location (pointer variable)
+            RBX - address of second memory location (variable)
+            **RAX <- *RBX (i.e. *Variable1 <- Variable2)
+         -->
         <variant>
             <stack stack-top="last">
                 <arg name="src" size="8"></arg>
