@@ -414,8 +414,8 @@ void callRegularFunctionWithRegisterArguments(void) {
         "ret;"
     );
 
-    // RAX - Call return value
-    // R10 - Address of variable to hold the call return value.
+    // RAX - The return value of the called function.
+    // R10 - Address of our variable where we place the call return value.
     __asm__(
         "nop;" // For easier visual separation in the output
         "pop %r10;"
@@ -451,8 +451,8 @@ void makeSystemCallWithRegisterArguments(void) {
         "ret;"
     );
 
-    // RAX - Call return value
-    // R10 - Address of variable to hold the call return value.
+    // RAX - The return value of the called function.
+    // R10 - Address of our variable where we place the call return value.
     __asm__(
         "nop;" // For easier visual separation in the output
         "pop %rax;" // Pop the system call number.
