@@ -40,4 +40,36 @@ Note: This gadget catalog configuration uses Instruction Sequences
             </stack>
         </variant>
     </gadget>
+    <gadget name="storePointerDereferenceIntoVariable">
+        <variant>
+            <stack stack-top="last">
+                <arg name="dest" size="8"></arg>
+                <arg name="ptrSource" size="8"></arg>
+                <insSeq syntax="att">
+                    pop %rax;
+                    pop %rbx;
+                    mov (%rax), %rax;
+                    mov (%rax), %rax;
+                    mov %rax, (%rbx);
+                    ret;
+                </insSeq>
+            </stack>
+        </variant>
+    </gadget>
+    <gadget name="storeVariableIntoPointerDereference">
+        <variant>
+            <stack stack-top="last">
+                <arg name="src" size="8"></arg>
+                <arg name="ptrDest" size="8"></arg>
+                <insSeq syntax="att">
+                    pop %rax;
+                    pop %rbx;
+                    mov (%rax), %rax;
+                    mov (%rbx), %rbx;
+                    mov %rbx, (%rax);
+                    ret;
+                </insSeq>
+            </stack>
+        </variant>
+    </gadget>
 </catalog>

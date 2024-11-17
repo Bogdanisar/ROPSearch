@@ -60,9 +60,9 @@ void assignVariableToVariable(void) {
     );
 }
 
-void assignVariableToVariableDereference(void) {
-    // RAX - address of first memory location (variable)
-    // RBX - address of second memory location (pointer variable)
+void storePointerDereferenceIntoVariable(void) {
+    // RAX - address of first memory location (pointer variable)
+    // RBX - address of second memory location (variable)
     // *RBX <- **RAX (i.e. Variable1 <- *Variable2)
     __asm__(
         "nop;" // For easier visual separation in the output
@@ -71,6 +71,21 @@ void assignVariableToVariableDereference(void) {
         "mov (%rax), %rax;"
         "mov (%rax), %rax;"
         "mov %rax, (%rbx);"
+        "ret;"
+    );
+}
+
+void storeVariableIntoPointerDereference(void) {
+    // RAX - address of first memory location (pointer variable)
+    // RBX - address of second memory location (variable)
+    // **RAX <- *RBX (i.e. *Variable1 <- Variable2)
+    __asm__(
+        "nop;" // For easier visual separation in the output
+        "pop %rax;"
+        "pop %rbx;"
+        "mov (%rax), %rax;"
+        "mov (%rbx), %rbx;"
+        "mov %rbx, (%rax);"
         "ret;"
     );
 }
