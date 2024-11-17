@@ -94,7 +94,7 @@ void ROOP::GadgetMould::addInsSeqElemToMould(pugi::xml_node stackElement, Virtua
 
     auto addressList = vmInfo.matchInstructionSequenceInVirtualMemory(std::string(instructionsString), asmSyntax);
     assertMessage(addressList.size() > 0,
-                  "[Gadget %s]: Can't find the in the virtual memory of the target program this instruction sequence: %s",
+                  "[Gadget %s]: Can't find in the virtual memory of the target program this instruction sequence: %s",
                   this->gadgetName.c_str(), instructionsString);
 
     unsigned long long insSeqAddress = addressList[0];
