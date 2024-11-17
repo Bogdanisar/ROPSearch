@@ -30,8 +30,8 @@ namespace ROOP {
         std::map<std::string, std::pair<unsigned,unsigned>> stackPositionForArgument;
 
         void checkMouldFormatIsCoherent() const;
-        void configureMould(pugi::xml_node configDictionary, VirtualMemoryInfo& insTrie);
 
+        void configureMould(pugi::xml_node configDictionary, VirtualMemoryInfo& vmInfo);
         void checkArgumentsFormatMatchesMouldFormat(const std::map<std::string, byteSequence>& arguments) const;
         byteSequence getConcreteGadget(const std::map<std::string, byteSequence>& arguments) const;
     };
