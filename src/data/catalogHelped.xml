@@ -130,4 +130,28 @@ Note: This gadget catalog configuration uses Instruction Sequences
             </stack>
         </variant>
     </gadget>
+    <gadget name="incrementVariable">
+        <variant>
+            <stack stack-top="last">
+                <arg name="var" size="8"></arg>
+                <insSeq syntax="att">
+                    pop %rax;
+                    incq (%rax);
+                    ret;
+                </insSeq>
+            </stack>
+        </variant>
+    </gadget>
+    <gadget name="decrementVariable">
+        <variant>
+            <stack stack-top="last">
+                <arg name="var" size="8"></arg>
+                <insSeq syntax="att">
+                    pop %rax;
+                    decq (%rax);
+                    ret;
+                </insSeq>
+            </stack>
+        </variant>
+    </gadget>
 </catalog>
