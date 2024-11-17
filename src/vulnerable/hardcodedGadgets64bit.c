@@ -101,6 +101,7 @@ int ________Arithmetic_operations________;
 
 void negateValueOfVariable(void) {
     // RAX - address of memory location (variable)
+    // RBX - working register
     __asm__(
         "nop;" // For easier visual separation in the output
         "pop %rax;"

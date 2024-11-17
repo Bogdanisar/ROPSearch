@@ -72,4 +72,22 @@ Note: This gadget catalog configuration uses Instruction Sequences
             </stack>
         </variant>
     </gadget>
+    <gadget name="negateValueOfVariable">
+        <!--
+            RAX - address of memory location (variable)
+            RBX - working register
+         -->
+        <variant>
+            <stack stack-top="last">
+                <arg name="var" size="8"></arg>
+                <insSeq syntax="att">
+                    pop %rax;
+                    mov (%rax), %rbx;
+                    neg %rbx;
+                    mov %rbx, (%rax);
+                    ret;
+                </insSeq>
+            </stack>
+        </variant>
+    </gadget>
 </catalog>
