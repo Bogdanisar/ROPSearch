@@ -17,7 +17,7 @@
 #define exiterror(format, ...) fprintf(stderr, (format "\n" "exit(-1);\n"), ##__VA_ARGS__); fflush(stderr); exit(-1)
 #define assertMessage(condition, format, ...) \
     do { \
-        if (!(condition)) { exiterror(format, ##__VA_ARGS__); } \
+        if (!(condition)) { exiterror("Assert failed!\n" "Assert condition: " #condition "\n" "Assert message:   " format, ##__VA_ARGS__); } \
     } while(0)
 
 #define UNUSED(variable) do { (void)(variable); } while (0)
