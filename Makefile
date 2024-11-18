@@ -15,7 +15,7 @@ CAPSTONE_LDFLAGS = -l:libcapstone.a
 # Main code
 
 bin/ROOP.exe: bin/ROOP.o bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryInfo.o \
-			  bin/InstructionConverter.o bin/InsSeqTrie.o bin/GadgetMould.o
+			  bin/InstructionConverter.o bin/InsSeqTrie.o bin/GadgetMould.o bin/GadgetCatalog.o
 	g++ $^ $(KEYSTONE_LDFLAGS) $(CAPSTONE_LDFLAGS) -o $@
 
 bin/ROOP.o: src/ROOP.cpp src/common/*.hpp
@@ -38,6 +38,9 @@ bin/InsSeqTrie.o: src/InsSeqTrie.*
 
 bin/GadgetMould.o: src/GadgetMould.* src/common/*.hpp
 	g++ $(wFlags) -c src/GadgetMould.cpp -o $@
+
+bin/GadgetCatalog.o: src/GadgetCatalog.* src/common/*.hpp
+	g++ $(wFlags) -c src/GadgetCatalog.cpp -o $@
 
 
 # Vulnerable executable

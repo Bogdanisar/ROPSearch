@@ -110,6 +110,8 @@ bool ROOP::GadgetMould::addInsSeqElemToMould(pugi::xml_node stackElement, Virtua
 }
 
 bool ROOP::GadgetMould::configureMould(pugi::xml_node configDict, VirtualMemoryInfo& vmInfo) {
+    assertMessage(configDict, "Got NULL XML node when configuring mould");
+
     assertMessage(configDict.attribute("name"),
                   "'name' attribute doesn't exist in gadget XML: %s", xmlNodeToString(configDict).c_str());
     this->gadgetName = std::string(configDict.attribute("name").value());

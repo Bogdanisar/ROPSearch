@@ -10,6 +10,7 @@
 
 #include "common/utils.hpp"
 #include "ELFParser.hpp"
+#include "GadgetCatalog.hpp"
 #include "GadgetMould.hpp"
 #include "InstructionConverter.hpp"
 #include "VirtualMemoryInfo.hpp"
@@ -632,6 +633,20 @@ void testGadgetMouldConfiguration(string targetExecutable) {
     }
 }
 
+void testGadgetCatalog(string targetExecutable) {
+    pv(targetExecutable); pn;
+    int targetPid = getPidOfExecutable(targetExecutable);
+
+    // Print the Virtual Memory mapping of the target process.
+    testVirtualMemoryMapping(targetPid); pn;
+
+    VirtualMemoryInfo vmInfo(targetPid);
+    printf("Finished initializing vmInfo object!\n\n");
+
+    string xmlPath = "../src/data/catalogHelped.xml";
+    GadgetCatalog gc(xmlPath, vmInfo);
+}
+
 
 int main(int argc, char* argv[]) {
     UNUSED(argc); UNUSED(argv);
@@ -650,7 +665,8 @@ int main(int argc, char* argv[]) {
     // testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
     // printVMInstructionSequences("vulnerable.exe"); pn;
     // testXMLReading();pn;
-    testGadgetMouldConfiguration("vulnerableHelped.exe"); pn;
+    // testGadgetMouldConfiguration("vulnerableHelped.exe"); pn;
+    testGadgetCatalog("vulnerableHelped.exe"); pn;
 
     return 0;
 }
