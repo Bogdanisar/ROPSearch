@@ -13,7 +13,9 @@
 
 
 namespace ROOP {
-    struct GadgetMould {
+    class GadgetMould {
+        private:
+
         bool isConfigured;
 
         // The name of the gadget, e.g. "assignConstant"
@@ -30,6 +32,7 @@ namespace ROOP {
         std::map<std::string, std::pair<unsigned,unsigned>> stackPositionForArgument;
 
 
+        /* Assert that the inner structures are coherent. */
         void checkMouldFormatIsCoherent() const;
 
         /* Add an "arg" element from the XML to the mould when configuring it.
@@ -45,12 +48,18 @@ namespace ROOP {
         */
         bool addInsSeqElemToMould(pugi::xml_node stackElement, VirtualMemoryInfo& vmInfo);
 
+        /* Assert that the given arguments match the inner structure of the mould. */
+        void checkArgumentsFormatMatchesMouldFormat(const std::map<std::string, byteSequence>& arguments) const;
+
+
+        public:
+
         /*
          * @return If the operation was successful.
          */
         bool configureMould(pugi::xml_node configDictionary, VirtualMemoryInfo& vmInfo);
 
-        void checkArgumentsFormatMatchesMouldFormat(const std::map<std::string, byteSequence>& arguments) const;
+        /* Insert the given arguments into the mould and get the bytes of the resulting gadget. */
         byteSequence getConcreteGadget(const std::map<std::string, byteSequence>& arguments) const;
     };
 }
