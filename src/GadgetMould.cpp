@@ -212,6 +212,7 @@ void ROOP::GadgetMould::checkArgumentsFormatMatchesMouldFormat(const std::map<st
 }
 
 ROOP::byteSequence ROOP::GadgetMould::getConcreteGadget(const std::map<std::string, byteSequence>& arguments) const {
+    assertMessage(this->isConfigured, "Can't get concrete gadget for unconfigured gadget mould!");
     this->checkMouldFormatIsCoherent();
     this->checkArgumentsFormatMatchesMouldFormat(arguments);
 
