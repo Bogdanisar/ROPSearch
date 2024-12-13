@@ -1,6 +1,6 @@
 
 .PHONY: all
-all: bin/ROOP.exe bin/vulnerable.exe bin/vulnerableHelped.exe
+all: bin/ManualTests.exe bin/vulnerable.exe bin/vulnerableHelped.exe
 
 wFlags := -Wall -Wextra -pedantic
 KEYSTONE_LDFLAGS = -lkeystone -lstdc++ -lm
@@ -14,11 +14,11 @@ CAPSTONE_LDFLAGS = -l:libcapstone.a
 
 # Main code
 
-bin/ROOP.exe: bin/ROOP.o bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryInfo.o \
-			  bin/InstructionConverter.o bin/InsSeqTrie.o bin/GadgetMould.o bin/GadgetCatalog.o
+bin/ManualTests.exe: bin/ManualTests.o bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryInfo.o \
+                     bin/InstructionConverter.o bin/InsSeqTrie.o bin/GadgetMould.o bin/GadgetCatalog.o
 	g++ $^ $(KEYSTONE_LDFLAGS) $(CAPSTONE_LDFLAGS) -o $@
 
-bin/ROOP.o: src/ROOP.cpp src/common/*.hpp
+bin/ManualTests.o: src/ManualTests.cpp src/common/*.hpp
 	g++ $(wFlags) -c $< -o $@
 
 bin/VirtualMemoryMapping.o: src/VirtualMemoryMapping.* src/common/*.hpp
