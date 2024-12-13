@@ -12,6 +12,10 @@
 #include "../deps/pugixml/src/pugixml.hpp"
 
 
+// Forward declaration for friend function.
+void testGadgetMouldConfiguration(std::string targetExecutable);
+
+
 namespace ROOP {
     class GadgetMould {
         private:
@@ -61,6 +65,10 @@ namespace ROOP {
 
         /* Insert the given arguments into the mould and get the bytes of the resulting gadget. */
         byteSequence getConcreteGadget(const std::map<std::string, byteSequence>& arguments) const;
+
+
+        // So that it can access private data.
+        friend void ::testGadgetMouldConfiguration(std::string targetExecutable);
     };
 }
 
