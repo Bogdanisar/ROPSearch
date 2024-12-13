@@ -9,7 +9,7 @@
 #include "common/types.hpp"
 
 
-namespace ROOP {
+namespace ROP {
 
     class ELFParser {
         std::string elfPath;

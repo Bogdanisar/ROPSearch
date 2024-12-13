@@ -5,7 +5,7 @@
 #include "common/utils.hpp"
 
 
-void ROOP::VirtualMemorySegmentMapping::printSegment() const {
+void ROP::VirtualMemorySegmentMapping::printSegment() const {
     printf("%llx-%llx %s %08llx %02llu:%02llu %-7llu %18c %s;",
            this->startAddress, this->endAddress, this->rights, this->offset,
            this->deviceMajor, this->deviceMinor, this->inodeNumber, ' ', this->path.c_str());
@@ -15,7 +15,7 @@ void ROOP::VirtualMemorySegmentMapping::printSegment() const {
 }
 
 
-ROOP::VirtualMemoryMapping::VirtualMemoryMapping(int processPid) {
+ROP::VirtualMemoryMapping::VirtualMemoryMapping(int processPid) {
 
     std::stringstream ss;
     ss << "/proc/" << processPid << "/maps";
@@ -43,10 +43,10 @@ ROOP::VirtualMemoryMapping::VirtualMemoryMapping(int processPid) {
 
         vmsm.rights[4] = '\0';
         vmsm.rightsMask = 0;
-        if (vmsm.rights[0] == 'r') { vmsm.rightsMask |= (unsigned int)ROOP::VirtualMemorySegmentMapping::SegmentRights::READ; }
-        if (vmsm.rights[1] == 'w') { vmsm.rightsMask |= (unsigned int)ROOP::VirtualMemorySegmentMapping::SegmentRights::WRITE; }
-        if (vmsm.rights[2] == 'x') { vmsm.rightsMask |= (unsigned int)ROOP::VirtualMemorySegmentMapping::SegmentRights::EXECUTE; }
-        if (vmsm.rights[3] == 'p') { vmsm.rightsMask |= (unsigned int)ROOP::VirtualMemorySegmentMapping::SegmentRights::PRIVATE; }
+        if (vmsm.rights[0] == 'r') { vmsm.rightsMask |= (unsigned int)ROP::VirtualMemorySegmentMapping::SegmentRights::READ; }
+        if (vmsm.rights[1] == 'w') { vmsm.rightsMask |= (unsigned int)ROP::VirtualMemorySegmentMapping::SegmentRights::WRITE; }
+        if (vmsm.rights[2] == 'x') { vmsm.rightsMask |= (unsigned int)ROP::VirtualMemorySegmentMapping::SegmentRights::EXECUTE; }
+        if (vmsm.rights[3] == 'p') { vmsm.rightsMask |= (unsigned int)ROP::VirtualMemorySegmentMapping::SegmentRights::PRIVATE; }
 
         vmsm.path = std::string(line.c_str() + readCharacters);
 
@@ -54,11 +54,11 @@ ROOP::VirtualMemoryMapping::VirtualMemoryMapping(int processPid) {
     }
 };
 
-const std::vector<ROOP::VirtualMemorySegmentMapping>& ROOP::VirtualMemoryMapping::getSegmentMaps() const {
+const std::vector<ROP::VirtualMemorySegmentMapping>& ROP::VirtualMemoryMapping::getSegmentMaps() const {
     return this->segmentMaps;
 }
 
-void ROOP::VirtualMemoryMapping::printMapping() const {
+void ROP::VirtualMemoryMapping::printMapping() const {
     for (const VirtualMemorySegmentMapping& s : this->segmentMaps) {
         s.printSegment();
     }

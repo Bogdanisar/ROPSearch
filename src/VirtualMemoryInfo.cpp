@@ -5,7 +5,7 @@
 #include "ELFParser.hpp"
 
 
-void ROOP::VirtualMemoryInfo::buildExecutableSegments() {
+void ROP::VirtualMemoryInfo::buildExecutableSegments() {
     // This is used as an optimization in case there are multiple executable segments for the same ELF path.
     // (Otherwise, we would need to create an ELFParser multiple times for the same path).
     std::map<std::string, ELFParser> elfPathToELFParser;
@@ -16,7 +16,7 @@ void ROOP::VirtualMemoryInfo::buildExecutableSegments() {
             continue;
         }
 
-        bool isExecutable = (segmentMap.rightsMask & (unsigned int)ROOP::VirtualMemorySegmentMapping::SegmentRights::EXECUTE);
+        bool isExecutable = (segmentMap.rightsMask & (unsigned int)ROP::VirtualMemorySegmentMapping::SegmentRights::EXECUTE);
         if (!isExecutable) {
             continue;
         }
@@ -53,7 +53,7 @@ void ROOP::VirtualMemoryInfo::buildExecutableSegments() {
 }
 
 
-void ROOP::VirtualMemoryInfo::disassembleSegmentBytes(const VirtualMemoryExecutableSegment& segm, const int first) {
+void ROP::VirtualMemoryInfo::disassembleSegmentBytes(const VirtualMemoryExecutableSegment& segm, const int first) {
     assert(first < (int)segm.executableBytes.size());
 
     if (this->disassembledSegment.count(first) == 1) {
@@ -61,8 +61,8 @@ void ROOP::VirtualMemoryInfo::disassembleSegmentBytes(const VirtualMemoryExecuta
         return;
     }
 
-    AssemblySyntax syntax = ROOPConsts::InstructionASMSyntax;
-    const int maxInstructionSize = ROOPConsts::MaxInstructionBytesCount;
+    AssemblySyntax syntax = ROPConsts::InstructionASMSyntax;
+    const int maxInstructionSize = ROPConsts::MaxInstructionBytesCount;
 
     const byte *firstPtr = segm.executableBytes.data() + first;
     const unsigned long long firstAddr = segm.startVirtualAddress + first;
@@ -86,7 +86,7 @@ void ROOP::VirtualMemoryInfo::disassembleSegmentBytes(const VirtualMemoryExecuta
 }
 
 // Check if the given instruction is useful as the ending instruction of an instruction sequence.
-static bool IsInstructionUsefulAsInstructionSequenceEnd(const ROOP::byteSequence& bSeq, int first, int last) {
+static bool IsInstructionUsefulAsInstructionSequenceEnd(const ROP::byteSequence& bSeq, int first, int last) {
     assert(0 <= first && first < (int)bSeq.size());
     assert(0 <= last && last < (int)bSeq.size());
     assert(first <= last);
@@ -105,20 +105,20 @@ static bool IsInstructionUsefulAsInstructionSequenceEnd(const ROOP::byteSequence
     return false;
 }
 
-void ROOP::VirtualMemoryInfo::buildInstructionTrie(
+void ROP::VirtualMemoryInfo::buildInstructionTrie(
     const VirtualMemoryExecutableSegment& segm,
     const int currRightSegmentIdx,
-    ROOP::InsSeqTrie::Node *currNode,
+    ROP::InsSeqTrie::Node *currNode,
     const int currInstrSeqLength
 ) {
     if (currRightSegmentIdx < 0) {
         return;
     }
-    if (currInstrSeqLength >= ROOPConsts::MaxInstructionSequenceSize) {
+    if (currInstrSeqLength >= ROPConsts::MaxInstructionSequenceSize) {
         return;
     }
 
-    const int maxInstructionSize = ROOPConsts::MaxInstructionBytesCount;
+    const int maxInstructionSize = ROPConsts::MaxInstructionBytesCount;
     int first = currRightSegmentIdx;
     int last = currRightSegmentIdx;
 
@@ -151,7 +151,7 @@ void ROOP::VirtualMemoryInfo::buildInstructionTrie(
     }
 }
 
-void ROOP::VirtualMemoryInfo::buildInstructionTrie() {
+void ROP::VirtualMemoryInfo::buildInstructionTrie() {
     for (const VirtualMemoryExecutableSegment& segm : this->executableSegments) {
         for (int rightIdx = (int)segm.executableBytes.size()-1; rightIdx >= 0; --rightIdx) {
             this->buildInstructionTrie(segm, rightIdx, this->instructionTrie.root, 0);
@@ -161,22 +161,22 @@ void ROOP::VirtualMemoryInfo::buildInstructionTrie() {
     }
 }
 
-ROOP::VirtualMemoryInfo::VirtualMemoryInfo(int processPid)
+ROP::VirtualMemoryInfo::VirtualMemoryInfo(int processPid)
 : vaSegmMapping(processPid) {
     this->buildExecutableSegments();
     this->buildInstructionTrie();
 }
 
 
-const ROOP::VirtualMemoryMapping& ROOP::VirtualMemoryInfo::getVASegmMapping() const {
+const ROP::VirtualMemoryMapping& ROP::VirtualMemoryInfo::getVASegmMapping() const {
     return this->vaSegmMapping;
 }
 
-const std::vector<ROOP::VirtualMemoryExecutableSegment>& ROOP::VirtualMemoryInfo::getExecutableSegments() const {
+const std::vector<ROP::VirtualMemoryExecutableSegment>& ROP::VirtualMemoryInfo::getExecutableSegments() const {
     return this->executableSegments;
 }
 
-bool ROOP::VirtualMemoryInfo::isValidVAAddressInExecutableSegment(unsigned long long vaAddress) const {
+bool ROP::VirtualMemoryInfo::isValidVAAddressInExecutableSegment(unsigned long long vaAddress) const {
     for (const auto& execSegm : this->executableSegments) {
         if (execSegm.startVirtualAddress <= vaAddress && vaAddress < execSegm.endVirtualAddress) {
             return true;
@@ -186,7 +186,7 @@ bool ROOP::VirtualMemoryInfo::isValidVAAddressInExecutableSegment(unsigned long 
     return false;
 }
 
-ROOP::byte ROOP::VirtualMemoryInfo::getByteAtVAAddress(unsigned long long vaAddress) const {
+ROP::byte ROP::VirtualMemoryInfo::getByteAtVAAddress(unsigned long long vaAddress) const {
     for (const auto& execSegm : this->executableSegments) {
 
         // As far as I can tell, the difference between "end" and "actualEnd"
@@ -209,7 +209,7 @@ ROOP::byte ROOP::VirtualMemoryInfo::getByteAtVAAddress(unsigned long long vaAddr
 }
 
 std::vector<unsigned long long>
-ROOP::VirtualMemoryInfo::matchInstructionSequenceInVirtualMemory(ROOP::byteSequence instructionSequence) {
+ROP::VirtualMemoryInfo::matchInstructionSequenceInVirtualMemory(ROP::byteSequence instructionSequence) {
     assertMessage(instructionSequence.size() != 0, "Got empty instruction sequence...");
 
     std::vector<unsigned long long> matchedVirtualAddresses;
@@ -238,7 +238,7 @@ ROOP::VirtualMemoryInfo::matchInstructionSequenceInVirtualMemory(ROOP::byteSeque
 }
 
 std::vector<unsigned long long>
-ROOP::VirtualMemoryInfo::matchInstructionSequenceInVirtualMemory(std::string origInstructionSequenceAsm, AssemblySyntax origSyntax) {
+ROP::VirtualMemoryInfo::matchInstructionSequenceInVirtualMemory(std::string origInstructionSequenceAsm, AssemblySyntax origSyntax) {
     // Normalize the instruction sequence,
     // so that we are sure it looks exactly like what we have in the internal Trie.
     std::vector<std::string> instructions = this->ic.normalizeInstructionAsm(origInstructionSequenceAsm, origSyntax);
@@ -247,6 +247,6 @@ ROOP::VirtualMemoryInfo::matchInstructionSequenceInVirtualMemory(std::string ori
 }
 
 std::vector< std::pair<unsigned long long, std::vector<std::string>> >
-ROOP::VirtualMemoryInfo::getInstructionSequences() const {
+ROP::VirtualMemoryInfo::getInstructionSequences() const {
     return this->instructionTrie.getTrieContent();
 }

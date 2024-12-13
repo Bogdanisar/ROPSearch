@@ -4,7 +4,7 @@
 #include <vector>
 
 
-namespace ROOP {
+namespace ROP {
     using byte = unsigned char;
     using byteSequence = std::vector<byte>;
 
@@ -13,7 +13,7 @@ namespace ROOP {
         ATT, // The assembly instructions are written in AT&T syntax.
     };
 
-    struct ROOPConsts {
+    struct ROPConsts {
         static const int MaxInstructionBytesCount = 24;
         static const int MaxInstructionSequenceSize = 10;
         static const bool architectureIsLittleEndian = true;

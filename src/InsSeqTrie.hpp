@@ -6,7 +6,7 @@
 #include <vector>
 
 
-namespace ROOP {
+namespace ROP {
 
     // A class that efficiently stores, through a Trie structure, all the instruction sequences
     // decoded from the executable bytes present in the virtual address space of a process.

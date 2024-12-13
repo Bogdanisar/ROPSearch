@@ -18,7 +18,7 @@
 
 
 using namespace std;
-using namespace ROOP;
+using namespace ROP;
 
 
 void printProcessInformation(int argc, char* argv[]) {
@@ -152,7 +152,7 @@ void testVirtualMemoryExecutableBytes(int targetPid) {
 
         printf("Testing VirtualMemoryInfo::getByteAtVAAddress():\n");
         for (unsigned long long addr = firstSegmStart; addr < firstSegmStart + bytesToPrint; ++addr) {
-            ROOP::byte b = vmBytes.getByteAtVAAddress(addr);
+            ROP::byte b = vmBytes.getByteAtVAAddress(addr);
             printf("virtual_memory[0x%llx] = %02hhx\n", addr, b);
         }
     }
@@ -226,7 +226,7 @@ void testGetExecutableBytesInteractive(string targetExecutable) {
                 break;
             }
 
-            ROOP::byte b = vmBytes.getByteAtVAAddress(cAddr);
+            ROP::byte b = vmBytes.getByteAtVAAddress(cAddr);
             printf("virtual_memory[0x%llx] = 0x%02hhx\n", cAddr, b);
         }
     }
@@ -234,7 +234,7 @@ void testGetExecutableBytesInteractive(string targetExecutable) {
 
 void testKeystoneFrameworkIntegration() {
     // Using AT&T syntax for the instructions below.
-    ROOP::AssemblySyntax syntax = ROOP::AssemblySyntax::ATT;
+    ROP::AssemblySyntax syntax = ROP::AssemblySyntax::ATT;
 
     // A few arbitrary instructions.
     vector<string> instructionSequences = {
@@ -265,7 +265,7 @@ void testKeystoneFrameworkIntegration() {
 
         printf("Instructions: %s\n", insSeq.c_str());
         printf("Decoded %u instructions into %u bytes: ", numDecodedInstructions, (unsigned)byteSeq.size());
-        for (const ROOP::byte& b : byteSeq) {
+        for (const ROP::byte& b : byteSeq) {
             printf("%02hhX ", (unsigned char)b);
         }
         printf("\n\n");
@@ -275,19 +275,19 @@ void testKeystoneFrameworkIntegration() {
 void testCapstoneFrameworkIntegrationBadBytes() {
     byteSequence bytes = {
         // "endbr64" instruction:
-        (ROOP::byte)'\xF3',
-        (ROOP::byte)'\x0F',
-        (ROOP::byte)'\x1E',
-        (ROOP::byte)'\xFA',
+        (ROP::byte)'\xF3',
+        (ROP::byte)'\x0F',
+        (ROP::byte)'\x1E',
+        (ROP::byte)'\xFA',
 
         // junk:
-        (ROOP::byte)'\xFF',
-        (ROOP::byte)'\xFF',
+        (ROP::byte)'\xFF',
+        (ROP::byte)'\xFF',
     };
 
     // Disassemble these bytes into assembly instructions as strings;
     InstructionConverter ic;
-    auto p = ic.convertInstructionSequenceToString(bytes, ROOP::AssemblySyntax::Intel);
+    auto p = ic.convertInstructionSequenceToString(bytes, ROP::AssemblySyntax::Intel);
     vector<string> instructions = p.first;
 
     printf("Number of input bytes: %u\n", (unsigned)bytes.size());
@@ -301,7 +301,7 @@ void testCapstoneFrameworkIntegrationBadBytes() {
 
 void testKeystoneCapstoneFrameworkIntegration() {
     // Using AT&T syntax for the instructions below.
-    ROOP::AssemblySyntax syntax = ROOP::AssemblySyntax::ATT;
+    ROP::AssemblySyntax syntax = ROP::AssemblySyntax::ATT;
 
     // A few arbitrary instructions.
     vector<string> instructionSequences = {
@@ -338,7 +338,7 @@ void testKeystoneCapstoneFrameworkIntegration() {
         unsigned originalNumDecodedInstructions = originalResult.second;
 
         printf("Decoded %u instructions into %u bytes: ", originalNumDecodedInstructions, (unsigned)originalByteSeq.size());
-        for (const ROOP::byte& b : originalByteSeq) {
+        for (const ROP::byte& b : originalByteSeq) {
             printf("%02hhX ", (unsigned char)b);
         }
         printf("\n");
@@ -367,7 +367,7 @@ void testKeystoneCapstoneFrameworkIntegration() {
         unsigned newNumDecodedInstructions = newResult.second;
 
         printf("Re-decoded %u instructions into %u bytes: ", newNumDecodedInstructions, (unsigned)newByteSeq.size());
-        for (const ROOP::byte& b : newByteSeq) {
+        for (const ROP::byte& b : newByteSeq) {
             printf("%02hhX ", (unsigned char)b);
         }
         printf("\n\n");
@@ -394,7 +394,7 @@ void testInstructionNormalization() {
 
     printf("//////////////////// Normalizing Intel-assembly instructions ////////////////////\n");
     for (const string& insAsm : instructionSequencesIntel) {
-        const vector<string>& normalizedInstructions = ic.normalizeInstructionAsm(insAsm, ROOP::AssemblySyntax::Intel);
+        const vector<string>& normalizedInstructions = ic.normalizeInstructionAsm(insAsm, ROP::AssemblySyntax::Intel);
         const string& normalizedInsAsm = ic.concatenateInstructionsAsm(normalizedInstructions);
         printf("insAsm = %s\n", insAsm.c_str());
         printf("normalizedInsAsm = %s\n", normalizedInsAsm.c_str());
@@ -430,7 +430,7 @@ void testInstructionNormalization() {
 
     printf("//////////////////// Normalizing AT&T-assembly instructions ////////////////////\n");
     for (const string& insAsm : instructionSequencesATT) {
-        const vector<string>& normalizedInstructions = ic.normalizeInstructionAsm(insAsm, ROOP::AssemblySyntax::ATT);
+        const vector<string>& normalizedInstructions = ic.normalizeInstructionAsm(insAsm, ROP::AssemblySyntax::ATT);
         const string& normalizedInsAsm = ic.concatenateInstructionsAsm(normalizedInstructions);
         printf("insAsm = %s\n", insAsm.c_str());
         printf("normalizedInsAsm = %s\n", normalizedInsAsm.c_str());
@@ -461,7 +461,7 @@ void testFindingInstructionSequenceInMemory(string targetExecutable) {
 
     // These are some sample instruction sequences found in libc.so.6
     // Note: Using Intel syntax here.
-    ROOP::AssemblySyntax syntax = ROOP::AssemblySyntax::Intel;
+    ROP::AssemblySyntax syntax = ROP::AssemblySyntax::Intel;
     vector<string> instructionSequences = {
         "add ch, cl ; ret",
         "and word ptr [rdi], sp ; ret",

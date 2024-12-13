@@ -15,7 +15,7 @@
 #include "VirtualMemoryMapping.hpp"
 
 
-namespace ROOP {
+namespace ROP {
 
     struct VirtualMemoryExecutableSegment {
         // The end address might be larger than start + bytes.size(),

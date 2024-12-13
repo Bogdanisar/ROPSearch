@@ -4,11 +4,11 @@
 #include <cassert>
 
 
-ROOP::InsSeqTrie::InsSeqTrie() {
+ROP::InsSeqTrie::InsSeqTrie() {
     this->root = new Node;
 }
 
-ROOP::InsSeqTrie::Node* ROOP::InsSeqTrie::addInstruction(const std::string& instruction, unsigned long long vaAddress, Node *node) {
+ROP::InsSeqTrie::Node* ROP::InsSeqTrie::addInstruction(const std::string& instruction, unsigned long long vaAddress, Node *node) {
     if (node->children.count(instruction) == 0) {
         node->children[instruction] = new Node;
     }
@@ -19,11 +19,11 @@ ROOP::InsSeqTrie::Node* ROOP::InsSeqTrie::addInstruction(const std::string& inst
     return childNode;
 }
 
-ROOP::InsSeqTrie::Node* ROOP::InsSeqTrie::addInstruction(const std::string& instruction, unsigned long long vaAddress) {
+ROP::InsSeqTrie::Node* ROP::InsSeqTrie::addInstruction(const std::string& instruction, unsigned long long vaAddress) {
     return this->addInstruction(instruction, vaAddress, this->root);
 }
 
-std::vector<unsigned long long> ROOP::InsSeqTrie::hasInstructionSequence(const std::vector<std::string>& instructionSequence) const {
+std::vector<unsigned long long> ROP::InsSeqTrie::hasInstructionSequence(const std::vector<std::string>& instructionSequence) const {
     Node *currentNode = this->root;
     for (auto it = instructionSequence.rbegin(); it != instructionSequence.rend(); ++it) {
         const std::string& instruction = *it;
@@ -37,7 +37,7 @@ std::vector<unsigned long long> ROOP::InsSeqTrie::hasInstructionSequence(const s
     return currentNode->matchingVirtualAddresses;
 }
 
-void ROOP::InsSeqTrie::getTrieContent(Node *currentNode,
+void ROP::InsSeqTrie::getTrieContent(Node *currentNode,
                                       const std::vector<std::string>& currInstrSeq,
                                       std::vector< std::pair<unsigned long long, std::vector<std::string>> >& content) const
 {
@@ -60,7 +60,7 @@ void ROOP::InsSeqTrie::getTrieContent(Node *currentNode,
 }
 
 std::vector< std::pair<unsigned long long, std::vector<std::string>> >
-ROOP::InsSeqTrie::getTrieContent() const
+ROP::InsSeqTrie::getTrieContent() const
 {
     std::vector< std::pair<unsigned long long, std::vector<std::string>> > content;
     this->getTrieContent(this->root, {}, content);
@@ -77,7 +77,7 @@ ROOP::InsSeqTrie::getTrieContent() const
     return content;
 }
 
-void ROOP::InsSeqTrie::recursiveFree(Node *currentNode) {
+void ROP::InsSeqTrie::recursiveFree(Node *currentNode) {
     for (const auto& keyValuePair : currentNode->children) {
         Node *child = keyValuePair.second;
         this->recursiveFree(child);
@@ -86,6 +86,6 @@ void ROOP::InsSeqTrie::recursiveFree(Node *currentNode) {
     delete currentNode;
 }
 
-ROOP::InsSeqTrie::~InsSeqTrie() {
+ROP::InsSeqTrie::~InsSeqTrie() {
     this->recursiveFree(this->root);
 }

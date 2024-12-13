@@ -4,7 +4,7 @@
 #include <keystone/keystone.h>
 
 
-void ROOP::InstructionConverter::initKeystone() {
+void ROP::InstructionConverter::initKeystone() {
     ks_err err;
 
     err = ks_open(KS_ARCH_X86, KS_MODE_64, &this->ksEngine);
@@ -21,7 +21,7 @@ void ROOP::InstructionConverter::initKeystone() {
     this->ksEngineSyntax = AssemblySyntax::Intel;
 }
 
-void ROOP::InstructionConverter::initCapstone() {
+void ROP::InstructionConverter::initCapstone() {
     cs_err err;
 
 	err = cs_open(CS_ARCH_X86, CS_MODE_64, &this->capstoneHandle);
@@ -38,13 +38,13 @@ void ROOP::InstructionConverter::initCapstone() {
     this->csHandleSyntax = AssemblySyntax::Intel;
 }
 
-ROOP::InstructionConverter::InstructionConverter() {
+ROP::InstructionConverter::InstructionConverter() {
     this->initKeystone();
     this->initCapstone();
 }
 
-std::pair<ROOP::byteSequence, unsigned>
-ROOP::InstructionConverter::convertInstructionSequenceToBytes(
+std::pair<ROP::byteSequence, unsigned>
+ROP::InstructionConverter::convertInstructionSequenceToBytes(
     std::string instructionSequenceAsm,
     AssemblySyntax asmSyntax,
     unsigned long long addr
@@ -97,7 +97,7 @@ cleanup:
 }
 
 std::pair<std::vector<std::string>, unsigned>
-ROOP::InstructionConverter::convertInstructionSequenceToString(
+ROP::InstructionConverter::convertInstructionSequenceToString(
     const byte * const instrSeqBytes,
     const size_t instrSeqBytesCount,
     AssemblySyntax asmSyntax,
@@ -159,7 +159,7 @@ cleanup:
 }
 
 std::pair<std::vector<std::string>, unsigned>
-ROOP::InstructionConverter::convertInstructionSequenceToString(
+ROP::InstructionConverter::convertInstructionSequenceToString(
     byteSequence instructionSequence,
     AssemblySyntax asmSyntax,
     unsigned long long addr,
@@ -171,11 +171,11 @@ ROOP::InstructionConverter::convertInstructionSequenceToString(
 }
 
 std::vector<std::string>
-ROOP::InstructionConverter::normalizeInstructionAsm(std::string origInsSequenceAsm, ROOP::AssemblySyntax inputAsmSyntax) {
+ROP::InstructionConverter::normalizeInstructionAsm(std::string origInsSequenceAsm, ROP::AssemblySyntax inputAsmSyntax) {
     const byteSequence& insSeqBytes = this->convertInstructionSequenceToBytes(origInsSequenceAsm, inputAsmSyntax).first;
 
-    AssemblySyntax roopSyntax = ROOPConsts::InstructionASMSyntax;
-    auto p = this->convertInstructionSequenceToString(insSeqBytes, roopSyntax);
+    AssemblySyntax internalSyntax = ROPConsts::InstructionASMSyntax;
+    auto p = this->convertInstructionSequenceToString(insSeqBytes, internalSyntax);
 
     std::vector<std::string> instructions = p.first;
     assert(p.second == insSeqBytes.size());
@@ -184,7 +184,7 @@ ROOP::InstructionConverter::normalizeInstructionAsm(std::string origInsSequenceA
 }
 
 std::string
-ROOP::InstructionConverter::concatenateInstructionsAsm(std::vector<std::string> instructionsAsm) {
+ROP::InstructionConverter::concatenateInstructionsAsm(std::vector<std::string> instructionsAsm) {
     std::string ret = "";
 
     for (size_t i = 0; i < instructionsAsm.size(); ++i) {
@@ -197,7 +197,7 @@ ROOP::InstructionConverter::concatenateInstructionsAsm(std::vector<std::string> 
     return ret;
 }
 
-ROOP::InstructionConverter::~InstructionConverter() {
+ROP::InstructionConverter::~InstructionConverter() {
     // Close the Keystone instance.
     ks_close(this->ksEngine);
 

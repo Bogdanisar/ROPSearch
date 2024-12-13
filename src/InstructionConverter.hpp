@@ -9,7 +9,7 @@
 #include "common/utils.hpp"
 
 
-namespace ROOP {
+namespace ROP {
 
     class InstructionConverter {
         // Inner assembler framework;
@@ -59,7 +59,7 @@ namespace ROOP {
                                            const size_t parseCount = 0);
 
         // Takes instruction(s) given as strings
-        // and normalizes them according to the same syntax we use internally in ROOP.
+        // and normalizes them according to the same syntax we use internally.
         // - The first argument may contain multiple instructions separated by ";".
         // - The syntax of the input instructions is given in the second argument.
         std::vector<std::string>

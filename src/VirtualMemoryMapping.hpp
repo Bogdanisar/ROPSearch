@@ -5,7 +5,7 @@
 #include <vector>
 
 
-namespace ROOP {
+namespace ROP {
 
     struct VirtualMemorySegmentMapping {
         unsigned long long startAddress;

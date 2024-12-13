@@ -7,12 +7,12 @@
 #include "common/utils.hpp"
 
 // (static method)
-bool ROOP::ELFParser::elfPathIsAcceptable(const std::string& elfPath) {
+bool ROP::ELFParser::elfPathIsAcceptable(const std::string& elfPath) {
     return (elfPath.size() != 0) && std::filesystem::exists(elfPath);
 }
 
 
-void ROOP::ELFParser::readEntireBinaryIntoMemory(std::ifstream& fin) {
+void ROP::ELFParser::readEntireBinaryIntoMemory(std::ifstream& fin) {
     fin.seekg(0, std::ios_base::end);
     size_t bytesCount = fin.tellg();
     assert(bytesCount > 0);
@@ -27,7 +27,7 @@ void ROOP::ELFParser::readEntireBinaryIntoMemory(std::ifstream& fin) {
     }
 }
 
-void ROOP::ELFParser::readAndValidateFileHeader(std::ifstream& fin) {
+void ROP::ELFParser::readAndValidateFileHeader(std::ifstream& fin) {
     fin.seekg(0, std::ios_base::beg);
     fin.read((char*)this->fileHeader.e_ident, sizeof(this->fileHeader.e_ident));
     if (!fin) {
@@ -59,7 +59,7 @@ void ROOP::ELFParser::readAndValidateFileHeader(std::ifstream& fin) {
     }
 }
 
-void ROOP::ELFParser::readSegments(std::ifstream& fin) {
+void ROP::ELFParser::readSegments(std::ifstream& fin) {
     Elf64_Off programHeaderTableOffset = this->fileHeader.e_phoff;
     Elf64_Half programHeaderSize = this->fileHeader.e_phentsize;
     Elf64_Half programHeaderNum = this->fileHeader.e_phnum;
@@ -113,12 +113,12 @@ void ROOP::ELFParser::readSegments(std::ifstream& fin) {
     assert(this->codeSegmentHeaders.size() == this->codeSegmentBytes.size());
 }
 
-ROOP::ELFParser::ELFParser() {
+ROP::ELFParser::ELFParser() {
     // We need the default constructor to exist if we want
     // to be able to use std::map<key, ELFParser>.
 }
 
-ROOP::ELFParser::ELFParser(const std::string& elfPath): elfPath(elfPath) {
+ROP::ELFParser::ELFParser(const std::string& elfPath): elfPath(elfPath) {
     if (!ELFParser::elfPathIsAcceptable(this->elfPath)) {
         pv(this->elfPath); pn;
         exiterror("ELF file path should point to valid ELF file");
@@ -130,26 +130,26 @@ ROOP::ELFParser::ELFParser(const std::string& elfPath): elfPath(elfPath) {
     this->readSegments(fin);
 }
 
-const std::string& ROOP::ELFParser::getElfPath() const {
+const std::string& ROP::ELFParser::getElfPath() const {
     return this->elfPath;
 }
 
-const ROOP::byteSequence& ROOP::ELFParser::getElfBytes() const {
+const ROP::byteSequence& ROP::ELFParser::getElfBytes() const {
     return this->elfBytes;
 }
 
-const Elf64_Ehdr& ROOP::ELFParser::getFileHeader() const {
+const Elf64_Ehdr& ROP::ELFParser::getFileHeader() const {
     return this->fileHeader;
 }
 
-const std::vector<Elf64_Phdr>& ROOP::ELFParser::getSegmentHeaders() const {
+const std::vector<Elf64_Phdr>& ROP::ELFParser::getSegmentHeaders() const {
     return this->segmentHeaders;
 }
 
-const std::vector<Elf64_Phdr>& ROOP::ELFParser::getCodeSegmentHeaders() const {
+const std::vector<Elf64_Phdr>& ROP::ELFParser::getCodeSegmentHeaders() const {
     return this->codeSegmentHeaders;
 }
 
-const std::vector<ROOP::byteSequence>& ROOP::ELFParser::getCodeSegmentBytes() const {
+const std::vector<ROP::byteSequence>& ROP::ELFParser::getCodeSegmentBytes() const {
     return this->codeSegmentBytes;
 }

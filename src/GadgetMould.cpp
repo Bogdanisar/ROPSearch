@@ -4,7 +4,7 @@
 #include <assert.h>
 
 
-void ROOP::GadgetMould::checkMouldFormatIsCoherent() const {
+void ROP::GadgetMould::checkMouldFormatIsCoherent() const {
 
     for (const auto& [argname, position] : this->stackPositionForArgument) {
 
@@ -35,8 +35,8 @@ void ROOP::GadgetMould::checkMouldFormatIsCoherent() const {
     }
 }
 
-static ROOP::byteSequence convertAddressToByteSequence(unsigned long long address) {
-    ROOP::byteSequence ret;
+static ROP::byteSequence convertAddressToByteSequence(unsigned long long address) {
+    ROP::byteSequence ret;
 
     for (int i = 0; i < 8; ++i) {
         unsigned char byte = (address & 0xFF);
@@ -45,14 +45,14 @@ static ROOP::byteSequence convertAddressToByteSequence(unsigned long long addres
         address >>= 8;
     }
 
-    if (!ROOP::ROOPConsts::architectureIsLittleEndian) {
+    if (!ROP::ROPConsts::architectureIsLittleEndian) {
         std::reverse(ret.begin(), ret.end());
     }
 
     return ret;
 }
 
-void ROOP::GadgetMould::addArgElemToMould(pugi::xml_node stackElement) {
+void ROP::GadgetMould::addArgElemToMould(pugi::xml_node stackElement) {
     pugi::xml_attribute nameAttr = stackElement.attribute("name");
     const char * const argName = nameAttr.as_string();
     assertMessage(!nameAttr.empty() && strcmp(argName, "") != 0,
@@ -75,7 +75,7 @@ void ROOP::GadgetMould::addArgElemToMould(pugi::xml_node stackElement) {
     this->stackTemplate.insert(this->stackTemplate.end(), argSize, 0x00);
 }
 
-bool ROOP::GadgetMould::addInsSeqElemToMould(pugi::xml_node stackElement, VirtualMemoryInfo& vmInfo) {
+bool ROP::GadgetMould::addInsSeqElemToMould(pugi::xml_node stackElement, VirtualMemoryInfo& vmInfo) {
     pugi::xml_attribute syntaxAttr = stackElement.attribute("syntax");
     const char * const syntax = syntaxAttr.as_string();
     assertMessage(!syntaxAttr.empty() && strcmp(syntax, "") != 0,
@@ -87,9 +87,9 @@ bool ROOP::GadgetMould::addInsSeqElemToMould(pugi::xml_node stackElement, Virtua
     printf("[Gadget %s]: Found instructions in XML: %s\n",
             this->gadgetName.c_str(), instructionsString); // TODO: Remove
 
-    ROOP::AssemblySyntax asmSyntax = ROOP::AssemblySyntax::Intel;
+    ROP::AssemblySyntax asmSyntax = ROP::AssemblySyntax::Intel;
     if (strcmp(syntax, "att") == 0) {
-        asmSyntax = ROOP::AssemblySyntax::ATT;
+        asmSyntax = ROP::AssemblySyntax::ATT;
     }
 
     auto addressList = vmInfo.matchInstructionSequenceInVirtualMemory(std::string(instructionsString), asmSyntax);
@@ -109,7 +109,7 @@ bool ROOP::GadgetMould::addInsSeqElemToMould(pugi::xml_node stackElement, Virtua
     return true;
 }
 
-bool ROOP::GadgetMould::configureMould(pugi::xml_node configDict, VirtualMemoryInfo& vmInfo) {
+bool ROP::GadgetMould::configureMould(pugi::xml_node configDict, VirtualMemoryInfo& vmInfo) {
     assertMessage(configDict, "Got NULL XML node when configuring mould");
 
     assertMessage(configDict.attribute("name"),
@@ -190,7 +190,7 @@ bool ROOP::GadgetMould::configureMould(pugi::xml_node configDict, VirtualMemoryI
     }
 }
 
-void ROOP::GadgetMould::checkArgumentsFormatMatchesMouldFormat(const std::map<std::string, byteSequence>& arguments) const {
+void ROP::GadgetMould::checkArgumentsFormatMatchesMouldFormat(const std::map<std::string, byteSequence>& arguments) const {
     // Check that the number of arguments is the same.
     assertMessage(this->stackPositionForArgument.size() == arguments.size(),
                   "[Gadget %s]: Wrong gadget instantiation. Num mould args: %u; Num instantiation arguments: %u",
@@ -211,7 +211,7 @@ void ROOP::GadgetMould::checkArgumentsFormatMatchesMouldFormat(const std::map<st
     }
 }
 
-ROOP::byteSequence ROOP::GadgetMould::getConcreteGadget(const std::map<std::string, byteSequence>& arguments) const {
+ROP::byteSequence ROP::GadgetMould::getConcreteGadget(const std::map<std::string, byteSequence>& arguments) const {
     assertMessage(this->isConfigured, "Can't get concrete gadget for unconfigured gadget mould!");
     this->checkMouldFormatIsCoherent();
     this->checkArgumentsFormatMatchesMouldFormat(arguments);

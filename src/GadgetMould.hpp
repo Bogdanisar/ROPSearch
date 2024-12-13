@@ -16,7 +16,7 @@
 void testGadgetMouldConfiguration(std::string targetExecutable);
 
 
-namespace ROOP {
+namespace ROP {
     class GadgetMould {
         private:
 

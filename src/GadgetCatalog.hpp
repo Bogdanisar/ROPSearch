@@ -12,7 +12,7 @@
 #include "../deps/pugixml/src/pugixml.hpp"
 
 
-namespace ROOP {
+namespace ROP {
 
     /* This class contains a set ("catalog") of configured GadgetMould objects,
      * which can be used to instantiate arbitrary Return-oriented-programming "code".
