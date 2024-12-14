@@ -25,7 +25,12 @@ namespace ROP {
 
         public:
         static bool elfPathIsAcceptable(const std::string& elfPath);
-        ELFParser(); // Empty parser. Don't use this.
+
+        // Empty parser. Don't use this.
+        // We need the default constructor to exist if we want
+        // to be able to use std::map<key, ELFParser>.
+        ELFParser();
+
         ELFParser(const std::string& elfPath);
 
         const std::string& getElfPath() const;

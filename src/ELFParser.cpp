@@ -113,10 +113,7 @@ void ROP::ELFParser::readSegments(std::ifstream& fin) {
     assert(this->codeSegmentHeaders.size() == this->codeSegmentBytes.size());
 }
 
-ROP::ELFParser::ELFParser() {
-    // We need the default constructor to exist if we want
-    // to be able to use std::map<key, ELFParser>.
-}
+ROP::ELFParser::ELFParser() {}
 
 ROP::ELFParser::ELFParser(const std::string& elfPath): elfPath(elfPath) {
     if (!ELFParser::elfPathIsAcceptable(this->elfPath)) {
