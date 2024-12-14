@@ -28,7 +28,7 @@ void printProcessInformation(int argc, char* argv[]) {
     long pageSize = sysconf(_SC_PAGESIZE);
     pv(pageSize); pn;
 
-    string execPath = getAbsPathToProcExecutable();
+    string execPath = GetAbsPathToProcExecutable();
     pv(execPath); pn;
 
     for (int i = 0; i < argc; ++i) {
@@ -41,7 +41,7 @@ void normalizeCWD() {
     pv(currentWorkingDirectory); pn;
 
     printf("Setting CWD to the location of this binary...\n");
-    setCWDToExecutableLocation();
+    SetCWDToExecutableLocation();
 
     currentWorkingDirectory = std::filesystem::current_path();
     pv(currentWorkingDirectory); pn;

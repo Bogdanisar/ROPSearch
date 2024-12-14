@@ -28,7 +28,7 @@ void printProcessInformation(int argc, char* argv[]) {
     long pageSize = sysconf(_SC_PAGESIZE);
     pv(pageSize); pn;
 
-    string execPath = getAbsPathToProcExecutable();
+    string execPath = GetAbsPathToProcExecutable();
     pv(execPath); pn;
 
     for (int i = 0; i < argc; ++i) {
@@ -41,7 +41,7 @@ void normalizeCWD() {
     pv(currentWorkingDirectory); pn;
 
     printf("Setting CWD to the location of this binary...\n");
-    setCWDToExecutableLocation();
+    SetCWDToExecutableLocation();
 
     currentWorkingDirectory = std::filesystem::current_path();
     pv(currentWorkingDirectory); pn;
@@ -534,7 +534,7 @@ void testXMLReading() {
     }
 
     printf("XML document loaded!\n");
-    printf("Value of entire XML document: \n%s\n", xmlNodeToString(doc).c_str());
+    printf("Value of entire XML document: \n%s\n", XmlNodeToString(doc).c_str());
 
     xml_node shape = doc.child("shape");
 
@@ -570,14 +570,14 @@ void testGadgetMouldConfiguration(string targetExecutable) {
     }
 
     printf("XML document loaded!\n");
-    // printf("Value of entire XML document: \n%s\n", xmlNodeToString(doc).c_str());
+    // printf("Value of entire XML document: \n%s\n", XmlNodeToString(doc).c_str());
     printf("\n");
 
     xml_node catalog = doc.child("catalog");
 
     for (xml_node gadgetXML : catalog.children("gadget")) {
         printf("Found '%s' gadget: \n%s\n",
-               gadgetXML.attribute("name").as_string(), xmlNodeToString(gadgetXML).c_str());
+               gadgetXML.attribute("name").as_string(), XmlNodeToString(gadgetXML).c_str());
 
         // const char * const targetGadget = "assignConstant";
         // if (strcmp(gadgetXML.attribute("name").as_string(), targetGadget) != 0) {

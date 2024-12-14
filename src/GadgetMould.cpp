@@ -57,13 +57,13 @@ void ROP::GadgetMould::addArgElemToMould(pugi::xml_node stackElement) {
     const char * const argName = nameAttr.as_string();
     assertMessage(!nameAttr.empty() && strcmp(argName, "") != 0,
                   "[Gadget %s]: Attribute 'name' of 'arg' XML node is malformed: \n%s",
-                  this->gadgetName.c_str(), xmlNodeToString(stackElement).c_str());
+                  this->gadgetName.c_str(), XmlNodeToString(stackElement).c_str());
 
     pugi::xml_attribute sizeAttr = stackElement.attribute("size");
     int argSize = sizeAttr.as_int(-1);
     assertMessage(!sizeAttr.empty() && argSize > 0,
                   "[Gadget %s]: Attribute 'size' of 'arg' XML node is malformed: \n%s",
-                  this->gadgetName.c_str(), xmlNodeToString(stackElement).c_str());
+                  this->gadgetName.c_str(), XmlNodeToString(stackElement).c_str());
 
     // Note the current [left, right] interval for this argument in the instance variable map.
     unsigned left = this->stackTemplate.size();
@@ -80,7 +80,7 @@ bool ROP::GadgetMould::addInsSeqElemToMould(pugi::xml_node stackElement, Virtual
     const char * const syntax = syntaxAttr.as_string();
     assertMessage(!syntaxAttr.empty() && strcmp(syntax, "") != 0,
                   "[Gadget %s]: Attribute 'syntax' of 'insSeq' XML node is malformed: \n%s",
-                  this->gadgetName.c_str(), xmlNodeToString(stackElement).c_str());
+                  this->gadgetName.c_str(), XmlNodeToString(stackElement).c_str());
 
     const char * const instructionsString = stackElement.child_value();
     const std::string instructionsAsm(instructionsString);
@@ -113,18 +113,18 @@ bool ROP::GadgetMould::configureMould(pugi::xml_node configDict, VirtualMemoryIn
     assertMessage(configDict, "Got NULL XML node when configuring mould");
 
     assertMessage(configDict.attribute("name"),
-                  "'name' attribute doesn't exist in gadget XML: %s", xmlNodeToString(configDict).c_str());
+                  "'name' attribute doesn't exist in gadget XML: %s", XmlNodeToString(configDict).c_str());
     this->gadgetName = std::string(configDict.attribute("name").value());
 
     assertMessage(!configDict.children("variant").empty(),
-                  "No <variant> nodes exist in gadget XML: %s", xmlNodeToString(configDict).c_str());
+                  "No <variant> nodes exist in gadget XML: %s", XmlNodeToString(configDict).c_str());
     for (pugi::xml_node variantNode : configDict.children("variant")) {
 
         // Get the child <stack> node for this current <variant> node.
         pugi::xml_node stackNode = variantNode.child("stack");
         assertMessage(stackNode,
                       "[Gadget %s]: <stack> node doesn't exist in gadget XML: %s",
-                      this->gadgetName.c_str(), xmlNodeToString(variantNode).c_str());
+                      this->gadgetName.c_str(), XmlNodeToString(variantNode).c_str());
 
         // Store the children of this <stack> node.
         std::vector<pugi::xml_node> allStackElements;
@@ -140,7 +140,7 @@ bool ROP::GadgetMould::configureMould(pugi::xml_node configDict, VirtualMemoryIn
         pugi::xml_attribute stackTopAttr = stackNode.attribute("stack-top");
         assertMessage(stackTopAttr,
                       "[Gadget %s]: 'stack-top' attribute doesn't exist in gadget XML: %s",
-                      this->gadgetName.c_str(), xmlNodeToString(variantNode).c_str());
+                      this->gadgetName.c_str(), XmlNodeToString(variantNode).c_str());
 
         bool topOfStackIsLast = strcmp(stackTopAttr.as_string(), "last") == 0;
         if (topOfStackIsLast) {
@@ -165,7 +165,7 @@ bool ROP::GadgetMould::configureMould(pugi::xml_node configDict, VirtualMemoryIn
             }
             else {
                 exiterror("[Gadget %s]: Found unexpected child node (%s) in this <stack> node: \n%s",
-                          this->gadgetName.c_str(), elemName, xmlNodeToString(stackNode).c_str());
+                          this->gadgetName.c_str(), elemName, XmlNodeToString(stackNode).c_str());
             }
         }
 

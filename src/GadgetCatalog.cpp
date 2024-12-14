@@ -21,7 +21,7 @@ ROP::GadgetCatalog::GadgetCatalog(std::string xmlPath, VirtualMemoryInfo& vmInfo
     if (!catalog) {
         pv(xmlPath); pn;
         exiterror("Can't find <catalog> tag inside XML file: %s",
-                  xmlNodeToString(doc).c_str());
+                  XmlNodeToString(doc).c_str());
     }
 
     xml_node gadgetNode;

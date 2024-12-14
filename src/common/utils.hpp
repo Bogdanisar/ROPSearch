@@ -26,7 +26,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
 
-static inline std::string getAbsPathToProcExecutable() {
+static inline std::string GetAbsPathToProcExecutable() {
     char buffer[PATH_MAX];
     memset(buffer, 0, sizeof(buffer));
 
@@ -38,8 +38,8 @@ static inline std::string getAbsPathToProcExecutable() {
     return std::string(buffer);
 }
 
-static inline void setCWDToExecutableLocation() {
-    std::filesystem::path execPath(getAbsPathToProcExecutable());
+static inline void SetCWDToExecutableLocation() {
+    std::filesystem::path execPath(GetAbsPathToProcExecutable());
 
     // Remove the file path component at the end of the path.
     std::filesystem::path parentDirPath = execPath.remove_filename();
@@ -48,7 +48,7 @@ static inline void setCWDToExecutableLocation() {
     std::filesystem::current_path(parentDirPath);
 }
 
-static std::string xmlNodeToString(pugi::xml_node node) {
+static std::string XmlNodeToString(pugi::xml_node node) {
 
     // Declare helper class;
     struct xml_string_writer : pugi::xml_writer {
