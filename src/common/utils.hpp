@@ -23,6 +23,7 @@
 #define UNUSED(variable) do { (void)(variable); } while (0)
 
 
+// To avoid warnings if any of the following functions aren't used in every file that includes the header.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
 
