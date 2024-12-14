@@ -12,26 +12,6 @@ CAPSTONE_LDFLAGS = -l:libcapstone.a
 # "$<" is an automatic variable for the first prerequisite.
 
 
-# Main program
-
-bin/ROPSearch.exe: bin/ROPSearch.o bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryInfo.o \
-                   bin/InstructionConverter.o bin/InsSeqTrie.o bin/GadgetMould.o bin/GadgetCatalog.o
-	g++ $^ $(KEYSTONE_LDFLAGS) $(CAPSTONE_LDFLAGS) -o $@
-
-bin/ROPSearch.o: src/ROPSearch.cpp src/common/*.hpp
-	g++ $(wFlags) -c $< -o $@
-
-
-# Tests code
-
-bin/ManualTests.exe: bin/ManualTests.o bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryInfo.o \
-                     bin/InstructionConverter.o bin/InsSeqTrie.o bin/GadgetMould.o bin/GadgetCatalog.o
-	g++ $^ $(KEYSTONE_LDFLAGS) $(CAPSTONE_LDFLAGS) -o $@
-
-bin/ManualTests.o: src/ManualTests.cpp src/common/*.hpp
-	g++ $(wFlags) -c $< -o $@
-
-
 # Classes
 
 bin/VirtualMemoryMapping.o: src/VirtualMemoryMapping.* src/common/*.hpp
@@ -55,6 +35,27 @@ bin/GadgetMould.o: src/GadgetMould.* src/common/*.hpp
 bin/GadgetCatalog.o: src/GadgetCatalog.* src/common/*.hpp
 	g++ $(wFlags) -c src/GadgetCatalog.cpp -o $@
 
+classObjectFiles := bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryInfo.o \
+				    bin/InstructionConverter.o bin/InsSeqTrie.o bin/GadgetMould.o bin/GadgetCatalog.o
+
+
+# Main program
+
+bin/ROPSearch.exe: bin/ROPSearch.o $(classObjectFiles)
+	g++ $^ $(KEYSTONE_LDFLAGS) $(CAPSTONE_LDFLAGS) -o $@
+
+bin/ROPSearch.o: src/ROPSearch.cpp src/common/*.hpp
+	g++ $(wFlags) -c $< -o $@
+
+
+# Tests code
+
+bin/ManualTests.exe: bin/ManualTests.o $(classObjectFiles)
+	g++ $^ $(KEYSTONE_LDFLAGS) $(CAPSTONE_LDFLAGS) -o $@
+
+bin/ManualTests.o: src/ManualTests.cpp src/common/*.hpp
+	g++ $(wFlags) -c $< -o $@
+
 
 # Vulnerable executable
 
@@ -70,6 +71,8 @@ bin/vulnerable.o: src/vulnerable/vulnerable.c
 bin/hardcodedGadgets64bit.o: src/vulnerable/hardcodedGadgets64bit.c
 	gcc $(wFlags) -O0 -c $< -o $@
 
+
+# Misc
 
 .PHONY: clean
 clean:
