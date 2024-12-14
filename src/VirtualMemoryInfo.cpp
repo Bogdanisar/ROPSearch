@@ -209,20 +209,20 @@ ROP::byte ROP::VirtualMemoryInfo::getByteAtVirtualAddress(unsigned long long vAd
 }
 
 std::vector<unsigned long long>
-ROP::VirtualMemoryInfo::matchInstructionSequenceInVirtualMemory(ROP::byteSequence instructionSequence) {
-    assertMessage(instructionSequence.size() != 0, "Got empty instruction sequence...");
+ROP::VirtualMemoryInfo::matchBytesInVirtualMemory(ROP::byteSequence bytes) {
+    assertMessage(bytes.size() != 0, "Got empty bytes sequence...");
 
     std::vector<unsigned long long> matchedVirtualAddresses;
 
     for (const VirtualMemoryExecutableSegment& execSegm : this->executableSegments) {
         const byteSequence& segmentBytes = execSegm.executableBytes;
         int sizeCodeBytes = (int)segmentBytes.size();
-        int sizeInsSeqBytes = (int)instructionSequence.size();
+        int sizeTargetBytes = (int)bytes.size();
 
-        for (int low = 0, high = sizeInsSeqBytes - 1; high < sizeCodeBytes; ++low, ++high) {
+        for (int low = 0, high = sizeTargetBytes - 1; high < sizeCodeBytes; ++low, ++high) {
             bool match = true;
-            for (int idx = 0; idx < sizeInsSeqBytes; ++idx) {
-                if (instructionSequence[idx] != segmentBytes[low + idx]) {
+            for (int idx = 0; idx < sizeTargetBytes; ++idx) {
+                if (bytes[idx] != segmentBytes[low + idx]) {
                     match = false;
                     break;
                 }

@@ -66,9 +66,9 @@ namespace ROP {
         bool isValidVirtualAddressInExecutableSegment(unsigned long long vAddress) const;
         byte getByteAtVirtualAddress(unsigned long long vAddress) const;
 
-        // Return a vector of addresses where the instruction sequence is found in virtual memory.
+        // Return a vector of addresses where the bytes are found in virtual memory.
         std::vector<unsigned long long>
-        matchInstructionSequenceInVirtualMemory(byteSequence instructionSequence);
+        matchBytesInVirtualMemory(byteSequence bytes);
 
         // Return a vector of addresses where the instruction sequence is found in virtual memory.
         std::vector<unsigned long long>
