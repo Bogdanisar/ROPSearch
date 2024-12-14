@@ -10,7 +10,7 @@ void ROP::VirtualMemoryInfo::buildExecutableSegments() {
     // (Otherwise, we would need to create an ELFParser multiple times for the same path).
     std::map<std::string, ELFParser> elfPathToELFParser;
 
-    const std::vector<VirtualMemorySegmentMapping>& allSegmentMaps = this->vaSegmMapping.getSegmentMaps();
+    const std::vector<VirtualMemorySegmentMapping>& allSegmentMaps = this->vmSegmMapping.getSegmentMaps();
     for (const VirtualMemorySegmentMapping& segmentMap : allSegmentMaps) {
         if (!ELFParser::elfPathIsAcceptable(segmentMap.path)) {
             continue;
@@ -143,8 +143,8 @@ void ROP::VirtualMemoryInfo::buildInstructionTrie(
 
         // Insert the instruction at this segment into the trie;
         const std::string& instruction = p.second;
-        unsigned long long vaAddress = segm.startVirtualAddress + first;
-        auto nextNode = this->instructionTrie.addInstruction(instruction, vaAddress, currNode);
+        unsigned long long vAddress = segm.startVirtualAddress + first;
+        auto nextNode = this->instructionTrie.addInstruction(instruction, vAddress, currNode);
 
         // And then recurse.
         this->buildInstructionTrie(segm, first - 1, nextNode, currInstrSeqLength + 1);
@@ -162,23 +162,23 @@ void ROP::VirtualMemoryInfo::buildInstructionTrie() {
 }
 
 ROP::VirtualMemoryInfo::VirtualMemoryInfo(int processPid)
-: vaSegmMapping(processPid) {
+: vmSegmMapping(processPid) {
     this->buildExecutableSegments();
     this->buildInstructionTrie();
 }
 
 
-const ROP::VirtualMemoryMapping& ROP::VirtualMemoryInfo::getVASegmMapping() const {
-    return this->vaSegmMapping;
+const ROP::VirtualMemoryMapping& ROP::VirtualMemoryInfo::getVMSegmMapping() const {
+    return this->vmSegmMapping;
 }
 
 const std::vector<ROP::VirtualMemoryExecutableSegment>& ROP::VirtualMemoryInfo::getExecutableSegments() const {
     return this->executableSegments;
 }
 
-bool ROP::VirtualMemoryInfo::isValidVAAddressInExecutableSegment(unsigned long long vaAddress) const {
+bool ROP::VirtualMemoryInfo::isValidVirtualAddressInExecutableSegment(unsigned long long vAddress) const {
     for (const auto& execSegm : this->executableSegments) {
-        if (execSegm.startVirtualAddress <= vaAddress && vaAddress < execSegm.endVirtualAddress) {
+        if (execSegm.startVirtualAddress <= vAddress && vAddress < execSegm.endVirtualAddress) {
             return true;
         }
     }
@@ -186,7 +186,7 @@ bool ROP::VirtualMemoryInfo::isValidVAAddressInExecutableSegment(unsigned long l
     return false;
 }
 
-ROP::byte ROP::VirtualMemoryInfo::getByteAtVAAddress(unsigned long long vaAddress) const {
+ROP::byte ROP::VirtualMemoryInfo::getByteAtVirtualAddress(unsigned long long vAddress) const {
     for (const auto& execSegm : this->executableSegments) {
 
         // As far as I can tell, the difference between "end" and "actualEnd"
@@ -195,16 +195,16 @@ ROP::byte ROP::VirtualMemoryInfo::getByteAtVAAddress(unsigned long long vaAddres
         unsigned long long end = execSegm.endVirtualAddress;
         unsigned long long actualEnd = start + (unsigned long long)execSegm.executableBytes.size();
 
-        if (start <= vaAddress && vaAddress < actualEnd) {
-            return execSegm.executableBytes[vaAddress - start];
+        if (start <= vAddress && vAddress < actualEnd) {
+            return execSegm.executableBytes[vAddress - start];
         }
-        else if (start <= vaAddress && vaAddress < end) {
+        else if (start <= vAddress && vAddress < end) {
             return (byte)0;
         }
     }
 
     printf("Can't find the given virtual address in the loaded Virtual Memory of executable code!\n");
-    printf("Bad address = %llu (0x%llx)\n", vaAddress, vaAddress);
+    printf("Bad address = %llu (0x%llx)\n", vAddress, vAddress);
     return (byte)0;
 }
 

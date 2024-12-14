@@ -8,19 +8,19 @@ ROP::InsSeqTrie::InsSeqTrie() {
     this->root = new Node;
 }
 
-ROP::InsSeqTrie::Node* ROP::InsSeqTrie::addInstruction(const std::string& instruction, unsigned long long vaAddress, Node *node) {
+ROP::InsSeqTrie::Node* ROP::InsSeqTrie::addInstruction(const std::string& instruction, unsigned long long vAddress, Node *node) {
     if (node->children.count(instruction) == 0) {
         node->children[instruction] = new Node;
     }
 
     Node *childNode = node->children[instruction];
-    childNode->matchingVirtualAddresses.push_back(vaAddress);
+    childNode->matchingVirtualAddresses.push_back(vAddress);
 
     return childNode;
 }
 
-ROP::InsSeqTrie::Node* ROP::InsSeqTrie::addInstruction(const std::string& instruction, unsigned long long vaAddress) {
-    return this->addInstruction(instruction, vaAddress, this->root);
+ROP::InsSeqTrie::Node* ROP::InsSeqTrie::addInstruction(const std::string& instruction, unsigned long long vAddress) {
+    return this->addInstruction(instruction, vAddress, this->root);
 }
 
 std::vector<unsigned long long> ROP::InsSeqTrie::hasInstructionSequence(const std::vector<std::string>& instructionSequence) const {

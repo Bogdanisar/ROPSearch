@@ -150,9 +150,9 @@ void testVirtualMemoryExecutableBytes(int targetPid) {
         unsigned long long firstSegmStart = firstExecSegm.startVirtualAddress;
         size_t bytesToPrint = std::min((size_t)20, firstExecSegm.executableBytes.size());
 
-        printf("Testing VirtualMemoryInfo::getByteAtVAAddress():\n");
+        printf("Testing VirtualMemoryInfo::getByteAtVirtualAddress():\n");
         for (unsigned long long addr = firstSegmStart; addr < firstSegmStart + bytesToPrint; ++addr) {
-            ROP::byte b = vmBytes.getByteAtVAAddress(addr);
+            ROP::byte b = vmBytes.getByteAtVirtualAddress(addr);
             printf("virtual_memory[0x%llx] = %02hhx\n", addr, b);
         }
     }
@@ -222,11 +222,11 @@ void testGetExecutableBytesInteractive(string targetExecutable) {
         }
 
         for (unsigned long long cAddr = addr; cAddr < (unsigned long long)addr + 20; ++cAddr) {
-            if (!vmBytes.isValidVAAddressInExecutableSegment(cAddr)) {
+            if (!vmBytes.isValidVirtualAddressInExecutableSegment(cAddr)) {
                 break;
             }
 
-            ROP::byte b = vmBytes.getByteAtVAAddress(cAddr);
+            ROP::byte b = vmBytes.getByteAtVirtualAddress(cAddr);
             printf("virtual_memory[0x%llx] = 0x%02hhx\n", cAddr, b);
         }
     }

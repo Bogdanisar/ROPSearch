@@ -26,7 +26,7 @@ namespace ROP {
     };
 
     class VirtualMemoryInfo {
-        VirtualMemoryMapping vaSegmMapping;
+        VirtualMemoryMapping vmSegmMapping;
         std::vector<VirtualMemoryExecutableSegment> executableSegments;
         InstructionConverter ic;
         InsSeqTrie instructionTrie;
@@ -60,11 +60,11 @@ namespace ROP {
         public:
         VirtualMemoryInfo(int processPid);
 
-        const VirtualMemoryMapping& getVASegmMapping() const;
+        const VirtualMemoryMapping& getVMSegmMapping() const;
         const std::vector<VirtualMemoryExecutableSegment>& getExecutableSegments() const;
 
-        bool isValidVAAddressInExecutableSegment(unsigned long long vaAddress) const;
-        byte getByteAtVAAddress(unsigned long long vaAddress) const;
+        bool isValidVirtualAddressInExecutableSegment(unsigned long long vAddress) const;
+        byte getByteAtVirtualAddress(unsigned long long vAddress) const;
 
         // Return a vector of addresses where the instruction sequence is found in virtual memory.
         std::vector<unsigned long long>

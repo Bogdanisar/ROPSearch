@@ -35,8 +35,8 @@ namespace ROP {
 
         InsSeqTrie();
 
-        Node* addInstruction(const std::string& instruction, unsigned long long vaAddress);
-        Node* addInstruction(const std::string& instruction, unsigned long long vaAddress, Node *node);
+        Node* addInstruction(const std::string& instruction, unsigned long long vAddress);
+        Node* addInstruction(const std::string& instruction, unsigned long long vAddress, Node *node);
 
         std::vector<unsigned long long> hasInstructionSequence(const std::vector<std::string>& instructionSequence) const;
 
