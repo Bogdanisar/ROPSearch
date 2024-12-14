@@ -40,7 +40,7 @@ void normalizeCWD() {
     string currentWorkingDirectory = std::filesystem::current_path();
     pv(currentWorkingDirectory); pn;
 
-    printf("Setting CWD to the parent directory of the location of this binary...\n");
+    printf("Setting CWD to the location of this binary...\n");
     setCWDToExecutableLocation();
 
     currentWorkingDirectory = std::filesystem::current_path();
