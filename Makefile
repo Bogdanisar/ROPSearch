@@ -1,6 +1,6 @@
 
 .PHONY: all
-all: bin/ManualTests.exe bin/vulnerable.exe bin/vulnerableHelped.exe
+all: bin/ROPSearch.exe bin/ManualTests.exe bin/vulnerable.exe bin/vulnerableHelped.exe
 
 wFlags := -Wall -Wextra -pedantic
 KEYSTONE_LDFLAGS = -lkeystone -lstdc++ -lm
@@ -12,7 +12,17 @@ CAPSTONE_LDFLAGS = -l:libcapstone.a
 # "$<" is an automatic variable for the first prerequisite.
 
 
-# Main code
+# Main program
+
+bin/ROPSearch.exe: bin/ROPSearch.o bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryInfo.o \
+                   bin/InstructionConverter.o bin/InsSeqTrie.o bin/GadgetMould.o bin/GadgetCatalog.o
+	g++ $^ $(KEYSTONE_LDFLAGS) $(CAPSTONE_LDFLAGS) -o $@
+
+bin/ROPSearch.o: src/ROPSearch.cpp src/common/*.hpp
+	g++ $(wFlags) -c $< -o $@
+
+
+# Tests code
 
 bin/ManualTests.exe: bin/ManualTests.o bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryInfo.o \
                      bin/InstructionConverter.o bin/InsSeqTrie.o bin/GadgetMould.o bin/GadgetCatalog.o
@@ -20,6 +30,9 @@ bin/ManualTests.exe: bin/ManualTests.o bin/VirtualMemoryMapping.o bin/ELFParser.
 
 bin/ManualTests.o: src/ManualTests.cpp src/common/*.hpp
 	g++ $(wFlags) -c $< -o $@
+
+
+# Classes
 
 bin/VirtualMemoryMapping.o: src/VirtualMemoryMapping.* src/common/*.hpp
 	g++ $(wFlags) -c src/VirtualMemoryMapping.cpp -o $@
