@@ -35,8 +35,11 @@ bin/GadgetMould.o: src/GadgetMould.* src/common/*.hpp
 bin/GadgetCatalog.o: src/GadgetCatalog.* src/common/*.hpp
 	g++ $(wFlags) -c src/GadgetCatalog.cpp -o $@
 
+bin/Log.o: src/Log.* src/common/*.hpp
+	g++ $(wFlags) -c src/Log.cpp -o $@
+
 classObjectFiles := bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryInfo.o \
-				    bin/InstructionConverter.o bin/InsSeqTrie.o bin/GadgetMould.o bin/GadgetCatalog.o
+				    bin/InstructionConverter.o bin/InsSeqTrie.o bin/GadgetMould.o bin/GadgetCatalog.o bin/Log.o
 
 
 # Main program

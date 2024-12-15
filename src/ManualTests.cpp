@@ -13,6 +13,7 @@
 #include "GadgetCatalog.hpp"
 #include "GadgetMould.hpp"
 #include "InstructionConverter.hpp"
+#include "Log.hpp"
 #include "VirtualMemoryInfo.hpp"
 #include "VirtualMemoryMapping.hpp"
 
@@ -647,6 +648,24 @@ void testGadgetCatalog(string targetExecutable) {
     GadgetCatalog gc(xmlPath, vmInfo);
 }
 
+void testLoggingFunctionality() {
+    printf("Logging with default level:\n");
+    LogDebug("Debug flag: %i\n", (int)Log::Level::Debug);
+    LogVerbose("Verbose flag: %i\n", (int)Log::Level::Verbose);
+    LogInfo("Info flag: %i\n", (int)Log::Level::Info);
+    LogWarn("Warn flag: %i\n", (int)Log::Level::Warn);
+    LogError("Error flag: %i\n\n", (int)Log::Level::Error);
+
+    Log::ProgramLogLevel = Log::Level::Debug;
+
+    printf("Logging with changed level:\n");
+    LogDebug("Debug flag: %i\n", (int)Log::Level::Debug);
+    LogVerbose("Verbose flag: %i\n", (int)Log::Level::Verbose);
+    LogInfo("Info flag: %i\n", (int)Log::Level::Info);
+    LogWarn("Warn flag: %i\n", (int)Log::Level::Warn);
+    LogError("Error flag: %i\n", (int)Log::Level::Error);
+}
+
 
 int main(int argc, char* argv[]) {
     UNUSED(argc); UNUSED(argv);
@@ -666,7 +685,8 @@ int main(int argc, char* argv[]) {
     // printVMInstructionSequences("vulnerable.exe"); pn;
     // testXMLReading();pn;
     // testGadgetMouldConfiguration("vulnerableHelped.exe"); pn;
-    testGadgetCatalog("vulnerableHelped.exe"); pn;
+    // testGadgetCatalog("vulnerableHelped.exe"); pn;
+    testLoggingFunctionality(); pn;
 
     return 0;
 }
