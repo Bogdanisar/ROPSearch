@@ -14,28 +14,28 @@ CAPSTONE_LDFLAGS = -l:libcapstone.a
 
 # Classes
 
-bin/VirtualMemoryMapping.o: src/VirtualMemoryMapping.* src/common/*.hpp
+bin/VirtualMemoryMapping.o: src/VirtualMemoryMapping.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) -c src/VirtualMemoryMapping.cpp -o $@
 
-bin/ELFParser.o: src/ELFParser.* src/common/*.hpp
+bin/ELFParser.o: src/ELFParser.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) -c src/ELFParser.cpp -o $@
 
-bin/VirtualMemoryInfo.o: src/VirtualMemoryInfo.* src/common/*.hpp
+bin/VirtualMemoryInfo.o: src/VirtualMemoryInfo.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) -c src/VirtualMemoryInfo.cpp -o $@
 
-bin/InstructionConverter.o: src/InstructionConverter.* src/common/*.hpp
+bin/InstructionConverter.o: src/InstructionConverter.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) -c src/InstructionConverter.cpp -o $@
 
-bin/InsSeqTrie.o: src/InsSeqTrie.*
+bin/InsSeqTrie.o: src/InsSeqTrie.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) -c src/InsSeqTrie.cpp -o $@
 
-bin/GadgetMould.o: src/GadgetMould.* src/common/*.hpp
+bin/GadgetMould.o: src/GadgetMould.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) -c src/GadgetMould.cpp -o $@
 
-bin/GadgetCatalog.o: src/GadgetCatalog.* src/common/*.hpp
+bin/GadgetCatalog.o: src/GadgetCatalog.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) -c src/GadgetCatalog.cpp -o $@
 
-bin/Log.o: src/Log.* src/common/*.hpp
+bin/Log.o: src/Log.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) -c src/Log.cpp -o $@
 
 classObjectFiles := bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryInfo.o \
@@ -47,7 +47,7 @@ classObjectFiles := bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemory
 bin/ROPSearch.exe: bin/ROPSearch.o $(classObjectFiles)
 	g++ $^ $(KEYSTONE_LDFLAGS) $(CAPSTONE_LDFLAGS) -o $@
 
-bin/ROPSearch.o: src/ROPSearch.cpp src/common/*.hpp
+bin/ROPSearch.o: src/ROPSearch.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) -c $< -o $@
 
 
@@ -56,7 +56,7 @@ bin/ROPSearch.o: src/ROPSearch.cpp src/common/*.hpp
 bin/ManualTests.exe: bin/ManualTests.o $(classObjectFiles)
 	g++ $^ $(KEYSTONE_LDFLAGS) $(CAPSTONE_LDFLAGS) -o $@
 
-bin/ManualTests.o: src/ManualTests.cpp src/common/*.hpp
+bin/ManualTests.o: src/ManualTests.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) -c $< -o $@
 
 
