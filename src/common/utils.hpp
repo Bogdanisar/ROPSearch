@@ -16,11 +16,11 @@
 #define pv(x) std::cout<<#x<<" = "<<(x)<<"; ";std::cout.flush()
 #define pn std::cout<<std::endl
 
-#define exiterror(format, ...) LogError("\n" format, ##__VA_ARGS__); LogError("exit(-1)"); exit(-1)
+#define exitError(format, ...) LogError("\n" format, ##__VA_ARGS__); LogError("exit(-1)"); exit(-1)
 #define assertMessage(condition, format, ...) \
     do { \
         if (!(condition)) { \
-            exiterror("Assert failed!\n" "Assert condition: " #condition "\n" "Assert message:   " format, ##__VA_ARGS__); \
+            exitError("Assert failed!\n" "Assert condition: " #condition "\n" "Assert message:   " format, ##__VA_ARGS__); \
         } \
     } while(0)
 
@@ -37,7 +37,7 @@ static inline std::string GetAbsPathToProcExecutable() {
 
     int ret = readlink("/proc/self/exe", buffer, sizeof(buffer)-1);
     if (ret == -1) {
-        exiterror("readlink(\"/proc/self/exe\") failed");
+        exitError("readlink(\"/proc/self/exe\") failed");
     }
 
     return std::string(buffer);

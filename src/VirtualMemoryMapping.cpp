@@ -24,7 +24,7 @@ ROP::VirtualMemoryMapping::VirtualMemoryMapping(int processPid) {
     std::ifstream fin(mapsPath);
     if (!fin) {
         pv(processPid); pv(mapsPath); pn;
-        exiterror("Got error when opening /proc/PID/maps file");
+        exitError("Got error when opening /proc/PID/maps file");
     }
 
     std::string line;
@@ -38,7 +38,7 @@ ROP::VirtualMemoryMapping::VirtualMemoryMapping(int processPid) {
 
         if (matched != 7) {
             pv(line); pn;
-            exiterror("Got error when parsing /maps segment line");
+            exitError("Got error when parsing /maps segment line");
         }
 
         vmsm.rights[4] = '\0';

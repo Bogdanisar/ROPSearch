@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
         gProgramParser.parse_args(argc, argv);
     }
     catch (const exception& err) {
-        exiterror("Argument parser error: %s", err.what());
+        exitError("Argument parser error: %s", err.what());
     }
 
     PrintProcessInformation();

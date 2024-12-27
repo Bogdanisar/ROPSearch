@@ -9,13 +9,13 @@ void ROP::InstructionConverter::initKeystone() {
 
     err = ks_open(KS_ARCH_X86, KS_MODE_64, &this->ksEngine);
     if (err != KS_ERR_OK) {
-        exiterror("Keystone: ks_open() failed with error %u!\n", (unsigned)err);
+        exitError("Keystone: ks_open() failed with error %u!\n", (unsigned)err);
     }
 
     // Adjust the engine to use Intel syntax by default.
     err = ks_option(this->ksEngine, KS_OPT_SYNTAX, KS_OPT_SYNTAX_INTEL);
     if (err != KS_ERR_OK) {
-        exiterror("Keystone: ks_option() failed with error %u!\n", (unsigned)err);
+        exitError("Keystone: ks_option() failed with error %u!\n", (unsigned)err);
     }
 
     this->ksEngineSyntax = AssemblySyntax::Intel;
@@ -26,13 +26,13 @@ void ROP::InstructionConverter::initCapstone() {
 
 	err = cs_open(CS_ARCH_X86, CS_MODE_64, &this->capstoneHandle);
     if (err != CS_ERR_OK) {
-        exiterror("Capstone: cs_open() failed with error %u!\n", (unsigned)err);
+        exitError("Capstone: cs_open() failed with error %u!\n", (unsigned)err);
     }
 
     // Adjust the engine to use Intel syntax by default.
     err = cs_option(this->capstoneHandle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
     if (err != CS_ERR_OK) {
-        exiterror("Capstone: cs_option() failed with error %u!\n", (unsigned)err);
+        exitError("Capstone: cs_option() failed with error %u!\n", (unsigned)err);
     }
 
     this->csHandleSyntax = AssemblySyntax::Intel;
@@ -90,7 +90,7 @@ cleanup:
     if (instructionSequence.size() == 0) {
         pv(instructionSequenceAsm); pn;
         pv(numDecodedInstructions); pn;
-        exiterror("Keystone conversion from instruction sequence string to instruction sequence bytes failed");
+        exitError("Keystone conversion from instruction sequence string to instruction sequence bytes failed");
     }
 
     return {instructionSequence, numDecodedInstructions};

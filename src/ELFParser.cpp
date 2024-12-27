@@ -23,7 +23,7 @@ void ROP::ELFParser::readEntireBinaryIntoMemory(std::ifstream& fin) {
     fin.read((char*)this->elfBytes.data(), bytesCount);
     if (!fin) {
         pv(this->elfPath); pn;
-        exiterror("Can't read binary file...");
+        exitError("Can't read binary file...");
     }
 }
 
@@ -32,7 +32,7 @@ void ROP::ELFParser::readAndValidateFileHeader(std::ifstream& fin) {
     fin.read((char*)this->fileHeader.e_ident, sizeof(this->fileHeader.e_ident));
     if (!fin) {
         pv(this->elfPath); pn;
-        exiterror("Can't read e_ident[EI_NIDENT] from binary file...");
+        exitError("Can't read e_ident[EI_NIDENT] from binary file...");
     }
 
     bool validMagic = this->fileHeader.e_ident[EI_MAG0] == ELFMAG0 &&
@@ -41,13 +41,13 @@ void ROP::ELFParser::readAndValidateFileHeader(std::ifstream& fin) {
                       this->fileHeader.e_ident[EI_MAG3] == ELFMAG3;
     if (!validMagic) {
         pv(this->elfPath); pn;
-        exiterror("File is not valid ELF file (magic number)");
+        exitError("File is not valid ELF file (magic number)");
     }
 
     bool is64BitELF = this->fileHeader.e_ident[EI_CLASS] == ELFCLASS64;
     if (!is64BitELF) {
         pv(this->elfPath); pn;
-        exiterror("This tool only supports 64bit ELF files");
+        exitError("This tool only supports 64bit ELF files");
     }
 
     size_t entireFHSize = sizeof(this->fileHeader);
@@ -55,7 +55,7 @@ void ROP::ELFParser::readAndValidateFileHeader(std::ifstream& fin) {
     fin.read((char*)&this->fileHeader + differenceFH, entireFHSize - differenceFH);
     if (!fin) {
         pv(this->elfPath); pn;
-        exiterror("Can't read the rest of Elf64_Ehdr header from ELF file...");
+        exitError("Can't read the rest of Elf64_Ehdr header from ELF file...");
     }
 }
 
@@ -67,7 +67,7 @@ void ROP::ELFParser::readSegments(std::ifstream& fin) {
     fin.seekg(programHeaderTableOffset, std::ios_base::beg);
     if (!fin) {
         pv(this->elfPath); pn;
-        exiterror("Can't seek to the begining of the program header table in the ELF file...");
+        exitError("Can't seek to the begining of the program header table in the ELF file...");
     }
 
     // Load the program/segment headers.
@@ -76,7 +76,7 @@ void ROP::ELFParser::readSegments(std::ifstream& fin) {
         fin.read((char*)&currentProgHeader, programHeaderSize);
         if (!fin) {
             pv(this->elfPath); pn;
-            exiterror("Can't read the current program header in the ELF file...");
+            exitError("Can't read the current program header in the ELF file...");
         }
 
         this->segmentHeaders.push_back(currentProgHeader);
@@ -100,7 +100,7 @@ void ROP::ELFParser::readSegments(std::ifstream& fin) {
         fin.read((char*)segmBytes.data(), segmentSizeInFile);
         if (!fin) {
             pv(this->elfPath); pn;
-            exiterror("Can't read the bytes of the current code segment in the ELF file...");
+            exitError("Can't read the bytes of the current code segment in the ELF file...");
         }
 
         if ((unsigned long long)segmBytes.size() != (unsigned long long)codeProgHeader.p_filesz) {
@@ -118,7 +118,7 @@ ROP::ELFParser::ELFParser() {}
 ROP::ELFParser::ELFParser(const std::string& elfPath): elfPath(elfPath) {
     if (!ELFParser::elfPathIsAcceptable(this->elfPath)) {
         pv(this->elfPath); pn;
-        exiterror("ELF file path should point to valid ELF file");
+        exitError("ELF file path should point to valid ELF file");
     }
 
     std::ifstream fin(elfPath, std::ifstream::binary);

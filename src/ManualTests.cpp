@@ -172,7 +172,7 @@ int getPidOfExecutable(string executableName) {
     ifstream fin(tempFile);
     fin >> pid;
     if (!fin) {
-        exiterror("Failed reading the temp file with the pid...");
+        exitError("Failed reading the temp file with the pid...");
     }
 
     return pid;
@@ -531,7 +531,7 @@ void testXMLReading() {
     xml_document doc;
     xml_parse_result loadResult = doc.load_string(source);
     if (!loadResult) {
-        exiterror("Got error loading the XML string: %s", loadResult.description());
+        exitError("Got error loading the XML string: %s", loadResult.description());
     }
 
     printf("XML document loaded!\n");
@@ -566,7 +566,7 @@ void testGadgetMouldConfiguration(string targetExecutable) {
     xml_document doc;
     xml_parse_result loadResult = doc.load_file("../src/data/catalogHelped.xml");
     if (!loadResult) {
-        exiterror("Got error '%s' at offset %llu loading the XML string",
+        exitError("Got error '%s' at offset %llu loading the XML string",
                   loadResult.description(), (unsigned long long)loadResult.offset);
     }
 

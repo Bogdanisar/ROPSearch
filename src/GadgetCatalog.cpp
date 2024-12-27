@@ -11,7 +11,7 @@ ROP::GadgetCatalog::GadgetCatalog(std::string xmlPath, VirtualMemoryInfo& vmInfo
     xml_parse_result loadResult = doc.load_file(xmlPath.c_str());
     if (!loadResult) {
         pv(xmlPath); pn;
-        exiterror("Got error '%s' at offset %llu loading the XML string",
+        exitError("Got error '%s' at offset %llu loading the XML string",
                   loadResult.description(), (unsigned long long)loadResult.offset);
     }
 
@@ -20,7 +20,7 @@ ROP::GadgetCatalog::GadgetCatalog(std::string xmlPath, VirtualMemoryInfo& vmInfo
     xml_node catalog = doc.child("catalog");
     if (!catalog) {
         pv(xmlPath); pn;
-        exiterror("Can't find <catalog> tag inside XML file: %s",
+        exitError("Can't find <catalog> tag inside XML file: %s",
                   XmlNodeToString(doc).c_str());
     }
 

@@ -164,7 +164,7 @@ bool ROP::GadgetMould::configureMould(pugi::xml_node configDict, VirtualMemoryIn
                 }
             }
             else {
-                exiterror("[Gadget %s]: Found unexpected child node (%s) in this <stack> node: \n%s",
+                exitError("[Gadget %s]: Found unexpected child node (%s) in this <stack> node: \n%s",
                           this->gadgetName.c_str(), elemName, XmlNodeToString(stackNode).c_str());
             }
         }
