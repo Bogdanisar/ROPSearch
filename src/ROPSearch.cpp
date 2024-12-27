@@ -15,7 +15,6 @@
 #include "GadgetCatalog.hpp"
 #include "GadgetMould.hpp"
 #include "InstructionConverter.hpp"
-#include "Log.hpp"
 #include "VirtualMemoryInfo.hpp"
 #include "VirtualMemoryMapping.hpp"
 
