@@ -1,6 +1,9 @@
 #ifndef LOG_H
 #define LOG_H
 
+#include <sstream>
+#include <iostream>
+
 
 class Log {
     public:
@@ -15,6 +18,18 @@ class Log {
 
     static Level ProgramLogLevel;
 };
+
+
+/**
+ * Converts a C++ expression/object into a temporary C-string (if a conversion to std::string exists).
+ * Beware: A temporary object gets deallocated right after the full expression in which it is used.
+ * Use this macro along with "%s" format specifiers for the format string Log functions.
+ * @note
+ * Correct usage: `LogInfo("i = %i; obj = %s", i, CSTR(obj));`
+ * @warning
+ * Incorrect usage (Undefined behavior): `char *ptr = CSTR(obj); func(ptr);`
+ */
+#define CSTR(obj) (((std::stringstream&)(std::stringstream() << (obj))).str().c_str())
 
 
 #define LogBase(fmt, ...) printf(fmt "\n", ##__VA_ARGS__)

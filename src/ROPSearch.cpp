@@ -46,14 +46,9 @@ void printProcessInformation(int argc, char* argv[]) {
 }
 
 void normalizeCWD() {
-    string currentWorkingDirectory = std::filesystem::current_path();
-    pv(currentWorkingDirectory); pn;
-
-    printf("Setting CWD to the location of this binary...\n");
     SetCWDToExecutableLocation();
-
-    currentWorkingDirectory = std::filesystem::current_path();
-    pv(currentWorkingDirectory); pn;
+    string currentWorkingDirectory = filesystem::current_path();
+    LogVerbose("Set Current Working Directory to: \"%s\"", CSTR(currentWorkingDirectory));
 }
 
 #pragma endregion Misc
@@ -89,9 +84,6 @@ int ________Main________;
 int main(int argc, char* argv[]) {
     // UNUSED(argc); UNUSED(argv);
 
-    // printProcessInformation(argc, argv); pn;
-    // normalizeCWD(); pn;
-
     configureArgumentParser();
 
     try {
@@ -100,6 +92,9 @@ int main(int argc, char* argv[]) {
     catch (const exception& err) {
         exiterror("Argument parser error: %s", err.what());
     }
+
+    // printProcessInformation(argc, argv); pn;
+    normalizeCWD();
 
     LogError("LogError message...");
     LogWarn("LogWarn message...");
