@@ -30,25 +30,14 @@ using namespace ROP;
 int ________Misc________;
 #endif
 
-void printProcessInformation(int argc, char* argv[]) {
-    int myPID = getpid();
-    pv(myPID); pn;
-
-    long pageSize = sysconf(_SC_PAGESIZE);
-    pv(pageSize); pn;
-
-    string execPath = GetAbsPathToProcExecutable();
-    pv(execPath); pn;
-
-    for (int i = 0; i < argc; ++i) {
-        printf("arg[%i] = %s\n", i, argv[i]);
-    }
+void printProcessInformation() {
+    LogVerbose("My PID: %i", (int)getpid());
 }
 
 void normalizeCWD() {
     SetCWDToExecutableLocation();
     string currentWorkingDirectory = filesystem::current_path();
-    LogVerbose("Set Current Working Directory to: \"%s\"", CSTR(currentWorkingDirectory));
+    LogVerbose("Set Current Working Directory to: \"%s\"\n", CSTR(currentWorkingDirectory));
 }
 
 #pragma endregion Misc
@@ -93,7 +82,7 @@ int main(int argc, char* argv[]) {
         exiterror("Argument parser error: %s", err.what());
     }
 
-    // printProcessInformation(argc, argv); pn;
+    printProcessInformation();
     normalizeCWD();
 
     LogError("LogError message...");
