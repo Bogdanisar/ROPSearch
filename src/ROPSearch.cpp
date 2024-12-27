@@ -30,11 +30,11 @@ using namespace ROP;
 int ________Misc________;
 #endif
 
-void printProcessInformation() {
+void PrintProcessInformation() {
     LogVerbose("My PID: %i", (int)getpid());
 }
 
-void normalizeCWD() {
+void NormalizeCWD() {
     SetCWDToExecutableLocation();
     string currentWorkingDirectory = filesystem::current_path();
     LogVerbose("Set Current Working Directory to: \"%s\"\n", CSTR(currentWorkingDirectory));
@@ -48,11 +48,11 @@ void normalizeCWD() {
 int ________Configure_argument_parser________;
 #endif
 
-ArgumentParser programParser("ROPSearch");
+ArgumentParser gProgramParser("ROPSearch");
 
-void configureArgumentParser() {
+void ConfigureArgumentParser() {
     Log::ProgramLogLevel = Log::Level::Info;
-    programParser.add_argument("-v", "--verbose")
+    gProgramParser.add_argument("-v", "--verbose")
     .action([&](const auto &) {
         int oldLogLevel = (int)Log::ProgramLogLevel;
         int newLogLevel = 2 * oldLogLevel;
@@ -73,17 +73,17 @@ int ________Main________;
 int main(int argc, char* argv[]) {
     // UNUSED(argc); UNUSED(argv);
 
-    configureArgumentParser();
+    ConfigureArgumentParser();
 
     try {
-        programParser.parse_args(argc, argv);
+        gProgramParser.parse_args(argc, argv);
     }
     catch (const exception& err) {
         exiterror("Argument parser error: %s", err.what());
     }
 
-    printProcessInformation();
-    normalizeCWD();
+    PrintProcessInformation();
+    NormalizeCWD();
 
     LogError("LogError message...");
     LogWarn("LogWarn message...");
