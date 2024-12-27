@@ -8,18 +8,27 @@
 #define PUGIXML_HEADER_ONLY
 #include "../deps/pugixml/src/pugixml.hpp"
 
+#include "../deps/argparse/include/argparse/argparse.hpp"
+
 #include "common/utils.hpp"
 #include "ELFParser.hpp"
 #include "GadgetCatalog.hpp"
 #include "GadgetMould.hpp"
 #include "InstructionConverter.hpp"
+#include "Log.hpp"
 #include "VirtualMemoryInfo.hpp"
 #include "VirtualMemoryMapping.hpp"
 
 
 using namespace std;
+using namespace argparse;
 using namespace ROP;
 
+
+#pragma region Misc
+#if false
+int ________Misc________;
+#endif
 
 void printProcessInformation(int argc, char* argv[]) {
     int myPID = getpid();
@@ -47,12 +56,58 @@ void normalizeCWD() {
     pv(currentWorkingDirectory); pn;
 }
 
+#pragma endregion Misc
+
+
+#pragma region Configure argument parser
+#if false
+int ________Configure_argument_parser________;
+#endif
+
+ArgumentParser programParser("ROPSearch");
+
+void configureArgumentParser() {
+    Log::ProgramLogLevel = Log::Level::Info;
+    programParser.add_argument("-v", "--verbose")
+    .action([&](const auto &) {
+        int oldLogLevel = (int)Log::ProgramLogLevel;
+        int newLogLevel = 2 * oldLogLevel;
+        Log::ProgramLogLevel = (Log::Level)newLogLevel;
+    })
+    .append()
+    .nargs(0);
+}
+
+#pragma endregion Configure argument parser
+
+
+#pragma region Main
+#if false
+int ________Main________;
+#endif
 
 int main(int argc, char* argv[]) {
     // UNUSED(argc); UNUSED(argv);
 
-    printProcessInformation(argc, argv); pn;
-    normalizeCWD(); pn;
+    // printProcessInformation(argc, argv); pn;
+    // normalizeCWD(); pn;
+
+    configureArgumentParser();
+
+    try {
+        programParser.parse_args(argc, argv);
+    }
+    catch (const exception& err) {
+        exiterror("Argument parser error: %s", err.what());
+    }
+
+    LogError("LogError message...");
+    LogWarn("LogWarn message...");
+    LogInfo("LogInfo message...");
+    LogVerbose("LogVerbose message...");
+    LogDebug("LogDebug message...");
 
     return 0;
 }
+
+#pragma endregion Main
