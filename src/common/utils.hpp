@@ -8,16 +8,20 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "../Log.hpp"
+
 #include "../../deps/pugixml/src/pugixml.hpp"
 
 
 #define pv(x) std::cout<<#x<<" = "<<(x)<<"; ";std::cout.flush()
 #define pn std::cout<<std::endl
 
-#define exiterror(format, ...) fprintf(stderr, (format "\n" "exit(-1);\n"), ##__VA_ARGS__); fflush(stderr); exit(-1)
+#define exiterror(format, ...) LogError("\n" format, ##__VA_ARGS__); LogError("exit(-1)"); exit(-1)
 #define assertMessage(condition, format, ...) \
     do { \
-        if (!(condition)) { exiterror("Assert failed!\n" "Assert condition: " #condition "\n" "Assert message:   " format, ##__VA_ARGS__); } \
+        if (!(condition)) { \
+            exiterror("Assert failed!\n" "Assert condition: " #condition "\n" "Assert message:   " format, ##__VA_ARGS__); \
+        } \
     } while(0)
 
 #define UNUSED(variable) do { (void)(variable); } while (0)
