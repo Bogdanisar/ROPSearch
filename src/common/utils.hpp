@@ -8,10 +8,10 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "../Log.hpp"
-
 #define PUGIXML_HEADER_ONLY
 #include "../../deps/pugixml/src/pugixml.hpp"
+
+#include "../Log.hpp"
 
 
 #define pv(x) std::cout<<#x<<" = "<<(x)<<"; ";std::cout.flush()

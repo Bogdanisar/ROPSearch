@@ -3,13 +3,13 @@
 
 #include <string>
 
+#define PUGIXML_HEADER_ONLY
+#include "../deps/pugixml/src/pugixml.hpp"
+
 #include "common/types.hpp"
 #include "common/utils.hpp"
 #include "GadgetMould.hpp"
 #include "VirtualMemoryInfo.hpp"
-
-#define PUGIXML_HEADER_ONLY
-#include "../deps/pugixml/src/pugixml.hpp"
 
 
 namespace ROP {

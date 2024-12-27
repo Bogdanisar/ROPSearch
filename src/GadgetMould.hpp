@@ -4,12 +4,12 @@
 #include <map>
 #include <vector>
 
+#define PUGIXML_HEADER_ONLY
+#include "../deps/pugixml/src/pugixml.hpp"
+
 #include "common/types.hpp"
 #include "common/utils.hpp"
 #include "VirtualMemoryInfo.hpp"
-
-#define PUGIXML_HEADER_ONLY
-#include "../deps/pugixml/src/pugixml.hpp"
 
 
 // Forward declaration for friend function.
