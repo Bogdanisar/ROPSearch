@@ -32,20 +32,35 @@ class Log {
 #define CSTR(obj) (((std::stringstream&)(std::stringstream() << (obj))).str().c_str())
 
 
-#define LogBase(fmt, ...) printf(fmt "\n", ##__VA_ARGS__)
+#define LogBase(fmt, ...) printf(fmt, ##__VA_ARGS__)
 
-#define LogMaybe(level, fmt, ...) \
+#define LogMaybe(level, flush, fmt, ...) \
     do { \
         if (level <= Log::ProgramLogLevel) { \
             LogBase(fmt, ##__VA_ARGS__); \
+            if (flush) { \
+                fflush(stdout); \
+            } \
         } \
     } while (0)
 
-#define LogError(fmt, ...) LogMaybe(Log::Level::Error, fmt, ##__VA_ARGS__)
-#define LogWarn(fmt, ...) LogMaybe(Log::Level::Warn, fmt, ##__VA_ARGS__)
-#define LogInfo(fmt, ...) LogMaybe(Log::Level::Info, fmt, ##__VA_ARGS__)
-#define LogVerbose(fmt, ...) LogMaybe(Log::Level::Verbose, fmt, ##__VA_ARGS__)
-#define LogDebug(fmt, ...) LogMaybe(Log::Level::Debug, fmt, ##__VA_ARGS__)
+#define LogError(fmt, ...) LogMaybe(Log::Level::Error, true, fmt "\n", ##__VA_ARGS__)
+#define LogWarn(fmt, ...) LogMaybe(Log::Level::Warn, false, fmt "\n", ##__VA_ARGS__)
+#define LogInfo(fmt, ...) LogMaybe(Log::Level::Info, false, fmt "\n", ##__VA_ARGS__)
+#define LogVerbose(fmt, ...) LogMaybe(Log::Level::Verbose, false, fmt "\n", ##__VA_ARGS__)
+#define LogDebug(fmt, ...) LogMaybe(Log::Level::Debug, true, fmt "\n", ##__VA_ARGS__)
+
+
+/** Print a variable as "variableName = variableValue; ", without newline, as a Debug log.
+ * Usage:
+ * `LogVar(a); LogVar(b); LogLine(); // "a = ...; b = ...; "`
+ *
+ * `LogVar(object); LogLine(); // "object = ...; "`
+*/
+#define LogVar(variable) LogMaybe(Log::Level::Debug, true, "%s = %s; ", (#variable), CSTR(variable))
+
+/** Print a new line, as a Debug log. */
+#define LogLine() LogDebug("")
 
 
 #endif // LOG_H
