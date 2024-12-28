@@ -38,13 +38,13 @@ void printProcessInformation(int argc, char* argv[]) {
 }
 
 void normalizeCWD() {
-    string currentWorkingDirectory = std::filesystem::current_path();
+    string currentWorkingDirectory = filesystem::current_path();
     pv(currentWorkingDirectory); pn;
 
     printf("Setting CWD to the location of this binary...\n");
     SetCWDToExecutableLocation();
 
-    currentWorkingDirectory = std::filesystem::current_path();
+    currentWorkingDirectory = filesystem::current_path();
     pv(currentWorkingDirectory); pn;
 }
 
@@ -59,7 +59,7 @@ void testVirtualMemoryMapping(int targetPid) {
 void testPrintCodeSegmentsOfLoadedELFs(int targetPid) {
     pv(targetPid); pn; pn;
 
-    std::set<std::string> loadedELFs;
+    set<string> loadedELFs;
     const VirtualMemoryMapping vmm(targetPid);
 
     for (const VirtualMemorySegmentMapping& segm : vmm.getSegmentMaps()) {
@@ -73,7 +73,7 @@ void testPrintCodeSegmentsOfLoadedELFs(int targetPid) {
     printf("\n");
 
     printf("___________ Printing code-segment information about the loaded ELFs ___________\n");
-    for (const std::string& elfPath : loadedELFs) {
+    for (const string& elfPath : loadedELFs) {
         assert(ELFParser::elfPathIsAcceptable(elfPath));
 
         printf("ELF file: %s\n", elfPath.c_str());
@@ -125,7 +125,7 @@ void testVirtualMemoryExecutableBytes(int targetPid) {
     pv(targetPid); pn; pn;
 
     VirtualMemoryExecutableBytes vmBytes(targetPid);
-    const std::vector<VirtualMemoryExecutableSegment>& executableSegments = vmBytes.getExecutableSegments();
+    const vector<VirtualMemoryExecutableSegment>& executableSegments = vmBytes.getExecutableSegments();
 
     printf("Executable Virtual Memory ranges (plus a few bytes from the start of the segment):\n");
     for (const auto& execSegm : executableSegments) {
@@ -138,7 +138,7 @@ void testVirtualMemoryExecutableBytes(int targetPid) {
         printf("0x%llx-0x%llx (real: 0x%llx-0x%llx; sz: %7llu): ",
                start, end, start, actualEnd, (unsigned long long)execSegm.executableBytes.size());
 
-        size_t bytesToPrint = std::min((size_t)20, execSegm.executableBytes.size());
+        size_t bytesToPrint = min((size_t)20, execSegm.executableBytes.size());
         for (size_t i = 0; i < bytesToPrint; ++i) {
             printf("%02hhx ", execSegm.executableBytes[i]);
         }
@@ -149,7 +149,7 @@ void testVirtualMemoryExecutableBytes(int targetPid) {
     if (executableSegments.size() != 0) {
         const auto& firstExecSegm = executableSegments[0];
         unsigned long long firstSegmStart = firstExecSegm.startVirtualAddress;
-        size_t bytesToPrint = std::min((size_t)20, firstExecSegm.executableBytes.size());
+        size_t bytesToPrint = min((size_t)20, firstExecSegm.executableBytes.size());
 
         printf("Testing VirtualMemoryExecutableBytes::getByteAtVirtualAddress():\n");
         for (unsigned long long addr = firstSegmStart; addr < firstSegmStart + bytesToPrint; ++addr) {
@@ -355,7 +355,7 @@ void testKeystoneCapstoneFrameworkIntegration() {
 
 
         // Decode the new instruction string back into bytes;
-        std::string newInstructionSequenceAsm = "";
+        string newInstructionSequenceAsm = "";
         for (size_t i = 0; i < newInstructions.size(); ++i) {
             newInstructionSequenceAsm += newInstructions[i];
             if (i != newInstructions.size() - 1) {
@@ -608,7 +608,7 @@ void testGadgetMouldConfiguration(string targetExecutable) {
         }
 
         // Set some dummy example bytes for each argument of the gadget.
-        std::map<std::string, byteSequence> argumentBytes;
+        map<string, byteSequence> argumentBytes;
         int argIndex = 0;
         for (xml_node argNode : gadgetXML.child("variant").child("stack").children("arg")) {
             const char * const argName = argNode.attribute("name").as_string();
