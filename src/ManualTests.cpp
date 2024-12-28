@@ -13,7 +13,8 @@
 #include "GadgetCatalog.hpp"
 #include "GadgetMould.hpp"
 #include "InstructionConverter.hpp"
-#include "VirtualMemoryInfo.hpp"
+#include "VirtualMemoryExecutableBytes.hpp"
+#include "VirtualMemoryInstructions.hpp"
 #include "VirtualMemoryMapping.hpp"
 
 
@@ -123,7 +124,7 @@ void testPrintCodeSegmentsOfLoadedELFs(int targetPid) {
 void testVirtualMemoryExecutableBytes(int targetPid) {
     pv(targetPid); pn; pn;
 
-    VirtualMemoryInfo vmBytes(targetPid);
+    VirtualMemoryExecutableBytes vmBytes(targetPid);
     const std::vector<VirtualMemoryExecutableSegment>& executableSegments = vmBytes.getExecutableSegments();
 
     printf("Executable Virtual Memory ranges (plus a few bytes from the start of the segment):\n");
@@ -150,7 +151,7 @@ void testVirtualMemoryExecutableBytes(int targetPid) {
         unsigned long long firstSegmStart = firstExecSegm.startVirtualAddress;
         size_t bytesToPrint = std::min((size_t)20, firstExecSegm.executableBytes.size());
 
-        printf("Testing VirtualMemoryInfo::getByteAtVirtualAddress():\n");
+        printf("Testing VirtualMemoryExecutableBytes::getByteAtVirtualAddress():\n");
         for (unsigned long long addr = firstSegmStart; addr < firstSegmStart + bytesToPrint; ++addr) {
             ROP::byte b = vmBytes.getByteAtVirtualAddress(addr);
             printf("virtual_memory[0x%llx] = %02hhx\n", addr, b);
@@ -198,7 +199,7 @@ void testGetExecutableBytesInteractive(string targetExecutable) {
     testVirtualMemoryMapping(targetPid); pn;
     testVirtualMemoryExecutableBytes(targetPid); pn;
 
-    VirtualMemoryInfo vmBytes(targetPid);
+    VirtualMemoryExecutableBytes vmBytes(targetPid);
 
     printf("Interactive virtual memory inspector...\n");
     while (true) {
@@ -456,7 +457,7 @@ void testFindingInstructionSequenceInMemory(string targetExecutable) {
     // Print the Virtual Memory mapping of the target process.
     testVirtualMemoryMapping(targetPid); pn;
 
-    VirtualMemoryInfo vmInfo(targetPid);
+    VirtualMemoryInstructions vmInfo(targetPid);
     printf("Finished initializing vmInfo object!\n\n");
 
     // These are some sample instruction sequences found in libc.so.6
@@ -505,7 +506,7 @@ void printVMInstructionSequences(string targetExecutable) {
     // Print the Virtual Memory mapping of the target process.
     testVirtualMemoryMapping(targetPid); pn;
 
-    VirtualMemoryInfo vmInfo(targetPid);
+    VirtualMemoryInstructions vmInfo(targetPid);
     printf("Finished initializing vmInfo object!\n\n");
 
     InstructionConverter ic;
@@ -556,7 +557,7 @@ void testGadgetMouldConfiguration(string targetExecutable) {
     // Print the Virtual Memory mapping of the target process.
     testVirtualMemoryMapping(targetPid); pn;
 
-    VirtualMemoryInfo vmInfo(targetPid);
+    VirtualMemoryInstructions vmInfo(targetPid);
     printf("Finished initializing vmInfo object!\n\n");
 
 
@@ -640,7 +641,7 @@ void testGadgetCatalog(string targetExecutable) {
     // Print the Virtual Memory mapping of the target process.
     testVirtualMemoryMapping(targetPid); pn;
 
-    VirtualMemoryInfo vmInfo(targetPid);
+    VirtualMemoryInstructions vmInfo(targetPid);
     printf("Finished initializing vmInfo object!\n\n");
 
     string xmlPath = "../src/data/catalogHelped.xml";
@@ -680,12 +681,12 @@ int main(int argc, char* argv[]) {
     // testCapstoneFrameworkIntegrationBadBytes(); pn;
     // testKeystoneCapstoneFrameworkIntegration(); pn;
     // testInstructionNormalization(); pn;
-    // testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
+    testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
     // printVMInstructionSequences("vulnerable.exe"); pn;
     // testXMLReading();pn;
     // testGadgetMouldConfiguration("vulnerableHelped.exe"); pn;
     // testGadgetCatalog("vulnerableHelped.exe"); pn;
-    testLoggingFunctionality(); pn;
+    // testLoggingFunctionality(); pn;
 
     return 0;
 }

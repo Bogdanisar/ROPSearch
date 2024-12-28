@@ -20,14 +20,17 @@ bin/VirtualMemoryMapping.o: src/VirtualMemoryMapping.cpp $(shell find ./src -nam
 bin/ELFParser.o: src/ELFParser.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) -c src/ELFParser.cpp -o $@
 
-bin/VirtualMemoryInfo.o: src/VirtualMemoryInfo.cpp $(shell find ./src -name "*.hpp")
-	g++ $(wFlags) -c src/VirtualMemoryInfo.cpp -o $@
+bin/VirtualMemoryExecutableBytes.o: src/VirtualMemoryExecutableBytes.cpp $(shell find ./src -name "*.hpp")
+	g++ $(wFlags) -c src/VirtualMemoryExecutableBytes.cpp -o $@
 
 bin/InstructionConverter.o: src/InstructionConverter.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) -c src/InstructionConverter.cpp -o $@
 
 bin/InsSeqTrie.o: src/InsSeqTrie.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) -c src/InsSeqTrie.cpp -o $@
+
+bin/VirtualMemoryInstructions.o: src/VirtualMemoryInstructions.cpp $(shell find ./src -name "*.hpp")
+	g++ $(wFlags) -c src/VirtualMemoryInstructions.cpp -o $@
 
 bin/GadgetMould.o: src/GadgetMould.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) -c src/GadgetMould.cpp -o $@
@@ -38,8 +41,9 @@ bin/GadgetCatalog.o: src/GadgetCatalog.cpp $(shell find ./src -name "*.hpp")
 bin/Log.o: src/Log.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) -c src/Log.cpp -o $@
 
-classObjectFiles := bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryInfo.o \
-				    bin/InstructionConverter.o bin/InsSeqTrie.o bin/GadgetMould.o bin/GadgetCatalog.o bin/Log.o
+classObjectFiles := bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryExecutableBytes.o \
+				    bin/InstructionConverter.o bin/InsSeqTrie.o bin/VirtualMemoryInstructions.o \
+					bin/GadgetMould.o bin/GadgetCatalog.o bin/Log.o
 
 
 # Main program

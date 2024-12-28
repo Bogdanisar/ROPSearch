@@ -9,7 +9,7 @@
 #include "common/types.hpp"
 #include "common/utils.hpp"
 #include "GadgetMould.hpp"
-#include "VirtualMemoryInfo.hpp"
+#include "VirtualMemoryInstructions.hpp"
 
 
 namespace ROP {
@@ -44,7 +44,7 @@ namespace ROP {
          * @param xmlPath A file-system path to an XML config file for this catalog.
          * @param vmInfo An object representing the active virtual memory of the target process.
         */
-        GadgetCatalog(std::string xmlPath, VirtualMemoryInfo& vmInfo);
+        GadgetCatalog(std::string xmlPath, VirtualMemoryInstructions& vmInfo);
     };
 }
 

@@ -1,5 +1,5 @@
-#ifndef VIRTUAL_MEMORY_INFO_H
-#define VIRTUAL_MEMORY_INFO_H
+#ifndef VIRTUAL_MEMORY_INSTRUCTIONS_H
+#define VIRTUAL_MEMORY_INSTRUCTIONS_H
 
 #include <map>
 #include <set>
@@ -12,27 +12,15 @@
 #include "common/utils.hpp"
 #include "InsSeqTrie.hpp"
 #include "InstructionConverter.hpp"
-#include "VirtualMemoryMapping.hpp"
+#include "VirtualMemoryExecutableBytes.hpp"
 
 
 namespace ROP {
 
-    struct VirtualMemoryExecutableSegment {
-        // The end address might be larger than start + bytes.size(),
-        // because of needing to be a multiple of the page size.
-        unsigned long long startVirtualAddress;
-        unsigned long long endVirtualAddress;
-        byteSequence executableBytes;
-    };
-
-    class VirtualMemoryInfo {
-        VirtualMemoryMapping vmSegmMapping;
-        std::vector<VirtualMemoryExecutableSegment> executableSegments;
+    class VirtualMemoryInstructions {
+        VirtualMemoryExecutableBytes vmExecBytes;
         InstructionConverter ic;
         InsSeqTrie instructionTrie;
-
-        void buildExecutableSegments();
-
 
         /*
         This data structure is used for optimizing (through memoization) the construction of the inner trie.
@@ -58,17 +46,7 @@ namespace ROP {
 
 
         public:
-        VirtualMemoryInfo(int processPid);
-
-        const VirtualMemoryMapping& getVMSegmMapping() const;
-        const std::vector<VirtualMemoryExecutableSegment>& getExecutableSegments() const;
-
-        bool isValidVirtualAddressInExecutableSegment(unsigned long long vAddress) const;
-        byte getByteAtVirtualAddress(unsigned long long vAddress) const;
-
-        // Return a vector of addresses where the bytes are found in virtual memory.
-        std::vector<unsigned long long>
-        matchBytesInVirtualMemory(byteSequence bytes);
+        VirtualMemoryInstructions(int processPid);
 
         // Return a vector of addresses where the instruction sequence is found in virtual memory.
         std::vector<unsigned long long>
@@ -81,4 +59,4 @@ namespace ROP {
 }
 
 
-#endif // VIRTUAL_MEMORY_INFO_H
+#endif // VIRTUAL_MEMORY_INSTRUCTIONS_H

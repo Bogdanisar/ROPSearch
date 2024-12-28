@@ -75,7 +75,7 @@ void ROP::GadgetMould::addArgElemToMould(pugi::xml_node stackElement) {
     this->stackTemplate.insert(this->stackTemplate.end(), argSize, 0x00);
 }
 
-bool ROP::GadgetMould::addInsSeqElemToMould(pugi::xml_node stackElement, VirtualMemoryInfo& vmInfo) {
+bool ROP::GadgetMould::addInsSeqElemToMould(pugi::xml_node stackElement, VirtualMemoryInstructions& vmInfo) {
     pugi::xml_attribute syntaxAttr = stackElement.attribute("syntax");
     const char * const syntax = syntaxAttr.as_string();
     assertMessage(!syntaxAttr.empty() && strcmp(syntax, "") != 0,
@@ -109,7 +109,7 @@ bool ROP::GadgetMould::addInsSeqElemToMould(pugi::xml_node stackElement, Virtual
     return true;
 }
 
-bool ROP::GadgetMould::configureMould(pugi::xml_node configDict, VirtualMemoryInfo& vmInfo) {
+bool ROP::GadgetMould::configureMould(pugi::xml_node configDict, VirtualMemoryInstructions& vmInfo) {
     assertMessage(configDict, "Got NULL XML node when configuring mould");
 
     assertMessage(configDict.attribute("name"),

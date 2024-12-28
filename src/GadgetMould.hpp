@@ -9,7 +9,7 @@
 
 #include "common/types.hpp"
 #include "common/utils.hpp"
-#include "VirtualMemoryInfo.hpp"
+#include "VirtualMemoryInstructions.hpp"
 
 
 // Forward declaration for friend function.
@@ -50,7 +50,7 @@ namespace ROP {
          *               This will be used to get the address of the instruction sequence.
          * @return If the operation was successful. This can fail if we can't find the instruction seq in the virtual memory.
         */
-        bool addInsSeqElemToMould(pugi::xml_node stackElement, VirtualMemoryInfo& vmInfo);
+        bool addInsSeqElemToMould(pugi::xml_node stackElement, VirtualMemoryInstructions& vmInfo);
 
         /* Assert that the given arguments match the inner structure of the mould. */
         void checkArgumentsFormatMatchesMouldFormat(const std::map<std::string, byteSequence>& arguments) const;
@@ -61,7 +61,7 @@ namespace ROP {
         /*
          * @return If the operation was successful.
          */
-        bool configureMould(pugi::xml_node configDictionary, VirtualMemoryInfo& vmInfo);
+        bool configureMould(pugi::xml_node configDictionary, VirtualMemoryInstructions& vmInfo);
 
         /* Insert the given arguments into the mould and get the bytes of the resulting gadget. */
         byteSequence getConcreteGadget(const std::map<std::string, byteSequence>& arguments) const;

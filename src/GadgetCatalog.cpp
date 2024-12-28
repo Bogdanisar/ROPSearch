@@ -4,7 +4,7 @@
 #include <assert.h>
 
 
-ROP::GadgetCatalog::GadgetCatalog(std::string xmlPath, VirtualMemoryInfo& vmInfo) {
+ROP::GadgetCatalog::GadgetCatalog(std::string xmlPath, VirtualMemoryInstructions& vmInfo) {
     using namespace pugi;
 
     xml_document doc;
