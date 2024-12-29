@@ -1,9 +1,4 @@
 #include <assert.h>
-#include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <set>
-#include <unistd.h>
 
 #define PUGIXML_HEADER_ONLY
 #include "../deps/pugixml/src/pugixml.hpp"
@@ -11,12 +6,8 @@
 #include "../deps/argparse/include/argparse/argparse.hpp"
 
 #include "common/utils.hpp"
-#include "ELFParser.hpp"
-#include "GadgetCatalog.hpp"
-#include "GadgetMould.hpp"
 #include "InstructionConverter.hpp"
-#include "VirtualMemoryExecutableBytes.hpp"
-#include "VirtualMemoryMapping.hpp"
+#include "VirtualMemoryInstructions.hpp"
 
 
 using namespace std;
@@ -48,6 +39,21 @@ int ________Configure_argument_parser________;
 #endif
 
 ArgumentParser gProgramParser("ROPSearch", "1.0", default_arguments::help);
+ArgumentParser gListCmdSubparser("list", "1.0", default_arguments::help);
+
+void ConfigureListCommandSubparser() {
+    gListCmdSubparser.add_description("List all instruction sequences found in the given source.");
+
+    gListCmdSubparser.add_argument("-pid", "--process-id")
+        .help("the pid for the target running process. "
+              "The tool needs permission to access the \"/proc/PID/maps\" file. "
+              "For example, run it under the same user as the target process or under the super-user)")
+        .metavar("PID")
+        .required()
+        .scan<'i', int>();
+
+    gProgramParser.add_subparser(gListCmdSubparser);
+}
 
 void ConfigureArgumentParser() {
     gProgramParser.add_argument("--version")
@@ -70,9 +76,37 @@ void ConfigureArgumentParser() {
     })
     .append()
     .nargs(0);
+
+    ConfigureListCommandSubparser();
 }
 
 #pragma endregion Configure argument parser
+
+
+#pragma region List command
+#if false
+int ________List_command________;
+#endif
+
+void DoListCommand() {
+    assertMessage(gListCmdSubparser, "Inner logic error...");
+
+    int targetPid = gListCmdSubparser.get<int>("-pid");
+    VirtualMemoryInstructions vmInstructions(targetPid);
+
+    InstructionConverter ic;
+    auto instrSeqs = vmInstructions.getInstructionSequences();
+
+    LogInfo("Found instruction sequences:");
+    for (const auto& p : instrSeqs) {
+        unsigned long long addr = p.first;
+        vector<string> instructionSequence = p.second;
+        string fullSequence = ic.concatenateInstructionsAsm(instructionSequence);
+        LogInfo("0x%10llx: %s", addr, fullSequence.c_str());
+    }
+}
+
+#pragma endregion List command
 
 
 #pragma region Main
@@ -94,6 +128,11 @@ int main(int argc, char* argv[]) {
 
     PrintProcessInformation();
     NormalizeCWD();
+
+    if (gListCmdSubparser) {
+        DoListCommand();
+        return 0;
+    }
 
     LogInfo("No command-line arguments. Try \"--help\"!");
     return 0;
