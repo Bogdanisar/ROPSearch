@@ -93,8 +93,7 @@ ROP::byte ROP::VirtualMemoryExecutableBytes::getByteAtVirtualAddress(unsigned lo
         }
     }
 
-    printf("Can't find the given virtual address in the loaded Virtual Memory of executable code!\n");
-    printf("Bad address = %llu (0x%llx)\n", vAddress, vAddress);
+    LogWarn("Bad query in Virtual Memory! Can't find address: %llu (0x%llx)\n", vAddress, vAddress);
     return (byte)0;
 }
 

@@ -678,12 +678,12 @@ int main(int argc, char* argv[]) {
     // testVirtualMemoryMapping(getpid()); pn;
     // testPrintCodeSegmentsOfLoadedELFs(getpid()); pn;
     // testVirtualMemoryExecutableBytes(getpid()); pn;
-    // testGetExecutableBytesInteractive("vulnerable.exe"); pn;
+    testGetExecutableBytesInteractive("vulnerable.exe"); pn;
     // testKeystoneFrameworkIntegration(); pn;
     // testCapstoneFrameworkIntegrationBadBytes(); pn;
     // testKeystoneCapstoneFrameworkIntegration(); pn;
     // testInstructionNormalization(); pn;
-    testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
+    // testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
     // printVMInstructionSequences("vulnerable.exe"); pn;
     // testXMLReading();pn;
     // testGadgetMouldConfiguration("vulnerableHelped.exe"); pn;

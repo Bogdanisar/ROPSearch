@@ -6,6 +6,7 @@
 
 #include "common/utils.hpp"
 
+
 // (static method)
 bool ROP::ELFParser::elfPathIsAcceptable(const std::string& elfPath) {
     return (elfPath.size() != 0) && std::filesystem::exists(elfPath);
@@ -104,7 +105,7 @@ void ROP::ELFParser::readSegments(std::ifstream& fin) {
         }
 
         if ((unsigned long long)segmBytes.size() != (unsigned long long)codeProgHeader.p_filesz) {
-            printf("Warning: loadedBytes.size() != codePH.p_filesz!\n");
+            LogWarn("loadedBytes.size() != codePH.p_filesz!");
         }
 
         this->codeSegmentBytes.push_back(segmBytes);

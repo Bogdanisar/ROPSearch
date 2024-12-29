@@ -83,9 +83,8 @@ bool ROP::GadgetMould::addInsSeqElemToMould(pugi::xml_node stackElement, Virtual
                   this->gadgetName.c_str(), XmlNodeToString(stackElement).c_str());
 
     const char * const instructionsString = stackElement.child_value();
-    const std::string instructionsAsm(instructionsString);
-    printf("[Gadget %s]: Found instructions in XML: %s\n",
-            this->gadgetName.c_str(), instructionsString); // TODO: Remove
+    LogVerbose("[Gadget %s]: Found instructions in XML: %s",
+               this->gadgetName.c_str(), instructionsString);
 
     ROP::AssemblySyntax asmSyntax = ROP::AssemblySyntax::Intel;
     if (strcmp(syntax, "att") == 0) {
@@ -94,14 +93,14 @@ bool ROP::GadgetMould::addInsSeqElemToMould(pugi::xml_node stackElement, Virtual
 
     auto addressList = vmInfo.matchInstructionSequenceInVirtualMemory(std::string(instructionsString), asmSyntax);
     if (addressList.size() == 0) {
-        printf("[Gadget %s]: Can't find in the virtual memory of the target program this instruction sequence: %s\n",
-               this->gadgetName.c_str(), instructionsString);
+        LogDebug("[Gadget %s]: Can't find in the virtual memory of the target program this instruction sequence: %s",
+                 this->gadgetName.c_str(), instructionsString);
         return false;
     }
 
     unsigned long long insSeqAddress = addressList[0];
-    printf("[Gadget %s]: Found the instructions at this virtual memory address: 0x%016llX\n\n",
-            this->gadgetName.c_str(), insSeqAddress); // TODO: Remove
+    LogVerbose("[Gadget %s]: Found the instructions at this virtual memory address: 0x%016llX\n\n",
+               this->gadgetName.c_str(), insSeqAddress);
 
     byteSequence addressBytes = convertAddressToByteSequence(insSeqAddress);
     this->stackTemplate.insert(this->stackTemplate.end(), addressBytes.begin(), addressBytes.end());

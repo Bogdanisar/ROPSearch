@@ -15,7 +15,7 @@ ROP::GadgetCatalog::GadgetCatalog(std::string xmlPath, VirtualMemoryInstructions
                   loadResult.description(), (unsigned long long)loadResult.offset);
     }
 
-    printf("XML document loaded!\n\n");
+    LogVerbose("XML document loaded!\n\n");
 
     xml_node catalog = doc.child("catalog");
     if (!catalog) {

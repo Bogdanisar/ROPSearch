@@ -63,7 +63,7 @@ ROP::InstructionConverter::convertInstructionSequenceToBytes(
         newSyntaxValue = (asmSyntax == AssemblySyntax::Intel) ? KS_OPT_SYNTAX_INTEL : KS_OPT_SYNTAX_ATT;
         err = ks_option(this->ksEngine, KS_OPT_SYNTAX, newSyntaxValue);
         if (err != KS_ERR_OK) {
-            printf("Keystone: ks_option() failed with error %u!\n", (unsigned)err);
+            LogError("Keystone: ks_option() failed with error %u!", (unsigned)err);
             goto cleanup;
         }
 
@@ -71,8 +71,8 @@ ROP::InstructionConverter::convertInstructionSequenceToBytes(
     }
 
     if (ks_asm(this->ksEngine, insSeqCString, addr, &insSeqEncoding, &insSeqEncodingSize, &numDecodedInstructions) != 0) {
-        printf("Keystone: ks_asm() failed with error %u; Number of decoded instructions = %u;\n",
-               (unsigned)ks_errno(this->ksEngine), (unsigned)numDecodedInstructions);
+        LogError("Keystone: ks_asm() failed with error %u; Number of decoded instructions = %u;",
+                 (unsigned)ks_errno(this->ksEngine), (unsigned)numDecodedInstructions);
         goto cleanup;
     }
 
@@ -117,7 +117,7 @@ ROP::InstructionConverter::convertInstructionSequenceToString(
         newSyntaxValue = (asmSyntax == AssemblySyntax::Intel) ? CS_OPT_SYNTAX_INTEL : CS_OPT_SYNTAX_ATT;
         err = cs_option(this->capstoneHandle, CS_OPT_SYNTAX, newSyntaxValue);
         if (err != CS_ERR_OK) {
-            printf("Capstone: cs_option() failed with error %u!\n", (unsigned)err);
+            LogError("Capstone: cs_option() failed with error %u!", (unsigned)err);
             goto cleanup;
         }
 
@@ -132,7 +132,7 @@ ROP::InstructionConverter::convertInstructionSequenceToString(
                                          &decodedInstructions);
     err = cs_errno(this->capstoneHandle);
     if (decodedInstructionsCount == 0 && err != CS_ERR_OK) {
-        printf("Capstone: cs_disasm() failed with error %u\n", (unsigned)err);
+        LogError("Capstone: cs_disasm() failed with error %u", (unsigned)err);
         goto cleanup;
     }
 
