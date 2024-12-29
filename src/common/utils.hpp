@@ -33,6 +33,7 @@
             LogError("Assert location:  %s:%i (%s)", __FILE__, __LINE__, __func__); \
             LogError("Assert condition: " #condition); \
             LogError("Assert message:   " format, ##__VA_ARGS__); \
+            exit(-1); \
         } \
     } while(0)
 
