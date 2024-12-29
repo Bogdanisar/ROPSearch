@@ -39,3 +39,6 @@
 
 # Anything in proj/bin/*
 bin/*
+
+# Visual Studio Code files
+.vscode/*
