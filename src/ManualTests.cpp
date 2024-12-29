@@ -670,6 +670,8 @@ void testLoggingFunctionality() {
 int main(int argc, char* argv[]) {
     UNUSED(argc); UNUSED(argv);
 
+    Log::ProgramLogLevel = Log::Level::Debug;
+
     printProcessInformation(argc, argv); pn;
     normalizeCWD(); pn;
 
