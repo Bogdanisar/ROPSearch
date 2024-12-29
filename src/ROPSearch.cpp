@@ -47,11 +47,22 @@ void NormalizeCWD() {
 int ________Configure_argument_parser________;
 #endif
 
-ArgumentParser gProgramParser("ROPSearch");
+ArgumentParser gProgramParser("ROPSearch", "1.0", default_arguments::help);
 
 void ConfigureArgumentParser() {
+    gProgramParser.add_argument("--version")
+    .help("prints version information and exits")
+    .action([&](const auto &) {
+        LogInfo("Version: %s", "1.0");
+        std::exit(0);
+    })
+    .default_value(false)
+    .implicit_value(true)
+    .nargs(0);
+
     Log::ProgramLogLevel = Log::Level::Info;
     gProgramParser.add_argument("-v", "--verbose")
+    .help("increases output verbosity")
     .action([&](const auto &) {
         int oldLogLevel = (int)Log::ProgramLogLevel;
         int newLogLevel = 2 * oldLogLevel;
