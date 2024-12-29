@@ -44,8 +44,8 @@ class Log {
         } \
     } while (0)
 
-#define LogError(fmt, ...) LogMaybe(Log::Level::Error, true, fmt "\n", ##__VA_ARGS__)
-#define LogWarn(fmt, ...) LogMaybe(Log::Level::Warn, false, fmt "\n", ##__VA_ARGS__)
+#define LogError(fmt, ...) LogMaybe(Log::Level::Error, true, "🔴 " fmt "\n", ##__VA_ARGS__)
+#define LogWarn(fmt, ...) LogMaybe(Log::Level::Warn, false,  "🟡 " fmt "\n", ##__VA_ARGS__)
 #define LogInfo(fmt, ...) LogMaybe(Log::Level::Info, false, fmt "\n", ##__VA_ARGS__)
 #define LogVerbose(fmt, ...) LogMaybe(Log::Level::Verbose, false, fmt "\n", ##__VA_ARGS__)
 #define LogDebug(fmt, ...) LogMaybe(Log::Level::Debug, true, fmt "\n", ##__VA_ARGS__)

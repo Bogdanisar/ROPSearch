@@ -17,11 +17,22 @@
 #define pv(x) std::cout<<#x<<" = "<<(x)<<"; ";std::cout.flush()
 #define pn std::cout<<std::endl
 
-#define exitError(format, ...) LogError("\n" format, ##__VA_ARGS__); LogError("exit(-1)"); exit(-1)
+#define exitError(format, ...) \
+    do { \
+        LogInfo(""); \
+        LogError(format, ##__VA_ARGS__); \
+        LogError("exit(-1);"); \
+        exit(-1); \
+    } while(0)
+
 #define assertMessage(condition, format, ...) \
     do { \
         if (!(condition)) { \
-            exitError("Assert failed!\n" "Assert condition: " #condition "\n" "Assert message:   " format, ##__VA_ARGS__); \
+            LogInfo(""); \
+            LogError("Assert failed!"); \
+            LogError("Assert location:  %s:%i (%s)", __FILE__, __LINE__, __func__); \
+            LogError("Assert condition: " #condition); \
+            LogError("Assert message:   " format, ##__VA_ARGS__); \
         } \
     } while(0)
 
