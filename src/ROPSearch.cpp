@@ -95,12 +95,7 @@ int main(int argc, char* argv[]) {
     PrintProcessInformation();
     NormalizeCWD();
 
-    LogError("LogError message...");
-    LogWarn("LogWarn message...");
-    LogInfo("LogInfo message...");
-    LogVerbose("LogVerbose message...");
-    LogDebug("LogDebug message...");
-
+    LogInfo("No command-line arguments. Try \"--help\"!");
     return 0;
 }
 
