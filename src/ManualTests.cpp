@@ -207,7 +207,7 @@ void testGetExecutableBytesInteractive(string targetExecutable) {
         printf("Please input a virtual memory address (or 0 to exit): ");
         int numMatched = scanf("%lli", &addr);
         if (numMatched != 1) {
-            printf("Bad input...\n");
+            printf("Bad input...\n\n");
             char c;
             while (scanf("%c", &c) == 1) {
                 if (c == '\n') {
@@ -224,12 +224,14 @@ void testGetExecutableBytesInteractive(string targetExecutable) {
 
         for (unsigned long long cAddr = addr; cAddr < (unsigned long long)addr + 20; ++cAddr) {
             if (!vmBytes.isValidVirtualAddressInExecutableSegment(cAddr)) {
+                printf("Address not in virtual memory...\n");
                 break;
             }
 
             ROP::byte b = vmBytes.getByteAtVirtualAddress(cAddr);
             printf("virtual_memory[0x%llx] = 0x%02hhx\n", cAddr, b);
         }
+        printf("\n");
     }
 }
 
