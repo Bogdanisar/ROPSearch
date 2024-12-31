@@ -44,6 +44,7 @@ ArgumentParser gListCmdSubparser("list", "1.0", default_arguments::help);
 void ConfigureListCommandSubparser() {
     gListCmdSubparser.add_description("List all instruction sequences found in the given source.");
 
+    gListCmdSubparser.add_group("Source");
     gListCmdSubparser.add_argument("-pid", "--process-id")
         .help("the pid for the target running process. "
               "The tool needs permission to access the \"/proc/PID/maps\" file. "
@@ -51,6 +52,14 @@ void ConfigureListCommandSubparser() {
         .metavar("PID")
         .required()
         .scan<'i', int>();
+
+    gListCmdSubparser.add_group("Filters");
+    gListCmdSubparser.add_argument("-maxi", "--max-instructions")
+        .help("the maximum number of assembly instructions contained in the same instruction sequence")
+        .metavar("MAXINS")
+        .default_value(10)
+        .scan<'i', int>()
+        .nargs(1);
 
     gProgramParser.add_subparser(gListCmdSubparser);
 }
@@ -91,10 +100,14 @@ int ________List_command________;
 void DoListCommand() {
     assertMessage(gListCmdSubparser, "Inner logic error...");
 
-    int targetPid = gListCmdSubparser.get<int>("-pid");
-    VirtualMemoryInstructions vmInstructions(targetPid);
+    const int targetPid = gListCmdSubparser.get<int>("-pid");
+
+    const int maxInstructions = gListCmdSubparser.get<int>("-maxi");
+    assertMessage(1 <= maxInstructions && maxInstructions <= 100, "Please input a different number of max instructions...");
+    VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = maxInstructions;
 
     InstructionConverter ic;
+    VirtualMemoryInstructions vmInstructions(targetPid);
     auto instrSeqs = vmInstructions.getInstructionSequences();
 
     LogInfo("Found instruction sequences:");

@@ -14,8 +14,8 @@ namespace ROP {
     };
 
     struct ROPConsts {
+        /** Maximum possible number of bytes in an x86 instruction. */
         static const int MaxInstructionBytesCount = 24;
-        static const int MaxInstructionSequenceSize = 10;
         static const bool architectureIsLittleEndian = true;
         static const AssemblySyntax InstructionASMSyntax = AssemblySyntax::Intel;
     };

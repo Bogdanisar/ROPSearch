@@ -3,6 +3,9 @@
 #include <algorithm>
 
 
+// Declaration for static member, with default value.
+int ROP::VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = 10;
+
 void ROP::VirtualMemoryInstructions::disassembleSegmentBytes(const VirtualMemoryExecutableSegment& segm, const int first) {
     assert(first < (int)segm.executableBytes.size());
 
@@ -64,7 +67,7 @@ void ROP::VirtualMemoryInstructions::buildInstructionTrie(
     if (currRightSegmentIdx < 0) {
         return;
     }
-    if (currInstrSeqLength >= ROPConsts::MaxInstructionSequenceSize) {
+    if (currInstrSeqLength >= VirtualMemoryInstructions::MaxInstructionsInInstructionSequence) {
         return;
     }
 

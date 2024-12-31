@@ -46,6 +46,8 @@ namespace ROP {
 
 
         public:
+        static int MaxInstructionsInInstructionSequence;
+
         VirtualMemoryInstructions(int processPid);
 
         // Return a vector of addresses where the instruction sequence is found in virtual memory.
