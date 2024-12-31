@@ -54,9 +54,15 @@ void ConfigureListCommandSubparser() {
         .scan<'i', int>();
 
     gListCmdSubparser.add_group("Filters");
+    gListCmdSubparser.add_argument("-mini", "--min-instructions")
+        .help("the minimum number of assembly instructions contained in the same instruction sequence")
+        .metavar("MIN_INS")
+        .default_value(1)
+        .scan<'i', int>()
+        .nargs(1);
     gListCmdSubparser.add_argument("-maxi", "--max-instructions")
         .help("the maximum number of assembly instructions contained in the same instruction sequence")
-        .metavar("MAXINS")
+        .metavar("MAX_INS")
         .default_value(10)
         .scan<'i', int>()
         .nargs(1);
@@ -101,9 +107,14 @@ void DoListCommand() {
     assertMessage(gListCmdSubparser, "Inner logic error...");
 
     const int targetPid = gListCmdSubparser.get<int>("-pid");
+    const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
+    const int maxInstructions = gListCmdSubparser.get<int>("--max-instructions");
 
-    const int maxInstructions = gListCmdSubparser.get<int>("-maxi");
+    assertMessage(1 <= minInstructions && minInstructions <= 100, "Please input a different number of min instructions...");
     assertMessage(1 <= maxInstructions && maxInstructions <= 100, "Please input a different number of max instructions...");
+    assertMessage(minInstructions <= maxInstructions, "Please input a different number of min/max instructions...");
+
+    // The "--max-instructions" filter will be applied in the object constructor.
     VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = maxInstructions;
 
     InstructionConverter ic;
@@ -114,6 +125,12 @@ void DoListCommand() {
     for (const auto& p : instrSeqs) {
         unsigned long long addr = p.first;
         vector<string> instructionSequence = p.second;
+
+        // Apply the "--min-instructions" filter.
+        if ((int)instructionSequence.size() < minInstructions) {
+            continue;
+        }
+
         string fullSequence = ic.concatenateInstructionsAsm(instructionSequence);
         LogInfo("0x%10llx: %s", addr, fullSequence.c_str());
     }
