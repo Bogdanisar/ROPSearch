@@ -42,9 +42,12 @@ int ________Configure_argument_parser________;
 ArgumentParser gProgramParser("ROPSearch", "1.0", default_arguments::help);
 ArgumentParser gListCmdSubparser("list", "1.0", default_arguments::help);
 
-#define SORT_CRIT_ADDRESS "address"
-#define SORT_CRIT_STRING "string"
-#define SORT_CRIT_NUM_INSTRUCTIONS "num-instr"
+#define SORT_CRIT_ADDRESS_ASC "address-asc"
+#define SORT_CRIT_ADDRESS_DESC "address-desc"
+#define SORT_CRIT_STRING_ASC "string-asc"
+#define SORT_CRIT_STRING_DESC "string-desc"
+#define SORT_CRIT_NUM_INSTRUCTIONS_ASC "num-instr-asc"
+#define SORT_CRIT_NUM_INSTRUCTIONS_DESC "num-instr-desc"
 
 
 void ConfigureListCommandSubparser() {
@@ -83,11 +86,15 @@ void ConfigureListCommandSubparser() {
     gListCmdSubparser.add_argument("-s", "--sort")
         .help("options for sorting the output instructions. "
               "Can be passed multiple times for a list of criteria. Most important first. "
-              "Possible values: '" SORT_CRIT_ADDRESS "', '" SORT_CRIT_STRING "', '" SORT_CRIT_NUM_INSTRUCTIONS "'. "
-              "Default value: '" SORT_CRIT_ADDRESS "', '" SORT_CRIT_NUM_INSTRUCTIONS "'")
+              "Possible values: '" SORT_CRIT_ADDRESS_ASC "', '" SORT_CRIT_ADDRESS_DESC "', "
+                               "'" SORT_CRIT_STRING_ASC "', '" SORT_CRIT_STRING_DESC "', "
+                               "'" SORT_CRIT_NUM_INSTRUCTIONS_ASC "', '" SORT_CRIT_NUM_INSTRUCTIONS_DESC "'. "
+              "Default value: '" SORT_CRIT_ADDRESS_ASC "', '" SORT_CRIT_NUM_INSTRUCTIONS_ASC "'")
         .metavar("CRITERION")
         .nargs(1, 3)
-        .choices(SORT_CRIT_ADDRESS, SORT_CRIT_STRING, SORT_CRIT_NUM_INSTRUCTIONS);
+        .choices(SORT_CRIT_ADDRESS_ASC, SORT_CRIT_ADDRESS_DESC,
+                 SORT_CRIT_STRING_ASC, SORT_CRIT_STRING_DESC,
+                 SORT_CRIT_NUM_INSTRUCTIONS_ASC, SORT_CRIT_NUM_INSTRUCTIONS_DESC);
 
     gProgramParser.add_subparser(gListCmdSubparser);
 }
@@ -129,7 +136,7 @@ void SortListOutput(vector< pair<unsigned long long, vector<string>> >& instrSeq
     vector<string> sortCriteria = gListCmdSubparser.get<vector<string>>("--sort");
     if (sortCriteria.size() == 0) {
         // Set default value.
-        sortCriteria = {SORT_CRIT_ADDRESS, SORT_CRIT_NUM_INSTRUCTIONS};
+        sortCriteria = {SORT_CRIT_ADDRESS_ASC, SORT_CRIT_NUM_INSTRUCTIONS_ASC};
     }
 
     for (int i = 0; i < (int)sortCriteria.size(); ++i) {
@@ -143,16 +150,25 @@ void SortListOutput(vector< pair<unsigned long long, vector<string>> >& instrSeq
     auto comparator = [&](const elemType& a, const elemType& b){
         for (int i = 0; i < (int)sortCriteria.size(); ++i) {
             string criterion = sortCriteria[i];
-            if (criterion == SORT_CRIT_ADDRESS) {
+            if (criterion == SORT_CRIT_ADDRESS_ASC) {
                 auto addressA = a.first, addressB = b.first;
                 if (addressA < addressB) {
                     return true;
                 }
-                else if (addressA > addressB) {
+                if (addressA > addressB) {
                     return false;
                 }
             }
-            else if (criterion == SORT_CRIT_STRING) {
+            else if (criterion == SORT_CRIT_ADDRESS_DESC) {
+                auto addressA = a.first, addressB = b.first;
+                if (addressA > addressB) {
+                    return true;
+                }
+                if (addressA < addressB) {
+                    return false;
+                }
+            }
+            else if (criterion == SORT_CRIT_STRING_ASC) {
                 if (a.second < b.second) {
                     return true;
                 }
@@ -160,12 +176,29 @@ void SortListOutput(vector< pair<unsigned long long, vector<string>> >& instrSeq
                     return false;
                 }
             }
-            else if (criterion == SORT_CRIT_NUM_INSTRUCTIONS) {
+            else if (criterion == SORT_CRIT_STRING_DESC) {
+                if (a.second > b.second) {
+                    return true;
+                }
+                if (a.second < b.second) {
+                    return false;
+                }
+            }
+            else if (criterion == SORT_CRIT_NUM_INSTRUCTIONS_ASC) {
                 auto sizeA = a.second.size(), sizeB = b.second.size();
                 if (sizeA < sizeB) {
                     return true;
                 }
-                else if (sizeA > sizeB) {
+                if (sizeA > sizeB) {
+                    return false;
+                }
+            }
+            else if (criterion == SORT_CRIT_NUM_INSTRUCTIONS_DESC) {
+                auto sizeA = a.second.size(), sizeB = b.second.size();
+                if (sizeA > sizeB) {
+                    return true;
+                }
+                if (sizeA < sizeB) {
                     return false;
                 }
             }
