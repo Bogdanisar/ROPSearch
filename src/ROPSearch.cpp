@@ -67,6 +67,14 @@ void ConfigureListCommandSubparser() {
         .scan<'i', int>()
         .nargs(1);
 
+    gListCmdSubparser.add_group("Output");
+    gListCmdSubparser.add_argument("-asm", "--assembly-syntax")
+        .help("desired assembly syntax for the output instructions. Possible values: \"intel\", \"att\"")
+        .metavar("ASM")
+        .default_value("intel")
+        .choices("intel", "att")
+        .nargs(1);
+
     gProgramParser.add_subparser(gListCmdSubparser);
 }
 
@@ -109,13 +117,18 @@ void DoListCommand() {
     const int targetPid = gListCmdSubparser.get<int>("-pid");
     const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
     const int maxInstructions = gListCmdSubparser.get<int>("--max-instructions");
+    const string asmSyntaxString = gListCmdSubparser.get<string>("--assembly-syntax");
 
     assertMessage(1 <= minInstructions && minInstructions <= 100, "Please input a different number of min instructions...");
     assertMessage(1 <= maxInstructions && maxInstructions <= 100, "Please input a different number of max instructions...");
     assertMessage(minInstructions <= maxInstructions, "Please input a different number of min/max instructions...");
 
-    // The "--max-instructions" filter will be applied in the object constructor.
+    // Apply "--max-instructions" filter. Specifically, instructions will be filtered in the object constructor.
     VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = maxInstructions;
+
+    // Apply "--assembly-syntax" output option.
+    ROP::AssemblySyntax desiredSyntax = (asmSyntaxString == "intel") ? ROP::AssemblySyntax::Intel : ROP::AssemblySyntax::ATT;
+    VirtualMemoryInstructions::innerAssemblySyntax = desiredSyntax;
 
     InstructionConverter ic;
     VirtualMemoryInstructions vmInstructions(targetPid);
