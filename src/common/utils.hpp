@@ -19,20 +19,22 @@
 
 #define exitError(format, ...) \
     do { \
-        LogInfo(""); \
+        LogError(""); \
         LogError(format, ##__VA_ARGS__); \
         LogError("exit(-1);"); \
+        LogError(""); \
         exit(-1); \
     } while(0)
 
 #define assertMessage(condition, format, ...) \
     do { \
         if (!(condition)) { \
-            LogInfo(""); \
+            LogError(""); \
             LogError("Assert failed!"); \
             LogError("Assert location:  %s:%i (%s)", __FILE__, __LINE__, __func__); \
             LogError("Assert condition: " #condition); \
             LogError("Assert message:   " format, ##__VA_ARGS__); \
+            LogError(""); \
             exit(-1); \
         } \
     } while(0)
