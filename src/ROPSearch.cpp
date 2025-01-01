@@ -146,6 +146,16 @@ void SortListOutput(vector< pair<unsigned long long, vector<string>> >& instrSeq
         }
     }
 
+    for (int i = 0; i < (int)sortCriteria.size(); ++i) {
+        for (int j = i + 1; j < (int)sortCriteria.size(); ++j) {
+            string criterion1MainPart = sortCriteria[i].substr(0, sortCriteria[i].find_last_of("-"));
+            string criterion2MainPart = sortCriteria[j].substr(0, sortCriteria[j].find_last_of("-"));
+            assertMessage(criterion1MainPart != criterion2MainPart,
+                          "You can't have both the ascending and descending variants of the same sort criterion (\"%s\")",
+                          criterion1MainPart.c_str());
+        }
+    }
+
     using elemType = pair<unsigned long long, vector<string>>;
     auto comparator = [&](const elemType& a, const elemType& b){
         for (int i = 0; i < (int)sortCriteria.size(); ++i) {
