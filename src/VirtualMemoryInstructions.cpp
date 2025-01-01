@@ -6,6 +6,10 @@
 // Declaration for static member, with default value.
 int ROP::VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = 10;
 
+// Declaration for static member, with default value.
+ROP::AssemblySyntax ROP::VirtualMemoryInstructions::innerAssemblySyntax = ROP::AssemblySyntax::Intel;
+
+
 void ROP::VirtualMemoryInstructions::disassembleSegmentBytes(const VirtualMemoryExecutableSegment& segm, const int first) {
     assert(first < (int)segm.executableBytes.size());
 
@@ -14,7 +18,7 @@ void ROP::VirtualMemoryInstructions::disassembleSegmentBytes(const VirtualMemory
         return;
     }
 
-    AssemblySyntax syntax = ROPConsts::InstructionASMSyntax;
+    AssemblySyntax syntax = VirtualMemoryInstructions::innerAssemblySyntax;
     const int maxInstructionSize = ROPConsts::MaxInstructionBytesCount;
 
     const byte *firstPtr = segm.executableBytes.data() + first;
@@ -126,7 +130,7 @@ ROP::VirtualMemoryInstructions::matchInstructionSequenceInVirtualMemory(std::str
     // so that we are sure it looks exactly like what we have in the internal Trie.
     std::vector<std::string> instructions = this->ic.normalizeInstructionAsm(origInstructionSequenceAsm,
                                                                              origSyntax,
-                                                                             ROP::ROPConsts::InstructionASMSyntax);
+                                                                             VirtualMemoryInstructions::innerAssemblySyntax);
 
     return this->instructionTrie.hasInstructionSequence(instructions);
 }

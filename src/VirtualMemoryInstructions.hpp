@@ -47,6 +47,7 @@ namespace ROP {
 
         public:
         static int MaxInstructionsInInstructionSequence;
+        static AssemblySyntax innerAssemblySyntax;
 
         VirtualMemoryInstructions(int processPid);
 
