@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <algorithm>
 
 #define PUGIXML_HEADER_ONLY
 #include "../deps/pugixml/src/pugixml.hpp"
@@ -41,6 +42,11 @@ int ________Configure_argument_parser________;
 ArgumentParser gProgramParser("ROPSearch", "1.0", default_arguments::help);
 ArgumentParser gListCmdSubparser("list", "1.0", default_arguments::help);
 
+#define SORT_CRIT_ADDRESS "address"
+#define SORT_CRIT_STRING "string"
+#define SORT_CRIT_NUM_INSTRUCTIONS "num-instr"
+
+
 void ConfigureListCommandSubparser() {
     gListCmdSubparser.add_description("List all instruction sequences found in the given source.");
 
@@ -74,6 +80,14 @@ void ConfigureListCommandSubparser() {
         .default_value("intel")
         .choices("intel", "att")
         .nargs(1);
+    gListCmdSubparser.add_argument("-s", "--sort")
+        .help("options for sorting the output instructions. "
+              "Can be passed multiple times for a list of criteria. Most important first. "
+              "Possible values: '" SORT_CRIT_ADDRESS "', '" SORT_CRIT_STRING "', '" SORT_CRIT_NUM_INSTRUCTIONS "'. "
+              "Default value: '" SORT_CRIT_ADDRESS "', '" SORT_CRIT_NUM_INSTRUCTIONS "'")
+        .metavar("CRITERION")
+        .nargs(1, 3)
+        .choices(SORT_CRIT_ADDRESS, SORT_CRIT_STRING, SORT_CRIT_NUM_INSTRUCTIONS);
 
     gProgramParser.add_subparser(gListCmdSubparser);
 }
@@ -111,6 +125,61 @@ void ConfigureArgumentParser() {
 int ________List_command________;
 #endif
 
+void SortListOutput(vector< pair<unsigned long long, vector<string>> >& instrSeqs) {
+    vector<string> sortCriteria = gListCmdSubparser.get<vector<string>>("--sort");
+    if (sortCriteria.size() == 0) {
+        // Set default value.
+        sortCriteria = {SORT_CRIT_ADDRESS, SORT_CRIT_NUM_INSTRUCTIONS};
+    }
+
+    for (int i = 0; i < (int)sortCriteria.size(); ++i) {
+        for (int j = i + 1; j < (int)sortCriteria.size(); ++j) {
+            assertMessage(sortCriteria[i] != sortCriteria[j],
+                          "You can't list the same sort criterion multiple times (\"%s\").", sortCriteria[i].c_str());
+        }
+    }
+
+    using elemType = pair<unsigned long long, vector<string>>;
+    auto comparator = [&](const elemType& a, const elemType& b){
+        for (int i = 0; i < (int)sortCriteria.size(); ++i) {
+            string criterion = sortCriteria[i];
+            if (criterion == SORT_CRIT_ADDRESS) {
+                auto addressA = a.first, addressB = b.first;
+                if (addressA < addressB) {
+                    return true;
+                }
+                else if (addressA > addressB) {
+                    return false;
+                }
+            }
+            else if (criterion == SORT_CRIT_STRING) {
+                if (a.second < b.second) {
+                    return true;
+                }
+                if (a.second > b.second) {
+                    return false;
+                }
+            }
+            else if (criterion == SORT_CRIT_NUM_INSTRUCTIONS) {
+                auto sizeA = a.second.size(), sizeB = b.second.size();
+                if (sizeA < sizeB) {
+                    return true;
+                }
+                else if (sizeA > sizeB) {
+                    return false;
+                }
+            }
+            else {
+                exitError("Sort criterion doesn't match possible values: %s", criterion.c_str());
+            }
+        }
+
+        return false;
+    };
+
+    sort(instrSeqs.begin(), instrSeqs.end(), comparator);
+}
+
 void DoListCommand() {
     assertMessage(gListCmdSubparser, "Inner logic error...");
 
@@ -133,6 +202,9 @@ void DoListCommand() {
     InstructionConverter ic;
     VirtualMemoryInstructions vmInstructions(targetPid);
     auto instrSeqs = vmInstructions.getInstructionSequences();
+
+    // Sort the output according to the "--sort" argument.
+    SortListOutput(instrSeqs);
 
     LogInfo("Found instruction sequences:");
     for (const auto& p : instrSeqs) {

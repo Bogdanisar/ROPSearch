@@ -71,9 +71,6 @@ ROP::InsSeqTrie::getTrieContent() const
         std::reverse(instrSeq.begin(), instrSeq.end());
     }
 
-    // Sort the pairs increasingly. First, by address. Second, by instruction sequence.
-    std::sort(content.begin(), content.end());
-
     return content;
 }
 
