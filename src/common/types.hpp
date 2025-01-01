@@ -5,6 +5,13 @@
 
 
 namespace ROP {
+
+    struct ROPConsts {
+        /** Maximum possible number of bytes in an x86 instruction. */
+        static const int MaxInstructionBytesCount = 24;
+        static const bool architectureIsLittleEndian = true;
+    };
+
     using byte = unsigned char;
     using byteSequence = std::vector<byte>;
 
@@ -13,11 +20,6 @@ namespace ROP {
         ATT, // The assembly instructions are written in AT&T syntax.
     };
 
-    struct ROPConsts {
-        /** Maximum possible number of bytes in an x86 instruction. */
-        static const int MaxInstructionBytesCount = 24;
-        static const bool architectureIsLittleEndian = true;
-    };
 }
 
 
