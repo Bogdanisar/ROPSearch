@@ -171,12 +171,12 @@ ROP::InstructionConverter::convertInstructionSequenceToString(
 }
 
 std::vector<std::string>
-ROP::InstructionConverter::normalizeInstructionAsm(std::string origInsSequenceAsm, ROP::AssemblySyntax inputAsmSyntax) {
+ROP::InstructionConverter::normalizeInstructionAsm(std::string origInsSequenceAsm,
+                                                   ROP::AssemblySyntax inputAsmSyntax,
+                                                   ROP::AssemblySyntax outputAsmSyntax) {
     const byteSequence& insSeqBytes = this->convertInstructionSequenceToBytes(origInsSequenceAsm, inputAsmSyntax).first;
 
-    AssemblySyntax internalSyntax = ROPConsts::InstructionASMSyntax;
-    auto p = this->convertInstructionSequenceToString(insSeqBytes, internalSyntax);
-
+    auto p = this->convertInstructionSequenceToString(insSeqBytes, outputAsmSyntax);
     std::vector<std::string> instructions = p.first;
     assert(p.second == insSeqBytes.size());
 

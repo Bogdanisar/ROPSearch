@@ -58,12 +58,14 @@ namespace ROP {
                                            unsigned long long addr = 0,
                                            const size_t parseCount = 0);
 
-        // Takes instruction(s) given as strings
-        // and normalizes them according to the same syntax we use internally.
-        // - The first argument may contain multiple instructions separated by ";".
-        // - The syntax of the input instructions is given in the second argument.
+        /**
+         * Takes the input instruction(s) and normalizes them according to the required syntax.
+         * @param origInsSequenceAsm The instruction(s), given in assembly, as a string. Multiple instructions are separated by ";".
+         * @param inputAsmSyntax The assembly syntax of `origInsSequenceAsm`.
+         * @param outputAsmSyntax The desired assembly syntax of the returned instructions.
+         */
         std::vector<std::string>
-        normalizeInstructionAsm(std::string origInsSequenceAsm, AssemblySyntax inputAsmSyntax);
+        normalizeInstructionAsm(std::string origInsSequenceAsm, AssemblySyntax inputAsmSyntax, AssemblySyntax outputAsmSyntax);
 
         // Concatenates instructions with "; " between them.
         std::string

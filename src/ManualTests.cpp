@@ -397,7 +397,9 @@ void testInstructionNormalization() {
 
     printf("//////////////////// Normalizing Intel-assembly instructions ////////////////////\n");
     for (const string& insAsm : instructionSequencesIntel) {
-        const vector<string>& normalizedInstructions = ic.normalizeInstructionAsm(insAsm, ROP::AssemblySyntax::Intel);
+        const vector<string>& normalizedInstructions = ic.normalizeInstructionAsm(insAsm,
+                                                                                  ROP::AssemblySyntax::Intel,
+                                                                                  ROP::ROPConsts::InstructionASMSyntax);
         const string& normalizedInsAsm = ic.concatenateInstructionsAsm(normalizedInstructions);
         printf("insAsm = %s\n", insAsm.c_str());
         printf("normalizedInsAsm = %s\n", normalizedInsAsm.c_str());
@@ -433,7 +435,9 @@ void testInstructionNormalization() {
 
     printf("//////////////////// Normalizing AT&T-assembly instructions ////////////////////\n");
     for (const string& insAsm : instructionSequencesATT) {
-        const vector<string>& normalizedInstructions = ic.normalizeInstructionAsm(insAsm, ROP::AssemblySyntax::ATT);
+        const vector<string>& normalizedInstructions = ic.normalizeInstructionAsm(insAsm,
+                                                                                  ROP::AssemblySyntax::ATT,
+                                                                                  ROP::ROPConsts::InstructionASMSyntax);
         const string& normalizedInsAsm = ic.concatenateInstructionsAsm(normalizedInstructions);
         printf("insAsm = %s\n", insAsm.c_str());
         printf("normalizedInsAsm = %s\n", normalizedInsAsm.c_str());
@@ -483,7 +487,7 @@ void testFindingInstructionSequenceInMemory(string targetExecutable) {
     for (const string& insSeq : instructionSequences) {
         printf("Instruction sequence: %s\n", insSeq.c_str());
 
-        auto normalizedArray = ic.normalizeInstructionAsm(insSeq, AssemblySyntax::Intel);
+        auto normalizedArray = ic.normalizeInstructionAsm(insSeq, AssemblySyntax::Intel, ROP::ROPConsts::InstructionASMSyntax);
         auto normalizedString = ic.concatenateInstructionsAsm(normalizedArray);
         printf("Normalized instruction sequence: %s\n", normalizedString.c_str());
 
@@ -680,11 +684,11 @@ int main(int argc, char* argv[]) {
     // testVirtualMemoryMapping(getpid()); pn;
     // testPrintCodeSegmentsOfLoadedELFs(getpid()); pn;
     // testVirtualMemoryExecutableBytes(getpid()); pn;
-    testGetExecutableBytesInteractive("vulnerable.exe"); pn;
+    // testGetExecutableBytesInteractive("vulnerable.exe"); pn;
     // testKeystoneFrameworkIntegration(); pn;
     // testCapstoneFrameworkIntegrationBadBytes(); pn;
     // testKeystoneCapstoneFrameworkIntegration(); pn;
-    // testInstructionNormalization(); pn;
+    testInstructionNormalization(); pn;
     // testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
     // printVMInstructionSequences("vulnerable.exe"); pn;
     // testXMLReading();pn;

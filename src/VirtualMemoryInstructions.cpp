@@ -124,7 +124,9 @@ std::vector<unsigned long long>
 ROP::VirtualMemoryInstructions::matchInstructionSequenceInVirtualMemory(std::string origInstructionSequenceAsm, AssemblySyntax origSyntax) {
     // Normalize the instruction sequence,
     // so that we are sure it looks exactly like what we have in the internal Trie.
-    std::vector<std::string> instructions = this->ic.normalizeInstructionAsm(origInstructionSequenceAsm, origSyntax);
+    std::vector<std::string> instructions = this->ic.normalizeInstructionAsm(origInstructionSequenceAsm,
+                                                                             origSyntax,
+                                                                             ROP::ROPConsts::InstructionASMSyntax);
 
     return this->instructionTrie.hasInstructionSequence(instructions);
 }
