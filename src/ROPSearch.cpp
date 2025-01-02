@@ -272,7 +272,7 @@ void DoListCommand() {
         }
 
         string fullSequence = ic.concatenateInstructionsAsm(instructionSequence);
-        LogInfo("0x%10llx: %s", addr, fullSequence.c_str());
+        LogInfo("0x%016llx: %s", addr, fullSequence.c_str());
     }
 }
 
