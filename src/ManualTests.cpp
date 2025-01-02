@@ -672,6 +672,20 @@ void testLoggingFunctionality() {
     LogError("Error flag: %i\n", (int)Log::Level::Error);
 }
 
+void testBytesOfInteger() {
+    LogDebug("Integer: %hhu", (unsigned char)0b01110111);
+    for (auto b : BytesOfInteger((unsigned char)0b01110111)) {
+        LogVar((int)b); LogLine();
+    }
+    LogLine();
+
+    LogDebug("Integer: %llu", (unsigned long long)213234523);
+    for (auto b : BytesOfInteger((unsigned long long)213234523)) {
+        LogVar((int)b); LogLine();
+    }
+    LogLine();
+}
+
 
 int main(int argc, char* argv[]) {
     UNUSED(argc); UNUSED(argv);
@@ -689,12 +703,13 @@ int main(int argc, char* argv[]) {
     // testCapstoneFrameworkIntegrationBadBytes(); pn;
     // testKeystoneCapstoneFrameworkIntegration(); pn;
     // testInstructionNormalization(); pn;
-    testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
+    // testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
     // printVMInstructionSequences("vulnerable.exe"); pn;
     // testXMLReading();pn;
     // testGadgetMouldConfiguration("vulnerableHelped.exe"); pn;
     // testGadgetCatalog("vulnerableHelped.exe"); pn;
     // testLoggingFunctionality(); pn;
+    testBytesOfInteger(); pn;
 
     return 0;
 }

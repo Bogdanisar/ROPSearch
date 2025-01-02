@@ -11,6 +11,7 @@
 #define PUGIXML_HEADER_ONLY
 #include "../../deps/pugixml/src/pugixml.hpp"
 
+#include "types.hpp"
 #include "../Log.hpp"
 
 
@@ -85,6 +86,19 @@ static std::string XmlNodeToString(pugi::xml_node node) {
 
     return writer.result;
 }
+
+template<typename integerType>
+static ROP::byteSequence BytesOfInteger(integerType integer) {
+    ROP::byteSequence bytes;
+
+    for (unsigned k = 0; k < sizeof(integer); ++k, integer >>= 8) {
+        ROP::byte b = (integer & 0xFF);
+        bytes.push_back(b);
+    }
+
+    return bytes;
+}
+
 
 #pragma GCC diagnostic pop
 

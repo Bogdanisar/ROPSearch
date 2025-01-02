@@ -75,6 +75,9 @@ void ConfigureListCommandSubparser() {
         .default_value(10)
         .scan<'i', int>()
         .nargs(1);
+    gListCmdSubparser.add_argument("--no-null")
+        .help("ignore instruction sequences that have a \"0x00\" byte in their virtual memory address. Note: This may print nothing on 64bit arch.")
+        .flag();
 
     gListCmdSubparser.add_group("Output");
     gListCmdSubparser.add_argument("-asm", "--assembly-syntax")
@@ -230,6 +233,7 @@ void DoListCommand() {
     const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
     const int maxInstructions = gListCmdSubparser.get<int>("--max-instructions");
     const string asmSyntaxString = gListCmdSubparser.get<string>("--assembly-syntax");
+    const bool ignoreNullBytes = gListCmdSubparser.get<bool>("--no-null");
 
     assertMessage(1 <= minInstructions && minInstructions <= 100, "Please input a different number of min instructions...");
     assertMessage(1 <= maxInstructions && maxInstructions <= 100, "Please input a different number of max instructions...");
@@ -257,6 +261,14 @@ void DoListCommand() {
         // Apply the "--min-instructions" filter.
         if ((int)instructionSequence.size() < minInstructions) {
             continue;
+        }
+
+        // Apply the "--no-null" filter
+        if (ignoreNullBytes) {
+            byteSequence addressBytes = BytesOfInteger(addr);
+            if (find(addressBytes.begin(), addressBytes.end(), (ROP::byte)0x00) != addressBytes.end()) {
+                continue;
+            }
         }
 
         string fullSequence = ic.concatenateInstructionsAsm(instructionSequence);
