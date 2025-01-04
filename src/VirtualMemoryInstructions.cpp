@@ -10,6 +10,71 @@ int ROP::VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = 10;
 ROP::AssemblySyntax ROP::VirtualMemoryInstructions::innerAssemblySyntax = ROP::AssemblySyntax::Intel;
 
 
+#pragma region Parse key instructions
+#if false
+int ________Parse_key_instructions________;
+#endif
+
+static inline bool BytesAreRetInstruction(const ROP::byteSequence& bSeq, int first, int last) {
+    const int numBytes = (last - first + 1);
+
+    // "ret" instruction.
+    if (numBytes == 1 && bSeq[first] == 0xC3) { return true; }
+
+    // "ret imm16" instruction.
+    if (numBytes == 3 && bSeq[first] == 0xC2) { return true; }
+
+    return false;
+}
+
+/**
+ * Check if the given bytes represent an instruction
+ * that is useful as the ending instruction of an instruction sequence.
+ */
+static inline bool BytesAreUsefulInstructionAtSequenceEnd(const ROP::byteSequence& bSeq, int first, int last) {
+    assert(0 <= first && first < (int)bSeq.size());
+    assert(0 <= last && last < (int)bSeq.size());
+    assert(first <= last);
+
+    if (BytesAreRetInstruction(bSeq, first, last)) {
+        return true;
+    }
+
+    // TODO: Add more.
+
+    // // Relative "call" instruction.
+    // if (numBytes == 5 && bSeq[first] == 0xE8) { return true; }
+
+    return false;
+}
+
+/**
+ * Check if the given bytes represent an instruction
+ * that is useful inside of an instruction sequence,
+ * where "inside" means anywhere except the last instruction.
+ */
+static bool BytesAreUsefulInstructionInsideSequence(const ROP::byteSequence& bSeq, int first, int last) {
+    assert(0 <= first && first < (int)bSeq.size());
+    assert(0 <= last && last < (int)bSeq.size());
+    assert(first <= last);
+
+    if (BytesAreRetInstruction(bSeq, first, last)) {
+        return false;
+    }
+
+    // TODO: Add more
+
+    return true;
+}
+
+#pragma endregion Parse key instructions
+
+
+#pragma region Methods
+#if false
+int ________Methods________;
+#endif
+
 void ROP::VirtualMemoryInstructions::disassembleSegmentBytes(const VirtualMemoryExecutableSegment& segm, const int first) {
     assert(first < (int)segm.executableBytes.size());
 
@@ -42,26 +107,6 @@ void ROP::VirtualMemoryInstructions::disassembleSegmentBytes(const VirtualMemory
     }
 }
 
-// Check if the given instruction is useful as the ending instruction of an instruction sequence.
-static bool IsInstructionUsefulAsInstructionSequenceEnd(const ROP::byteSequence& bSeq, int first, int last) {
-    assert(0 <= first && first < (int)bSeq.size());
-    assert(0 <= last && last < (int)bSeq.size());
-    assert(first <= last);
-
-    const int numBytes = (last - first + 1);
-
-    // "ret" instruction.
-    if (numBytes == 1 && bSeq[first] == 0xC3) { return true; }
-
-    // "ret imm16" instruction.
-    if (numBytes == 3 && bSeq[first] == 0xC2) { return true; }
-
-    // // Relative "call" instruction.
-    // if (numBytes == 5 && bSeq[first] == 0xE8) { return true; }
-
-    return false;
-}
-
 void ROP::VirtualMemoryInstructions::buildInstructionTrie(
     const VirtualMemoryExecutableSegment& segm,
     const int currRightSegmentIdx,
@@ -80,9 +125,15 @@ void ROP::VirtualMemoryInstructions::buildInstructionTrie(
     int last = currRightSegmentIdx;
 
     for (; first >= 0 && (last - first + 1) <= maxInstructionSize; --first) {
-        if (currInstrSeqLength == 0 && !IsInstructionUsefulAsInstructionSequenceEnd(segm.executableBytes, first, last)) {
-            // This segment might represent a valid instruction but we don't consider it
+        if (currInstrSeqLength == 0 && !BytesAreUsefulInstructionAtSequenceEnd(segm.executableBytes, first, last)) {
+            // This index interval might represent a valid instruction but we don't consider it
             // to be useful as the ending instruction of an instruction sequence.
+            continue;
+        }
+
+        if (currInstrSeqLength > 0 && !BytesAreUsefulInstructionInsideSequence(segm.executableBytes, first, last)) {
+            // This index interval might represent a valid instruction but we don't consider it
+            // to be a useful instruction inside of an instruction sequence.
             continue;
         }
 
@@ -139,3 +190,5 @@ std::vector< std::pair<unsigned long long, std::vector<std::string>> >
 ROP::VirtualMemoryInstructions::getInstructionSequences() const {
     return this->instructionTrie.getTrieContent();
 }
+
+#pragma endregion Methods
