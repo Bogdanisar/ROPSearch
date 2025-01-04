@@ -28,6 +28,16 @@ static inline bool BytesAreRetInstruction(const ROP::byteSequence& bSeq, int fir
 }
 
 /**
+ * Check if this is a relative "call" instruction ("relative" meaning "RIP = RIP + offset").
+ * @note As an asm string, this is represented as "call finalAddress",
+ *       even though only the offset is encoded.
+ */
+static inline bool BytesAreRelativeCallInstruction64bit(const ROP::byteSequence& bSeq, int first, int last) {
+    const int numBytes = (last - first + 1);
+    return (numBytes == 5 && bSeq[first] == 0xE8);
+}
+
+/**
  * Check if the given bytes represent an instruction
  * that is useful as the ending instruction of an instruction sequence.
  */
@@ -41,9 +51,6 @@ static inline bool BytesAreUsefulInstructionAtSequenceEnd(const ROP::byteSequenc
     }
 
     // TODO: Add more.
-
-    // // Relative "call" instruction.
-    // if (numBytes == 5 && bSeq[first] == 0xE8) { return true; }
 
     return false;
 }
@@ -59,6 +66,10 @@ static bool BytesAreUsefulInstructionInsideSequence(const ROP::byteSequence& bSe
     assert(first <= last);
 
     if (BytesAreRetInstruction(bSeq, first, last)) {
+        return false;
+    }
+
+    if (BytesAreRelativeCallInstruction64bit(bSeq, first, last)) {
         return false;
     }
 
