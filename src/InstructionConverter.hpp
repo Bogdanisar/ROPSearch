@@ -27,19 +27,32 @@ namespace ROP {
         public:
         InstructionConverter();
 
-        // Returns the converted instruction sequence and the number of parsed instructions.
-        // Note: A trailing ";" in the asm is counted as an additional instruction.
-        // "addr": The virtual memory address of the first instruction. This can influence the output for some instructions.
+        /**
+         * Convert instructions (assembly strings) to a byte sequence.
+         * @param instructionSequenceAsm The assemby strings. Multiple instructions can be separated by ";".
+         * @param asmSyntax The assembly syntax of the input instruction string.
+         * @param addr The virtual memory address of the first instruction.
+         *             This might influence the output for some instructions.
+         * @return The converted instruction sequence and the number of parsed instructions.
+         * @warning A trailing ";" in the asm is counted as an additional instruction.
+         */
         std::pair<byteSequence, unsigned>
         convertInstructionSequenceToBytes(std::string instructionSequenceAsm,
                                           AssemblySyntax asmSyntax,
                                           unsigned long long addr = 0);
 
-        // Returns { The converted instructions (as strings); The number of disassembled bytes };
-        // The syntax of the returned instructions is given in the second argument.
-        // The number of disassembled bytes will be smaller than the size of the input if there's a parsing error.
-        // "addr": The virtual memory address of the first byte. This can influence the output for some instructions.
-        // "parseCount": The maximum number of assembly instructions to parse from the bytes. Pass "0" for "all of them".
+        /**
+         * Converts / disassembles a sequence of bytes to instructions (as assembly strings).
+         * The number of disassembled bytes might be smaller than the size of the input
+         * if asked or if there's a parsing error.
+         * @param instrSeqBytes The input byte sequence.
+         * @param instrSeqBytesCount The byte count of the input byte sequence.
+         * @param asmSyntax The desired syntax for the output assembly string.
+         * @param addr The virtual memory address of the first byte.
+         *             This might affect the output string of some instructions.
+         * @param parseCount The max number of output instructions to parse or 0 to disassemble all input bytes.
+         * @return The converted instructions (as strings) and the number of disassembled bytes.
+         */
         std::pair<std::vector<std::string>, unsigned>
         convertInstructionSequenceToString(const byte * const instrSeqBytes,
                                            const size_t instrSeqBytesCount,
@@ -47,11 +60,17 @@ namespace ROP {
                                            unsigned long long addr = 0,
                                            const size_t parseCount = 0);
 
-        // Returns { The converted instructions (as strings); The number of disassembled bytes };
-        // The syntax of the returned instructions is given in the second argument.
-        // The number of disassembled bytes will be smaller than the size of the input if there's a parsing error.
-        // "addr": The virtual memory address of the first byte. This can influence the output for some instructions.
-        // "parseCount": The maximum number of assembly instructions to parse from the bytes. Pass "0" for "all of them".
+        /**
+         * Converts / disassembles a sequence of bytes to instructions (as assembly strings).
+         * The number of disassembled bytes might be smaller than the size of the input
+         * if asked or if there's a parsing error.
+         * @param instructionSequence The input byte sequence.
+         * @param asmSyntax The desired syntax for the output assembly string.
+         * @param addr The virtual memory address of the first byte.
+         *             This might affect the output string of some instructions.
+         * @param parseCount The max number of output instructions to parse or 0 to disassemble all input bytes.
+         * @return The converted instructions (as strings) and the number of disassembled bytes.
+         */
         std::pair<std::vector<std::string>, unsigned>
         convertInstructionSequenceToString(byteSequence instructionSequence,
                                            AssemblySyntax asmSyntax,
@@ -67,7 +86,9 @@ namespace ROP {
         std::vector<std::string>
         normalizeInstructionAsm(std::string origInsSequenceAsm, AssemblySyntax inputAsmSyntax, AssemblySyntax outputAsmSyntax);
 
-        // Concatenates instructions with "; " between them.
+        /**
+         * Concatenates instructions with "; " between them.
+         */
         std::string
         concatenateInstructionsAsm(std::vector<std::string> instructionsAsm);
 
