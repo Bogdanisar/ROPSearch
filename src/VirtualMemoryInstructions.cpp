@@ -15,6 +15,46 @@ ROP::AssemblySyntax ROP::VirtualMemoryInstructions::innerAssemblySyntax = ROP::A
 int ________Parse_key_instructions________;
 #endif
 
+/** Check if this byte represents an instruction prefix byte in x86. */
+static inline bool ByteIsInstructionPrefix(ROP::byte b) {
+    switch (b) {
+        // LOCK prefix
+        case 0xF0: return true;
+
+        // REPNE/REPNZ prefix
+        case 0xF2: return true;
+
+        // REP or REPE/REPZ prefix
+        case 0xF3: return true;
+
+        // CS segment override / Branch not taken
+        case 0x2E: return true;
+
+        // SS segment override
+        case 0x36: return true;
+
+        // DS segment override / Branch taken
+        case 0x3E: return true;
+
+        // ES segment override
+        case 0x26: return true;
+
+        // FS segment override
+        case 0x64: return true;
+
+        // GS segment override
+        case 0x65: return true;
+
+        // Operand-size override prefix
+        case 0x66: return true;
+
+        // Address-size override prefix
+        case 0x67: return true;
+
+        default: return false;
+    }
+}
+
 static inline bool BytesAreRetInstruction(const ROP::byteSequence& bSeq, int first, int last) {
     const int numBytes = (last - first + 1);
 
@@ -46,6 +86,11 @@ static inline bool BytesAreUsefulInstructionAtSequenceEnd(const ROP::byteSequenc
     assert(0 <= last && last < (int)bSeq.size());
     assert(first <= last);
 
+    if (first < last && ByteIsInstructionPrefix(bSeq[first])
+        && BytesAreUsefulInstructionAtSequenceEnd(bSeq, first + 1, last)) {
+        return true;
+    }
+
     if (BytesAreRetInstruction(bSeq, first, last)) {
         return true;
     }
@@ -57,25 +102,30 @@ static inline bool BytesAreUsefulInstructionAtSequenceEnd(const ROP::byteSequenc
 
 /**
  * Check if the given bytes represent an instruction
- * that is useful inside of an instruction sequence,
+ * that is unhelpful inside of an instruction sequence,
  * where "inside" means anywhere except the last instruction.
  */
-static bool BytesAreUsefulInstructionInsideSequence(const ROP::byteSequence& bSeq, int first, int last) {
+static bool BytesAreBadInstructionInsideSequence(const ROP::byteSequence& bSeq, int first, int last) {
     assert(0 <= first && first < (int)bSeq.size());
     assert(0 <= last && last < (int)bSeq.size());
     assert(first <= last);
 
+    if (first < last && ByteIsInstructionPrefix(bSeq[first])
+        && BytesAreBadInstructionInsideSequence(bSeq, first + 1, last)) {
+        return true;
+    }
+
     if (BytesAreRetInstruction(bSeq, first, last)) {
-        return false;
+        return true;
     }
 
     if (BytesAreRelativeCallInstruction64bit(bSeq, first, last)) {
-        return false;
+        return true;
     }
 
     // TODO: Add more
 
-    return true;
+    return false;
 }
 
 #pragma endregion Parse key instructions
@@ -142,7 +192,7 @@ void ROP::VirtualMemoryInstructions::buildInstructionTrie(
             continue;
         }
 
-        if (currInstrSeqLength > 0 && !BytesAreUsefulInstructionInsideSequence(segm.executableBytes, first, last)) {
+        if (currInstrSeqLength > 0 && BytesAreBadInstructionInsideSequence(segm.executableBytes, first, last)) {
             // This index interval might represent a valid instruction but we don't consider it
             // to be a useful instruction inside of an instruction sequence.
             continue;
