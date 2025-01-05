@@ -275,17 +275,33 @@ void testKeystoneFrameworkIntegration() {
     }
 }
 
-void testCapstoneFrameworkIntegrationBadBytes() {
-    byteSequence bytes = {
-        // "endbr64" instruction:
-        (ROP::byte)'\xF3',
-        (ROP::byte)'\x0F',
-        (ROP::byte)'\x1E',
-        (ROP::byte)'\xFA',
+void testCapstoneFrameworkIntegration() {
 
-        // junk:
-        (ROP::byte)'\xFF',
-        (ROP::byte)'\xFF',
+    // byteSequence bytes = {
+    //     // "endbr64" instruction:
+    //     (ROP::byte)'\xF3',
+    //     (ROP::byte)'\x0F',
+    //     (ROP::byte)'\x1E',
+    //     (ROP::byte)'\xFA',
+
+    //     // junk:
+    //     (ROP::byte)'\xFF',
+    //     (ROP::byte)'\xFF',
+    // };
+
+
+    byteSequence bytes = {
+        // "gs" segment prefix:
+        0x65,
+
+        // relative "call" opcode:
+        0xE8,
+
+        // address offset:
+        0x5B,
+        0x41,
+    	0x5C,
+        0x41,
     };
 
     // Disassemble these bytes into assembly instructions as strings;
@@ -700,7 +716,7 @@ int main(int argc, char* argv[]) {
     // testVirtualMemoryExecutableBytes(getpid()); pn;
     // testGetExecutableBytesInteractive("vulnerable.exe"); pn;
     // testKeystoneFrameworkIntegration(); pn;
-    // testCapstoneFrameworkIntegrationBadBytes(); pn;
+    testCapstoneFrameworkIntegration(); pn;
     // testKeystoneCapstoneFrameworkIntegration(); pn;
     // testInstructionNormalization(); pn;
     // testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
@@ -709,7 +725,7 @@ int main(int argc, char* argv[]) {
     // testGadgetMouldConfiguration("vulnerableHelped.exe"); pn;
     // testGadgetCatalog("vulnerableHelped.exe"); pn;
     // testLoggingFunctionality(); pn;
-    testBytesOfInteger(); pn;
+    // testBytesOfInteger(); pn;
 
     return 0;
 }
