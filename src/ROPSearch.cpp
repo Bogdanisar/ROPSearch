@@ -54,13 +54,29 @@ void ConfigureListCommandSubparser() {
     gListCmdSubparser.add_description("List all instruction sequences found in the given source.");
 
     gListCmdSubparser.add_group("Source");
-    gListCmdSubparser.add_argument("-pid", "--process-id")
+    auto &mutExGroup = gListCmdSubparser.add_mutually_exclusive_group(true);
+    mutExGroup.add_argument("-pid", "--process-id")
         .help("the pid for the target running process. "
               "The tool needs permission to access the \"/proc/PID/maps\" file. "
               "For example, run it under the same user as the target process or under the super-user)")
         .metavar("PID")
-        .required()
         .scan<'i', int>();
+    mutExGroup.add_argument("-exec", "--executable-path")
+        .help("a path to an executable (ELF) file. "
+              "The tool will load all executable segments found in the file (usually just one). "
+              "Can be passed multiple times. "
+              "Can be used with the \"--base-address\" argument")
+        .metavar("PATH")
+        .nargs(argparse::nargs_pattern::at_least_one);
+    gListCmdSubparser.add_argument("-addr", "--base-address")
+        .help("This argument is only relevant when used with \"--executable-path\". "
+              "It's a hexadecimal address which will be used as a base address for a loaded executable segment. "
+              "Can be passed multiple times and each new address will be used for the next found segment. "
+              "If not enough addresses, then the `Elf64_Phdr.p_vaddr` value is used instead")
+        .metavar("ADDR")
+        .scan<'x', unsigned long long>()
+        .nargs(argparse::nargs_pattern::any)
+        .default_value(vector<unsigned long long>{});
 
     gListCmdSubparser.add_group("Filters");
     gListCmdSubparser.add_argument("-mini", "--min-instructions")
@@ -229,7 +245,6 @@ void SortListOutput(vector< pair<unsigned long long, vector<string>> >& instrSeq
 void DoListCommand() {
     assertMessage(gListCmdSubparser, "Inner logic error...");
 
-    const int targetPid = gListCmdSubparser.get<int>("-pid");
     const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
     const int maxInstructions = gListCmdSubparser.get<int>("--max-instructions");
     const string asmSyntaxString = gListCmdSubparser.get<string>("--assembly-syntax");
@@ -246,8 +261,18 @@ void DoListCommand() {
     ROP::AssemblySyntax desiredSyntax = (asmSyntaxString == "intel") ? ROP::AssemblySyntax::Intel : ROP::AssemblySyntax::ATT;
     VirtualMemoryInstructions::innerAssemblySyntax = desiredSyntax;
 
+    VirtualMemoryInstructions vmInstructions = [&]() {
+        if (auto pid = gListCmdSubparser.present<int>("--process-id")) {
+            return VirtualMemoryInstructions(*pid);
+        }
+        else {
+            vector<string> execs = gListCmdSubparser.get<vector<string>>("--executable-path");
+            vector<unsigned long long> addrs = gListCmdSubparser.get<vector<unsigned long long>>("--base-address");
+            return VirtualMemoryInstructions(execs, addrs);
+        }
+    }();
+
     InstructionConverter ic;
-    VirtualMemoryInstructions vmInstructions(targetPid);
     auto instrSeqs = vmInstructions.getInstructionSequences();
 
     // Sort the output according to the "--sort" argument.
