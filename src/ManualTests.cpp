@@ -702,6 +702,55 @@ void testBytesOfInteger() {
     LogLine();
 }
 
+void testLoadVirtualMemoryOfExecutablePaths() {
+    vector<string> execPaths = {
+        "/usr/lib/x86_64-linux-gnu/libc.so.6",
+        "/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+    };
+    vector<unsigned long long> baseAddresses = {
+        // 0x7ffff7c28000,
+        // 0x7ffff7fc6000,
+    };
+    VirtualMemoryInstructions vmInfo(execPaths, baseAddresses);
+
+    // These are some sample instruction sequences found in libc.so.6
+    // Note: Using Intel syntax here.
+    ROP::AssemblySyntax syntax = ROP::AssemblySyntax::Intel;
+    vector<string> instructionSequences = {
+        "add ch, cl ; ret",
+        "and word ptr [rdi], sp ; ret",
+        "dec dword ptr [rax - 0x77] ; ret 0x840f",
+        "mov ecx, eax ; mov eax, ecx ; ret",
+        "mov edx, 0xffffffff ; ret",
+        "or al, 0x7e ; ret",
+        "sub eax, esi ; ret",
+        "xchg eax, ebp ; ret 0xffff",
+        "xor rax, rax ; ret"
+    };
+
+    InstructionConverter ic;
+
+    printf("======= Searching for instruction sequences in virtual memory... =======\n");
+    for (const string& insSeq : instructionSequences) {
+        printf("Instruction sequence: %s\n", insSeq.c_str());
+
+        auto normalizedArray = ic.normalizeInstructionAsm(insSeq, AssemblySyntax::Intel, ROP::AssemblySyntax::Intel);
+        auto normalizedString = ic.concatenateInstructionsAsm(normalizedArray);
+        printf("Normalized instruction sequence: %s\n", normalizedString.c_str());
+
+        vector<unsigned long long> matchedAddresses = vmInfo.matchInstructionSequenceInVirtualMemory(insSeq, syntax);
+        if (matchedAddresses.size() != 0) {
+            for (unsigned long long addr : matchedAddresses) {
+                printf("Found at 0x%llx\n", addr);
+            }
+        }
+        else {
+            printf("Didn't find this instruction sequence in virtual memory...\n");
+        }
+        printf("\n");
+    }
+}
+
 
 int main(int argc, char* argv[]) {
     UNUSED(argc); UNUSED(argv);
@@ -716,7 +765,7 @@ int main(int argc, char* argv[]) {
     // testVirtualMemoryExecutableBytes(getpid()); pn;
     // testGetExecutableBytesInteractive("vulnerable.exe"); pn;
     // testKeystoneFrameworkIntegration(); pn;
-    testCapstoneFrameworkIntegration(); pn;
+    // testCapstoneFrameworkIntegration(); pn;
     // testKeystoneCapstoneFrameworkIntegration(); pn;
     // testInstructionNormalization(); pn;
     // testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
@@ -726,6 +775,7 @@ int main(int argc, char* argv[]) {
     // testGadgetCatalog("vulnerableHelped.exe"); pn;
     // testLoggingFunctionality(); pn;
     // testBytesOfInteger(); pn;
+    testLoadVirtualMemoryOfExecutablePaths(); pn;
 
     return 0;
 }

@@ -235,6 +235,12 @@ ROP::VirtualMemoryInstructions::VirtualMemoryInstructions(int processPid)
     this->buildInstructionTrie();
 }
 
+ROP::VirtualMemoryInstructions::VirtualMemoryInstructions(const std::vector<std::string> execPaths,
+                                                          const std::vector<unsigned long long> baseAddresses)
+: vmExecBytes(execPaths, baseAddresses) {
+    this->buildInstructionTrie();
+}
+
 
 std::vector<unsigned long long>
 ROP::VirtualMemoryInstructions::matchInstructionSequenceInVirtualMemory(std::string origInstructionSequenceAsm, AssemblySyntax origSyntax) {

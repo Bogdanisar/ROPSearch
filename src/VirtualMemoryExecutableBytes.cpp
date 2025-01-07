@@ -5,12 +5,14 @@
 #include "ELFParser.hpp"
 
 
-void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments() {
+void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(int processPid) {
+    const VirtualMemoryMapping& vmSegmMapping(processPid);
+
     // This is used as an optimization in case there are multiple executable segments for the same ELF path.
     // (Otherwise, we would need to create an ELFParser multiple times for the same path).
     std::map<std::string, ELFParser> elfPathToELFParser;
 
-    const std::vector<VirtualMemorySegmentMapping>& allSegmentMaps = this->vmSegmMapping.getSegmentMaps();
+    const std::vector<VirtualMemorySegmentMapping>& allSegmentMaps = vmSegmMapping.getSegmentMaps();
     for (const VirtualMemorySegmentMapping& segmentMap : allSegmentMaps) {
         if (!ELFParser::elfPathIsAcceptable(segmentMap.path)) {
             continue;
@@ -52,15 +54,61 @@ void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments() {
     std::sort(this->executableSegments.begin(), this->executableSegments.end(), comparator);
 }
 
-ROP::VirtualMemoryExecutableBytes::VirtualMemoryExecutableBytes(int processPid)
-: vmSegmMapping(processPid) {
-    this->buildExecutableSegments();
+void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(const std::vector<std::string> execPaths,
+                                                                const std::vector<unsigned long long> baseAddresses) {
+    // This is used as an optimization in case we have the same ELF path multiple times.
+    // (Otherwise, we would need to create more than one ELFParser for the same path).
+    std::map<std::string, ELFParser> elfPathToELFParser;
+
+    unsigned addrIndex = 0;
+    for (const std::string& path : execPaths) {
+        assertMessage(ELFParser::elfPathIsAcceptable(path), "Bad path: %s", path.c_str());
+
+        if (elfPathToELFParser.count(path) == 0) {
+            elfPathToELFParser[path] = ELFParser(path);
+        }
+
+        ELFParser& elfParser = elfPathToELFParser[path];
+        const std::vector<Elf64_Phdr>& elfCodeSegmentHdrs = elfParser.getCodeSegmentHeaders();
+        const std::vector<byteSequence>& elfCodeSegmentBytes = elfParser.getCodeSegmentBytes();
+
+        for (size_t i = 0; i < elfCodeSegmentHdrs.size(); ++i) {
+            const Elf64_Phdr& codeSegmHdr = elfCodeSegmentHdrs[i];
+            const byteSequence& codeSegmBytes = elfCodeSegmentBytes[i];
+
+            VirtualMemoryExecutableSegment execSegm;
+
+            if (addrIndex < baseAddresses.size()) {
+                execSegm.startVirtualAddress = baseAddresses[addrIndex++];
+            }
+            else {
+                execSegm.startVirtualAddress = codeSegmHdr.p_vaddr;
+            }
+
+            // Maybe use `execSegm.startVirtualAddress + codeSegmHdr.p_memsz` ?
+            execSegm.endVirtualAddress = execSegm.startVirtualAddress + codeSegmBytes.size();
+            execSegm.executableBytes = codeSegmBytes;
+
+            this->executableSegments.push_back(execSegm);
+        }
+    }
+
+    auto comparator = [](const VirtualMemoryExecutableSegment& a, const VirtualMemoryExecutableSegment& b){
+        return a.startVirtualAddress < b.startVirtualAddress;
+    };
+
+    std::sort(this->executableSegments.begin(), this->executableSegments.end(), comparator);
 }
 
-
-const ROP::VirtualMemoryMapping& ROP::VirtualMemoryExecutableBytes::getVMSegmMapping() const {
-    return this->vmSegmMapping;
+ROP::VirtualMemoryExecutableBytes::VirtualMemoryExecutableBytes(int processPid) {
+    this->buildExecutableSegments(processPid);
 }
+
+ROP::VirtualMemoryExecutableBytes::VirtualMemoryExecutableBytes(const std::vector<std::string> execPaths,
+                                                                const std::vector<unsigned long long> baseAddresses) {
+    this->buildExecutableSegments(execPaths, baseAddresses);
+}
+
 
 const std::vector<ROP::VirtualMemoryExecutableSegment>& ROP::VirtualMemoryExecutableBytes::getExecutableSegments() const {
     return this->executableSegments;

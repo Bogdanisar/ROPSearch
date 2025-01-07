@@ -24,15 +24,17 @@ namespace ROP {
     };
 
     class VirtualMemoryExecutableBytes {
-        VirtualMemoryMapping vmSegmMapping;
         std::vector<VirtualMemoryExecutableSegment> executableSegments;
 
-        void buildExecutableSegments();
+        void buildExecutableSegments(int processPid);
+        void buildExecutableSegments(const std::vector<std::string> execPaths,
+                                     const std::vector<unsigned long long> baseAddresses);
 
         public:
         VirtualMemoryExecutableBytes(int processPid);
+        VirtualMemoryExecutableBytes(const std::vector<std::string> execPaths,
+                                     const std::vector<unsigned long long> baseAddresses);
 
-        const VirtualMemoryMapping& getVMSegmMapping() const;
         const std::vector<VirtualMemoryExecutableSegment>& getExecutableSegments() const;
 
         bool isValidVirtualAddressInExecutableSegment(unsigned long long vAddress) const;

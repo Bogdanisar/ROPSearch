@@ -50,6 +50,8 @@ namespace ROP {
         static AssemblySyntax innerAssemblySyntax;
 
         VirtualMemoryInstructions(int processPid);
+        VirtualMemoryInstructions(const std::vector<std::string> execPaths,
+                                  const std::vector<unsigned long long> baseAddresses);
 
         // Return a vector of addresses where the instruction sequence is found in virtual memory.
         std::vector<unsigned long long>
