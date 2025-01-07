@@ -31,7 +31,20 @@ namespace ROP {
                                      const std::vector<unsigned long long> baseAddresses);
 
         public:
+        /**
+         * Get executable bytes by reading the "/proc/PID/maps" file
+         * and then loading executable segments from each ELF file according to the mapping.
+         */
         VirtualMemoryExecutableBytes(int processPid);
+
+        /**
+         * Load all executable segments from each given executable path.
+         * @param execPaths Paths to executable files.
+         * @param baseAddresses Values that will be used, in order, as a base address
+         *                      for each executable segment that we find in the given executable files.
+         *                      If this array is empty or has fewer addresses than the total number of segments,
+         *                      the Elf64_Phdr.p_vaddr value found in the ELF file will be used instead.
+         */
         VirtualMemoryExecutableBytes(const std::vector<std::string> execPaths,
                                      const std::vector<unsigned long long> baseAddresses);
 
