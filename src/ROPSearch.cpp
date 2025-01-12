@@ -58,10 +58,12 @@ void AddVerboseArgumentToParser(ArgumentParser& parser) {
 
 void ConfigureListCommandSubparser() {
     gListCmdSubparser.add_description("List all instruction sequences found in the given source.");
+    gListCmdSubparser.set_usage_max_line_width(160);
 
     AddVerboseArgumentToParser(gListCmdSubparser);
 
-    gListCmdSubparser.add_group("Source");
+    // "Source" arguments
+    gListCmdSubparser.add_usage_newline();
     auto &mutExGroup = gListCmdSubparser.add_mutually_exclusive_group(true);
     mutExGroup.add_argument("-pid", "--process-id")
         .help("the pid for the target running process. "
@@ -86,7 +88,8 @@ void ConfigureListCommandSubparser() {
         .nargs(argparse::nargs_pattern::any)
         .default_value(vector<unsigned long long>{});
 
-    gListCmdSubparser.add_group("Filters");
+    // "Filter" arguments
+    gListCmdSubparser.add_usage_newline();
     gListCmdSubparser.add_argument("-mini", "--min-instructions")
         .help("the minimum number of assembly instructions contained in the same instruction sequence")
         .metavar("MIN_INS")
@@ -103,7 +106,8 @@ void ConfigureListCommandSubparser() {
         .help("ignore instruction sequences that have a \"0x00\" byte in their virtual memory address. Note: This may print nothing on 64bit arch.")
         .flag();
 
-    gListCmdSubparser.add_group("Output");
+    // "Output" arguments
+    gListCmdSubparser.add_usage_newline();
     gListCmdSubparser.add_argument("-asm", "--assembly-syntax")
         .help("desired assembly syntax for the output instructions. Possible values: \"intel\", \"att\"")
         .metavar("ASM")
