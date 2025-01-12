@@ -123,7 +123,7 @@ void ConfigureArgumentParser() {
     .help("prints version information and exits")
     .action([&](const auto &) {
         LogInfo("Version: %s", "1.0");
-        std::exit(0);
+        exit(0);
     })
     .default_value(false)
     .implicit_value(true)
