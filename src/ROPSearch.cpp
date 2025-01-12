@@ -272,7 +272,7 @@ void DoListCommand() {
     // Sort the output according to the "--sort" argument.
     SortListOutput(instrSeqs);
 
-    LogInfo("Found instruction sequences:");
+    unsigned long long totalPrinted = 0;
     for (const auto& p : instrSeqs) {
         unsigned long long addr = p.first;
         vector<string> instructionSequence = p.second;
@@ -292,7 +292,11 @@ void DoListCommand() {
 
         string fullSequence = ic.concatenateInstructionsAsm(instructionSequence);
         LogInfo("0x%016llx: %s", addr, fullSequence.c_str());
+        totalPrinted += 1;
     }
+
+    LogInfo("");
+    LogInfo("Found %llu instruction sequences.", totalPrinted);
 }
 
 #pragma endregion List command
