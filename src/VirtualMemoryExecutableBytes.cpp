@@ -62,7 +62,7 @@ void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(const std::vecto
 
     unsigned addrIndex = 0;
     for (const std::string& path : execPaths) {
-        assertMessage(ELFParser::elfPathIsAcceptable(path), "Bad path: %s", path.c_str());
+        assertMessage(ELFParser::elfPathIsAcceptable(path), "Bad path: \"%s\"", path.c_str());
 
         if (elfPathToELFParser.count(path) == 0) {
             elfPathToELFParser[path] = ELFParser(path);
