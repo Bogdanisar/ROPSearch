@@ -60,7 +60,8 @@ static inline std::string GetAbsPathToProcExecutable() {
 }
 
 static inline void SetCWDToExecutableLocation() {
-    std::filesystem::path execPath(GetAbsPathToProcExecutable());
+    // Get the path to the running executable.
+    std::filesystem::path execPath = GetAbsPathToProcExecutable();
 
     // Remove the file path component at the end of the path.
     std::filesystem::path parentDirPath = execPath.remove_filename();

@@ -25,12 +25,6 @@ void PrintProcessInformation() {
     LogVerbose("My PID: %i", (int)getpid());
 }
 
-void NormalizeCWD() {
-    SetCWDToExecutableLocation();
-    string currentWorkingDirectory = filesystem::current_path();
-    LogVerbose("Set Current Working Directory to: \"%s\"\n", CSTR(currentWorkingDirectory));
-}
-
 #pragma endregion Misc
 
 
@@ -322,7 +316,6 @@ int main(int argc, char* argv[]) {
     }
 
     PrintProcessInformation();
-    NormalizeCWD();
 
     if (gListCmdSubparser) {
         DoListCommand();
