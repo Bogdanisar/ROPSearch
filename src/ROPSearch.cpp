@@ -44,8 +44,22 @@ ArgumentParser gListCmdSubparser("list", "1.0", default_arguments::help);
 #define SORT_CRIT_NUM_INSTRUCTIONS_DESC "num-instr-desc"
 
 
+void AddVerboseArgumentToParser(ArgumentParser& parser) {
+    parser.add_argument("-v", "--verbose")
+    .help("increases output verbosity")
+    .action([&](const auto &) {
+        int oldLogLevel = (int)Log::ProgramLogLevel;
+        int newLogLevel = 2 * oldLogLevel;
+        Log::ProgramLogLevel = (Log::Level)newLogLevel;
+    })
+    .append()
+    .nargs(0);
+}
+
 void ConfigureListCommandSubparser() {
     gListCmdSubparser.add_description("List all instruction sequences found in the given source.");
+
+    AddVerboseArgumentToParser(gListCmdSubparser);
 
     gListCmdSubparser.add_group("Source");
     auto &mutExGroup = gListCmdSubparser.add_mutually_exclusive_group(true);
@@ -121,17 +135,6 @@ void ConfigureArgumentParser() {
     })
     .default_value(false)
     .implicit_value(true)
-    .nargs(0);
-
-    Log::ProgramLogLevel = Log::Level::Info;
-    gProgramParser.add_argument("-v", "--verbose")
-    .help("increases output verbosity")
-    .action([&](const auto &) {
-        int oldLogLevel = (int)Log::ProgramLogLevel;
-        int newLogLevel = 2 * oldLogLevel;
-        Log::ProgramLogLevel = (Log::Level)newLogLevel;
-    })
-    .append()
     .nargs(0);
 
     ConfigureListCommandSubparser();
@@ -308,7 +311,8 @@ int ________Main________;
 #endif
 
 int main(int argc, char* argv[]) {
-    // UNUSED(argc); UNUSED(argv);
+    // Set default log level.
+    Log::ProgramLogLevel = Log::Level::Info;
 
     ConfigureArgumentParser();
 
