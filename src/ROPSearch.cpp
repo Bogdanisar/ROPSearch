@@ -83,7 +83,7 @@ void ConfigureListCommandSubparser() {
               "It's a hexadecimal address which will be used as a base address for a loaded executable segment. "
               "Can be passed multiple times and each new address will be used for the next found segment. "
               "If not enough addresses, then the `Elf64_Phdr.p_vaddr` value is used instead")
-        .metavar("ADDR")
+        .metavar("HEX")
         .scan<'x', unsigned long long>()
         .nargs(argparse::nargs_pattern::any)
         .default_value(vector<unsigned long long>{});
@@ -92,13 +92,13 @@ void ConfigureListCommandSubparser() {
     gListCmdSubparser.add_usage_newline();
     gListCmdSubparser.add_argument("-mini", "--min-instructions")
         .help("the minimum number of assembly instructions contained in the same instruction sequence")
-        .metavar("MIN_INS")
+        .metavar("INT")
         .default_value(1)
         .scan<'i', int>()
         .nargs(1);
     gListCmdSubparser.add_argument("-maxi", "--max-instructions")
         .help("the maximum number of assembly instructions contained in the same instruction sequence")
-        .metavar("MAX_INS")
+        .metavar("INT")
         .default_value(10)
         .scan<'i', int>()
         .nargs(1);
@@ -110,7 +110,7 @@ void ConfigureListCommandSubparser() {
     gListCmdSubparser.add_usage_newline();
     gListCmdSubparser.add_argument("-asm", "--assembly-syntax")
         .help("desired assembly syntax for the output instructions. Possible values: \"intel\", \"att\"")
-        .metavar("ASM")
+        .metavar("STR")
         .default_value("intel")
         .choices("intel", "att")
         .nargs(1);
@@ -121,7 +121,7 @@ void ConfigureListCommandSubparser() {
                                "'" SORT_CRIT_STRING_ASC "', '" SORT_CRIT_STRING_DESC "', "
                                "'" SORT_CRIT_NUM_INSTRUCTIONS_ASC "', '" SORT_CRIT_NUM_INSTRUCTIONS_DESC "'. "
               "Default value: '" SORT_CRIT_ADDRESS_ASC "', '" SORT_CRIT_NUM_INSTRUCTIONS_ASC "'")
-        .metavar("CRITERION")
+        .metavar("STR")
         .nargs(1, 3)
         .choices(SORT_CRIT_ADDRESS_ASC, SORT_CRIT_ADDRESS_DESC,
                  SORT_CRIT_STRING_ASC, SORT_CRIT_STRING_DESC,
