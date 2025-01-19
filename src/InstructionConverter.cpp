@@ -35,7 +35,13 @@ void ROP::InstructionConverter::initCapstone() {
         exitError("Capstone: cs_option() failed with error %u!\n", (unsigned)err);
     }
 
+    err = cs_option(this->capstoneHandle, CS_OPT_DETAIL, CS_OPT_OFF);
+    if (err != CS_ERR_OK) {
+        exitError("Capstone: cs_option() failed with error %u!", (unsigned)err);
+    }
+
     this->csHandleSyntax = AssemblySyntax::Intel;
+    this->csDetailOption = CS_OPT_OFF;
 }
 
 ROP::InstructionConverter::InstructionConverter() {
@@ -96,32 +102,48 @@ cleanup:
     return {instructionSequence, numDecodedInstructions};
 }
 
-std::pair<std::vector<std::string>, unsigned>
+unsigned
 ROP::InstructionConverter::convertInstructionSequenceToString(
     const byte * const instrSeqBytes,
     const size_t instrSeqBytesCount,
     AssemblySyntax asmSyntax,
     unsigned long long addr,
-    const size_t parseCount
+    const size_t parseCount,
+    std::vector<std::string> *outInstructionAsm,
+    std::vector<RegisterInfo> *outRegInfo
 ) {
     cs_err err;
-    size_t newSyntaxValue;
+    cs_opt_value newSyntaxValue;
+    cs_opt_value newDetailOpt;
 	cs_insn *decodedInstructions = NULL;
 	size_t decodedInstructionsCount;
     size_t idx;
-    std::vector<std::string> decodedInstructionsAsm;
     unsigned totalDecodedBytes = 0;
+
+    (*outInstructionAsm).clear();
 
     // Adjust the handle (if needed) to use Intel or AT&T syntax.
     if (this->csHandleSyntax != asmSyntax) {
         newSyntaxValue = (asmSyntax == AssemblySyntax::Intel) ? CS_OPT_SYNTAX_INTEL : CS_OPT_SYNTAX_ATT;
         err = cs_option(this->capstoneHandle, CS_OPT_SYNTAX, newSyntaxValue);
         if (err != CS_ERR_OK) {
-            LogError("Capstone: cs_option() failed with error %u!", (unsigned)err);
+            LogError("Capstone: cs_option(CS_OPT_SYNTAX) failed with error %u!", (unsigned)err);
             goto cleanup;
         }
 
         this->csHandleSyntax = asmSyntax;
+    }
+
+    // Adjust the handle (if needed) to enable/disable DETAIL mode.
+    newDetailOpt = (outRegInfo != NULL) ? CS_OPT_ON : CS_OPT_OFF;
+    if (this->csDetailOption != newDetailOpt) {
+        err = cs_option(this->capstoneHandle, CS_OPT_DETAIL, newDetailOpt);
+        if (err != CS_ERR_OK) {
+            LogError("Capstone: cs_option(CS_OPT_DETAIL) failed with error %u!", (unsigned)err);
+            goto cleanup;
+        }
+
+        this->csDetailOption = newDetailOpt;
     }
 
 	decodedInstructionsCount = cs_disasm(this->capstoneHandle,
@@ -145,8 +167,32 @@ ROP::InstructionConverter::convertInstructionSequenceToString(
             instructionAsm += " " + operands;
         }
 
-        decodedInstructionsAsm.push_back(instructionAsm);
         totalDecodedBytes += decodedInstructions[idx].size;
+        (*outInstructionAsm).push_back(instructionAsm);
+
+        if (outRegInfo != NULL) {
+            RegisterInfo ri;
+
+            cs_regs regsRead, regsWritten;
+            uint8_t readCount = 0, writeCount = 0;
+            cs_err regsRet = cs_regs_access(this->capstoneHandle, &decodedInstructions[idx],
+                                            regsRead, &readCount, regsWritten, &writeCount);
+            if (regsRet != CS_ERR_OK) {
+                LogError("Capstone: cs_regs_access() failed with error %u", (unsigned)regsRet);
+                goto cleanup;
+            }
+
+            for (uint8_t i = 0; i < readCount; ++i) {
+                size_t registerIndex = regsRead[i];
+                ri.rRegs.set(registerIndex, true);
+            }
+            for (uint8_t i = 0; i < writeCount; ++i) {
+                size_t registerIndex = regsWritten[i];
+                ri.wRegs.set(registerIndex, true);
+            }
+
+            (*outRegInfo).push_back(ri);
+        }
     }
 
 cleanup:
@@ -155,19 +201,27 @@ cleanup:
     }
 
 // Final
-    return { decodedInstructionsAsm, totalDecodedBytes };
+    return totalDecodedBytes;
 }
 
-std::pair<std::vector<std::string>, unsigned>
+unsigned
 ROP::InstructionConverter::convertInstructionSequenceToString(
-    byteSequence instructionSequence,
+    const byteSequence& instructionSequence,
     AssemblySyntax asmSyntax,
     unsigned long long addr,
-    const size_t parseCount
+    const size_t parseCount,
+    std::vector<std::string> *outInstructionAsm,
+    std::vector<RegisterInfo> *outRegInfo
 ) {
     const byte *instrSeqBytes = (const byte *)instructionSequence.data();
     const size_t instrSeqBytesCount = instructionSequence.size();
-    return this->convertInstructionSequenceToString(instrSeqBytes, instrSeqBytesCount, asmSyntax, addr, parseCount);
+    return this->convertInstructionSequenceToString(instrSeqBytes,
+                                                    instrSeqBytesCount,
+                                                    asmSyntax,
+                                                    addr,
+                                                    parseCount,
+                                                    outInstructionAsm,
+                                                    outRegInfo);
 }
 
 std::vector<std::string>
@@ -176,9 +230,9 @@ ROP::InstructionConverter::normalizeInstructionAsm(std::string origInsSequenceAs
                                                    ROP::AssemblySyntax outputAsmSyntax) {
     const byteSequence& insSeqBytes = this->convertInstructionSequenceToBytes(origInsSequenceAsm, inputAsmSyntax).first;
 
-    auto p = this->convertInstructionSequenceToString(insSeqBytes, outputAsmSyntax);
-    std::vector<std::string> instructions = p.first;
-    assert(p.second == insSeqBytes.size());
+    std::vector<std::string> instructions;
+    auto convertedBytes = this->convertInstructionSequenceToString(insSeqBytes, outputAsmSyntax, 0, 0, &instructions);
+    assert(convertedBytes == insSeqBytes.size());
 
     return instructions;
 }

@@ -1,6 +1,7 @@
 #ifndef INSTRUCTION_CONVERTER_H
 #define INSTRUCTION_CONVERTER_H
 
+#include <bitset>
 #include <vector>
 
 #include <capstone/capstone.h>
@@ -10,6 +11,14 @@
 
 
 namespace ROP {
+
+    struct RegisterInfo {
+        // Registers that are read by the instruction (see "x86_reg" enum).
+        std::bitset<X86_REG_ENDING> rRegs;
+
+        // Registers that are written by the instruction (see "x86_reg" enum).
+        std::bitset<X86_REG_ENDING> wRegs;
+    };
 
     class InstructionConverter {
         // Inner assembler framework;
@@ -21,6 +30,7 @@ namespace ROP {
         // Inner disassembler framework;
         csh capstoneHandle;
         AssemblySyntax csHandleSyntax;
+        cs_opt_value csDetailOption;
 
         void initCapstone();
 
@@ -42,40 +52,37 @@ namespace ROP {
                                           unsigned long long addr = 0);
 
         /**
-         * Converts / disassembles a sequence of bytes to instructions (as assembly strings).
+         * Converts / disassembles a sequence of bytes into instructions (as assembly strings).
          * The number of disassembled bytes might be smaller than the size of the input
          * if asked or if there's a parsing error.
          * @param instrSeqBytes The input byte sequence.
          * @param instrSeqBytesCount The byte count of the input byte sequence.
          * @param asmSyntax The desired syntax for the output assembly string.
-         * @param addr The virtual memory address of the first byte.
-         *             This might affect the output string of some instructions.
+         * @param addr The virtual memory address of the first byte. This might
+         *             affect the output string of some instructions. Use 0 otherwise.
          * @param parseCount The max number of output instructions to parse or 0 to disassemble all input bytes.
-         * @return The converted instructions (as strings) and the number of disassembled bytes.
+         * @param outInstructionAsm The assembly strings of the instructions decoded from the input bytes.
+         * @param outRegInfo Register information for each decoded instruction, if desired. Can be NULL.
+         *                   Note: Getting the register info might imply a performance overhead.
+         *
+         * @return The number of disassembled bytes. Will be 0 if invalid input or error.
          */
-        std::pair<std::vector<std::string>, unsigned>
+        unsigned
         convertInstructionSequenceToString(const byte * const instrSeqBytes,
                                            const size_t instrSeqBytesCount,
                                            AssemblySyntax asmSyntax,
-                                           unsigned long long addr = 0,
-                                           const size_t parseCount = 0);
+                                           unsigned long long addr,
+                                           const size_t parseCount,
+                                           std::vector<std::string> *outInstructionAsm,
+                                           std::vector<RegisterInfo> *outRegInfo = NULL);
 
-        /**
-         * Converts / disassembles a sequence of bytes to instructions (as assembly strings).
-         * The number of disassembled bytes might be smaller than the size of the input
-         * if asked or if there's a parsing error.
-         * @param instructionSequence The input byte sequence.
-         * @param asmSyntax The desired syntax for the output assembly string.
-         * @param addr The virtual memory address of the first byte.
-         *             This might affect the output string of some instructions.
-         * @param parseCount The max number of output instructions to parse or 0 to disassemble all input bytes.
-         * @return The converted instructions (as strings) and the number of disassembled bytes.
-         */
-        std::pair<std::vector<std::string>, unsigned>
-        convertInstructionSequenceToString(byteSequence instructionSequence,
+        unsigned
+        convertInstructionSequenceToString(const byteSequence& instructionSequence,
                                            AssemblySyntax asmSyntax,
-                                           unsigned long long addr = 0,
-                                           const size_t parseCount = 0);
+                                           unsigned long long addr,
+                                           const size_t parseCount,
+                                           std::vector<std::string> *outInstructionAsm,
+                                           std::vector<RegisterInfo> *outRegInfo = NULL);
 
         /**
          * Takes the input instruction(s) and normalizes them according to the required syntax.

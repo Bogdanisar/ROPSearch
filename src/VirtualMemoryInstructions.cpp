@@ -151,9 +151,14 @@ void ROP::VirtualMemoryInstructions::disassembleSegmentBytes(const VirtualMemory
     const unsigned long long firstAddr = segm.startVirtualAddress + first;
     int segmentSize = std::min(maxInstructionSize, (int)segm.executableBytes.size() - first);
 
-    auto p = this->ic.convertInstructionSequenceToString(firstPtr, segmentSize, syntax, firstAddr, 1);
-    std::vector<std::string>& instructions = p.first;
-    unsigned totalDisassembledBytes = p.second;
+    std::vector<std::string> instructions;
+    unsigned totalDisassembledBytes;
+    totalDisassembledBytes = this->ic.convertInstructionSequenceToString(firstPtr,
+                                                                         segmentSize,
+                                                                         syntax,
+                                                                         firstAddr,
+                                                                         1,
+                                                                         &instructions);
 
     if (instructions.size() == 1) {
         int last = first + totalDisassembledBytes - 1;

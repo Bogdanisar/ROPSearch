@@ -276,6 +276,7 @@ void testKeystoneFrameworkIntegration() {
 }
 
 void testCapstoneFrameworkIntegration() {
+    InstructionConverter ic;
 
     // byteSequence bytes = {
     //     // "endbr64" instruction:
@@ -305,12 +306,16 @@ void testCapstoneFrameworkIntegration() {
     };
 
     // Disassemble these bytes into assembly instructions as strings;
-    InstructionConverter ic;
-    auto p = ic.convertInstructionSequenceToString(bytes, ROP::AssemblySyntax::Intel);
-    vector<string> instructions = p.first;
+    vector<string> instructions;
+    unsigned disassembledBytes;
+    disassembledBytes = ic.convertInstructionSequenceToString(bytes,
+                                                              ROP::AssemblySyntax::Intel,
+                                                              0,
+                                                              0,
+                                                              &instructions);
 
     printf("Number of input bytes: %u\n", (unsigned)bytes.size());
-    printf("Number of disassembled bytes: %u\n", (unsigned)p.second);
+    printf("Number of disassembled bytes: %u\n", disassembledBytes);
 
     printf("Disassembled instructions:\n");
     for (size_t i = 0; i < instructions.size(); ++i) {
@@ -364,8 +369,11 @@ void testKeystoneCapstoneFrameworkIntegration() {
 
 
         // Encode these bytes back into instructions as strings;
-        auto p = ic.convertInstructionSequenceToString(originalByteSeq, syntax);
-        vector<string> newInstructions = p.first;
+        vector<string> newInstructions;
+        unsigned disassembledBytes;
+        disassembledBytes = ic.convertInstructionSequenceToString(originalByteSeq, syntax, 0, 0, &newInstructions);
+        assert(disassembledBytes != 0);
+
         printf("Re-encoded instructions:\n");
         for (size_t i = 0; i < newInstructions.size(); ++i) {
             printf("    instr[%i] = %s\n", (int)i, newInstructions[i].c_str());
@@ -766,7 +774,7 @@ int main(int argc, char* argv[]) {
     // testGetExecutableBytesInteractive("vulnerable.exe"); pn;
     // testKeystoneFrameworkIntegration(); pn;
     // testCapstoneFrameworkIntegration(); pn;
-    // testKeystoneCapstoneFrameworkIntegration(); pn;
+    testKeystoneCapstoneFrameworkIntegration(); pn;
     // testInstructionNormalization(); pn;
     // testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
     // printVMInstructionSequences("vulnerable.exe"); pn;
@@ -775,7 +783,7 @@ int main(int argc, char* argv[]) {
     // testGadgetCatalog("vulnerableHelped.exe"); pn;
     // testLoggingFunctionality(); pn;
     // testBytesOfInteger(); pn;
-    testLoadVirtualMemoryOfExecutablePaths(); pn;
+    // testLoadVirtualMemoryOfExecutablePaths(); pn;
 
     return 0;
 }
