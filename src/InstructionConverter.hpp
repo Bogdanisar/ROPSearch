@@ -100,6 +100,11 @@ namespace ROP {
         concatenateInstructionsAsm(std::vector<std::string> instructionsAsm);
 
         ~InstructionConverter();
+
+
+        static const char * convertCapstoneRegIdToString(x86_reg regId);
+
+        static x86_reg convertStringToCapstoneRegId(std::string regString);
     };
 
 }

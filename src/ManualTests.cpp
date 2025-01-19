@@ -323,6 +323,115 @@ void testCapstoneFrameworkIntegration() {
     }
 }
 
+void testCapstoneGetRegisterInfo() {
+    InstructionConverter ic;
+
+    vector<byteSequence> byteSequences = {
+        {
+            // "endbr64" instruction:
+            (ROP::byte)'\xF3',
+            (ROP::byte)'\x0F',
+            (ROP::byte)'\x1E',
+            (ROP::byte)'\xFA',
+
+            // junk:
+            (ROP::byte)'\xFF',
+            (ROP::byte)'\xFF',
+        },
+
+        {
+            // "gs" segment prefix:
+            0x65,
+
+            // relative "call" opcode:
+            0xE8,
+
+            // address offset:
+            0x5B,
+            0x41,
+            0x5C,
+            0x41,
+        },
+
+        {
+            // "xor %rax, %rax" instruction:
+            (ROP::byte)'\x48',
+            (ROP::byte)'\x31',
+            (ROP::byte)'\xC0',
+        },
+
+        {
+            // "xor %rcx, %rcx" instruction:
+            (ROP::byte)'\x48',
+            (ROP::byte)'\x31',
+            (ROP::byte)'\xC9',
+        },
+
+        {
+            // "nop; pop %rax; syscall; pop %r10; mov %rax, (%r10)"
+            (ROP::byte)'\x90',
+            (ROP::byte)'\x58',
+            (ROP::byte)'\x0F',
+            (ROP::byte)'\x05',
+            (ROP::byte)'\x41',
+            (ROP::byte)'\x5A',
+            (ROP::byte)'\x49',
+            (ROP::byte)'\x89',
+            (ROP::byte)'\x02',
+        },
+    };
+
+    for (const byteSequence& bytes : byteSequences) {
+        // Disassemble these bytes into assembly instructions as strings;
+        vector<string> instructions;
+        vector<RegisterInfo> regInfo;
+        unsigned disassembledBytes;
+        disassembledBytes = ic.convertInstructionSequenceToString(bytes,
+                                                                  ROP::AssemblySyntax::Intel,
+                                                                  0,
+                                                                  0,
+                                                                  &instructions,
+                                                                  &regInfo);
+        assert(instructions.size() == regInfo.size());
+
+        printf("Number of input bytes: %u\n", (unsigned)bytes.size());
+        printf("Number of disassembled bytes: %u\n", disassembledBytes);
+
+        printf("Disassembled instructions:\n");
+        for (size_t i = 0; i < instructions.size(); ++i) {
+            printf("instr[%i] = %s\n", (int)i, instructions[i].c_str());
+
+            printf("Read registers: ");
+            for (unsigned regIndex = 0; regIndex < (unsigned)X86_REG_ENDING; ++regIndex) {
+                if (regInfo[i].rRegs.test(regIndex)) {
+                    printf("%s ", InstructionConverter::convertCapstoneRegIdToString((x86_reg)regIndex));
+                }
+            }
+            printf("\n");
+
+            printf("Written registers: ");
+            for (unsigned regIndex = 0; regIndex < (unsigned)X86_REG_ENDING; ++regIndex) {
+                if (regInfo[i].wRegs.test(regIndex)) {
+                    printf("%s ", InstructionConverter::convertCapstoneRegIdToString((x86_reg)regIndex));
+                }
+            }
+            printf("\n");
+
+            printf("\n");
+        }
+
+        printf("\n");
+    }
+
+    LogVar(InstructionConverter::convertCapstoneRegIdToString(X86_REG_RAX)); LogLine();
+    LogVar(InstructionConverter::convertCapstoneRegIdToString(X86_REG_R15)); LogLine();
+    LogVar(InstructionConverter::convertCapstoneRegIdToString(X86_REG_EFLAGS)); LogLine();
+
+    LogVar(InstructionConverter::convertStringToCapstoneRegId("rax")); LogLine();
+    LogVar(InstructionConverter::convertStringToCapstoneRegId("bl")); LogLine();
+    LogVar(InstructionConverter::convertStringToCapstoneRegId("r13")); LogLine();
+}
+
 void testKeystoneCapstoneFrameworkIntegration() {
     // Using AT&T syntax for the instructions below.
     ROP::AssemblySyntax syntax = ROP::AssemblySyntax::ATT;
@@ -774,7 +883,8 @@ int main(int argc, char* argv[]) {
     // testGetExecutableBytesInteractive("vulnerable.exe"); pn;
     // testKeystoneFrameworkIntegration(); pn;
     // testCapstoneFrameworkIntegration(); pn;
-    testKeystoneCapstoneFrameworkIntegration(); pn;
+    testCapstoneGetRegisterInfo(); pn;
+    // testKeystoneCapstoneFrameworkIntegration(); pn;
     // testInstructionNormalization(); pn;
     // testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
     // printVMInstructionSequences("vulnerable.exe"); pn;
