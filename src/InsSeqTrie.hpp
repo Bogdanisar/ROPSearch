@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "InstructionConverter.hpp"
+
 
 namespace ROP {
 
@@ -19,6 +21,8 @@ namespace ROP {
         struct Node {
             // A list of virtual addresses where the ins sequence denoted by this node can be found.
             std::vector<unsigned long long> matchingVirtualAddresses;
+            RegisterInfo regInfo;
+
             std::map<std::string, Node *> children;
         };
 
@@ -35,8 +39,14 @@ namespace ROP {
 
         InsSeqTrie();
 
-        Node* addInstruction(const std::string& instruction, unsigned long long vAddress);
-        Node* addInstruction(const std::string& instruction, unsigned long long vAddress, Node *node);
+        Node* addInstruction(const std::string& instruction,
+                             unsigned long long vAddress,
+                             const RegisterInfo *regInfo = NULL);
+
+        Node* addInstruction(const std::string& instruction,
+                             unsigned long long vAddress,
+                             Node *node,
+                             const RegisterInfo *regInfo = NULL);
 
         std::vector<unsigned long long> hasInstructionSequence(const std::vector<std::string>& instructionSequence) const;
 

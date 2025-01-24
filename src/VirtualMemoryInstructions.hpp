@@ -24,12 +24,21 @@ namespace ROP {
 
         /*
         This data structure is used for optimizing (through memoization) the construction of the inner trie.
-        - disassembledSegment[first] == {last, instruction},
-          if [first, last] is a valid bytes segment that disassembles into "instruction".
-        - disassembledSegment[first] == {-1, ""},
-          if there is no valid [first, last] bytes segment (for the purpose of disassembly).
+        - `disassembledSegment[first]` == `{last, instruction}`,
+          if `[first, last]` is a valid bytes segment that disassembles into `instruction`.
+          This segment is unique for `first` (if it exists).
+        - `disassembledSegment[first]` == `{-1, ""}`,
+          if there is no valid `[first, last]` bytes segment (for the purpose of disassembly).
         */
         std::unordered_map<int, std::pair<int, std::string>> disassembledSegment;
+
+        /*
+        This data structure is used for optimizing (through memoization) the construction of the inner trie.
+        `regInfoForSegment[first]` = The register information associated with the instruction at
+        the `[first, last]` bytes segment described by `disassembledSegment[first]`,
+        if the segment is valid and the register information was queried.
+        */
+        std::unordered_map<int, RegisterInfo> regInfoForSegment;
 
         // Check if there is an index "last" such that [first, last] can be disassembled into a valid instruction.
         // Note: Since x86 is a prefix-free architecture, this "last" index is unique (if it exists).

@@ -152,13 +152,15 @@ void ROP::VirtualMemoryInstructions::disassembleSegmentBytes(const VirtualMemory
     int segmentSize = std::min(maxInstructionSize, (int)segm.executableBytes.size() - first);
 
     std::vector<std::string> instructions;
+    std::vector<RegisterInfo> regInfo;
     unsigned totalDisassembledBytes;
     totalDisassembledBytes = this->ic.convertInstructionSequenceToString(firstPtr,
                                                                          segmentSize,
                                                                          syntax,
                                                                          firstAddr,
                                                                          1,
-                                                                         &instructions);
+                                                                         &instructions,
+                                                                         &regInfo);
 
     if (instructions.size() == 1) {
         int last = first + totalDisassembledBytes - 1;
@@ -166,6 +168,10 @@ void ROP::VirtualMemoryInstructions::disassembleSegmentBytes(const VirtualMemory
         // The left-side index "first" corresponds uniquely to the [first, last] segment.
         // The segment disassembles into the "instructions[0]" instruction.
         this->disassembledSegment[first] = {last, instructions[0]};
+
+        if (true) {
+            this->regInfoForSegment[first] = regInfo[0];
+        }
     }
     else {
         // There is no "last" index such that [first, last] is a valid instruction.
@@ -218,7 +224,7 @@ void ROP::VirtualMemoryInstructions::buildInstructionTrie(
         // Insert the instruction at this segment into the trie;
         const std::string& instruction = p.second;
         unsigned long long vAddress = segm.startVirtualAddress + first;
-        auto nextNode = this->instructionTrie.addInstruction(instruction, vAddress, currNode);
+        auto nextNode = this->instructionTrie.addInstruction(instruction, vAddress, currNode, &this->regInfoForSegment[first]);
 
         // And then recurse.
         this->buildInstructionTrie(segm, first - 1, nextNode, currInstrSeqLength + 1);
@@ -232,6 +238,7 @@ void ROP::VirtualMemoryInstructions::buildInstructionTrie() {
         }
 
         this->disassembledSegment.clear();
+        this->regInfoForSegment.clear();
     }
 }
 
