@@ -21,6 +21,7 @@ namespace ROP {
         VirtualMemoryExecutableBytes vmExecBytes;
         InstructionConverter ic;
         InsSeqTrie instructionTrie;
+        std::vector<RegisterInfo> auxRegInfoVector;
 
         /*
         This data structure is used for optimizing (through memoization) the construction of the inner trie.
@@ -55,8 +56,12 @@ namespace ROP {
 
 
         public:
+        // Default value: 10.
         static int MaxInstructionsInInstructionSequence;
+        // Default value: AssemblySyntax::Intel.
         static AssemblySyntax innerAssemblySyntax;
+        // Default value: false.
+        static bool computeRegisterInfo;
 
         /**
          * Get executable bytes by reading the "/proc/PID/maps" file

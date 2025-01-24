@@ -9,6 +9,9 @@ int ROP::VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = 10;
 // Declaration for static member, with default value.
 ROP::AssemblySyntax ROP::VirtualMemoryInstructions::innerAssemblySyntax = ROP::AssemblySyntax::Intel;
 
+// Declaration for static member, with default value.
+bool ROP::VirtualMemoryInstructions::computeRegisterInfo = false;
+
 
 #pragma region Parse key instructions
 #if false
@@ -152,15 +155,20 @@ void ROP::VirtualMemoryInstructions::disassembleSegmentBytes(const VirtualMemory
     int segmentSize = std::min(maxInstructionSize, (int)segm.executableBytes.size() - first);
 
     std::vector<std::string> instructions;
-    std::vector<RegisterInfo> regInfo;
     unsigned totalDisassembledBytes;
+
+    std::vector<RegisterInfo> *regInfoVectorPtr = NULL;
+    if (VirtualMemoryInstructions::computeRegisterInfo) {
+        regInfoVectorPtr = &(this->auxRegInfoVector);
+    }
+
     totalDisassembledBytes = this->ic.convertInstructionSequenceToString(firstPtr,
                                                                          segmentSize,
                                                                          syntax,
                                                                          firstAddr,
                                                                          1,
                                                                          &instructions,
-                                                                         &regInfo);
+                                                                         regInfoVectorPtr);
 
     if (instructions.size() == 1) {
         int last = first + totalDisassembledBytes - 1;
@@ -169,8 +177,9 @@ void ROP::VirtualMemoryInstructions::disassembleSegmentBytes(const VirtualMemory
         // The segment disassembles into the "instructions[0]" instruction.
         this->disassembledSegment[first] = {last, instructions[0]};
 
-        if (true) {
-            this->regInfoForSegment[first] = regInfo[0];
+        if (VirtualMemoryInstructions::computeRegisterInfo) {
+            this->regInfoForSegment[first] = this->auxRegInfoVector[0];
+            this->auxRegInfoVector.clear();
         }
     }
     else {
@@ -224,7 +233,13 @@ void ROP::VirtualMemoryInstructions::buildInstructionTrie(
         // Insert the instruction at this segment into the trie;
         const std::string& instruction = p.second;
         unsigned long long vAddress = segm.startVirtualAddress + first;
-        auto nextNode = this->instructionTrie.addInstruction(instruction, vAddress, currNode, &this->regInfoForSegment[first]);
+
+        RegisterInfo *regInfoPtr = NULL;
+        if (VirtualMemoryInstructions::computeRegisterInfo) {
+            regInfoPtr = &this->regInfoForSegment[first];
+        }
+
+        auto nextNode = this->instructionTrie.addInstruction(instruction, vAddress, currNode, regInfoPtr);
 
         // And then recurse.
         this->buildInstructionTrie(segm, first - 1, nextNode, currInstrSeqLength + 1);
