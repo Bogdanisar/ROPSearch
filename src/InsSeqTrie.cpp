@@ -18,12 +18,12 @@ ROP::InsSeqTrie::Node* ROP::InsSeqTrie::addInstruction(
         node->children[instruction] = new Node;
     }
 
-    if (regInfo) {
-        node->regInfo = *regInfo;
-    }
-
     Node *childNode = node->children[instruction];
     childNode->matchingVirtualAddresses.push_back(vAddress);
+
+    if (regInfo) {
+        childNode->regInfo = *regInfo;
+    }
 
     return childNode;
 }
