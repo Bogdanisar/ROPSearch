@@ -31,7 +31,9 @@ namespace ROP {
 
         void getTrieContent(Node *currentNode,
                             const std::vector<std::string>& currInstrSeq,
-                            std::vector< std::pair<unsigned long long, std::vector<std::string>> >& content) const;
+                            const std::vector<RegisterInfo>& currRegInfoSeq,
+                            std::vector< std::pair<unsigned long long, std::vector<std::string>> >& content,
+                            std::vector<std::vector<RegisterInfo>> *outRegInfo) const;
 
         public:
         // The root node, corresponding to the empty instruction sequence.
@@ -51,7 +53,8 @@ namespace ROP {
         std::vector<unsigned long long> hasInstructionSequence(const std::vector<std::string>& instructionSequence) const;
 
         // Return a vector of pairs of (virtual memory address, instruction sequence).
-        std::vector< std::pair<unsigned long long, std::vector<std::string>> > getTrieContent() const;
+        std::vector< std::pair<unsigned long long, std::vector<std::string>> >
+        getTrieContent(std::vector<std::vector<RegisterInfo>> *outRegInfo = NULL) const;
 
         ~InsSeqTrie();
     };

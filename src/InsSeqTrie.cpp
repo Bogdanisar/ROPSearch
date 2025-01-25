@@ -51,13 +51,18 @@ std::vector<unsigned long long> ROP::InsSeqTrie::hasInstructionSequence(const st
 }
 
 void ROP::InsSeqTrie::getTrieContent(Node *currentNode,
-                                      const std::vector<std::string>& currInstrSeq,
-                                      std::vector< std::pair<unsigned long long, std::vector<std::string>> >& content) const
+                                     const std::vector<std::string>& currInstrSeq,
+                                     const std::vector<RegisterInfo>& currRegInfoSeq,
+                                     std::vector< std::pair<unsigned long long, std::vector<std::string>> >& content,
+                                     std::vector<std::vector<RegisterInfo>> *outRegInfo) const
 {
     assert(currentNode == this->root || currentNode->matchingVirtualAddresses.size() != 0);
     if (currentNode->matchingVirtualAddresses.size() != 0) {
         for (unsigned long long addr : currentNode->matchingVirtualAddresses) {
             content.push_back({addr, currInstrSeq});
+            if (outRegInfo) {
+                (*outRegInfo).push_back(currRegInfoSeq);
+            }
         }
     }
 
@@ -68,20 +73,34 @@ void ROP::InsSeqTrie::getTrieContent(Node *currentNode,
         auto nextInstrSeq = currInstrSeq;
         nextInstrSeq.push_back(nextInstr);
 
-        this->getTrieContent(nextNode, nextInstrSeq, content);
+        if (outRegInfo) {
+            auto nextRegInfoSeq = currRegInfoSeq;
+            nextRegInfoSeq.push_back(nextNode->regInfo);
+
+            this->getTrieContent(nextNode, nextInstrSeq, nextRegInfoSeq, content, outRegInfo);
+        }
+        else {
+            this->getTrieContent(nextNode, nextInstrSeq, {}, content, NULL);
+        }
     }
 }
 
 std::vector< std::pair<unsigned long long, std::vector<std::string>> >
-ROP::InsSeqTrie::getTrieContent() const
+ROP::InsSeqTrie::getTrieContent(std::vector<std::vector<RegisterInfo>> *outRegInfo) const
 {
     std::vector< std::pair<unsigned long long, std::vector<std::string>> > content;
-    this->getTrieContent(this->root, {}, content);
+    this->getTrieContent(this->root, {}, {}, content, outRegInfo);
 
     // The Instruction Sequence vectors need to be reversed.
     for (auto &p : content) {
         std::vector<std::string>& instrSeq = p.second;
         std::reverse(instrSeq.begin(), instrSeq.end());
+    }
+
+    if (outRegInfo) {
+        for (auto &regInfoSeq : *outRegInfo) {
+            std::reverse(regInfoSeq.begin(), regInfoSeq.end());
+        }
     }
 
     return content;

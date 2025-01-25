@@ -379,6 +379,10 @@ void testCapstoneGetRegisterInfo() {
             (ROP::byte)'\x89',
             (ROP::byte)'\x02',
         },
+
+        {
+            (ROP::byte)'\xC3',
+        }
     };
 
     for (const byteSequence& bytes : byteSequences) {
@@ -659,6 +663,54 @@ void printVMInstructionSequences(string targetExecutable) {
     }
 }
 
+void testFilterVMInstructionSequencesByRegisterInfo(string targetExecutable) {
+    pv(targetExecutable); pn;
+    int targetPid = getPidOfExecutable(targetExecutable);
+    pv(targetPid); pn;
+
+    VirtualMemoryInstructions::computeRegisterInfo = true;
+    VirtualMemoryInstructions vmInfo(targetPid);
+    printf("Finished initializing vmInfo object!\n\n");
+
+    InstructionConverter ic;
+
+    printf("Found instruction sequences:\n");
+    vector<vector<RegisterInfo>> allRegInfoSeqs;
+    auto instrSeqs = vmInfo.getInstructionSequences(&allRegInfoSeqs);
+    assert(instrSeqs.size() == allRegInfoSeqs.size());
+    for (unsigned idx = 0; idx < instrSeqs.size(); ++idx) {
+        unsigned long long addr = instrSeqs[idx].first;
+        const vector<string>& currInstrSeq = instrSeqs[idx].second;
+        const vector<RegisterInfo>& currRegInfoSeq = allRegInfoSeqs[idx];
+        assert(currInstrSeq.size() == currRegInfoSeq.size());
+
+        // Keep only instruction sequences that manipulate the target registers.
+        bool match = false;
+        for (const RegisterInfo& regInfo : currRegInfoSeq) {
+            // LogVar(regInfo.rRegs.count()); LogLine();
+            // for (unsigned regId = 0; regId < (unsigned)X86_REG_ENDING; ++regId) {
+            //     if (regInfo.rRegs[regId]) {
+            //         LogDebug("Read register: %s", InstructionConverter::convertCapstoneRegIdToString((x86_reg)regId));
+            //     }
+            // }
+
+            // LogVar(regInfo.wRegs.count()); LogLine();
+
+            if (regInfo.rRegs[X86_REG_RBX] && regInfo.wRegs[X86_REG_DH]) {
+                match = true;
+                break;
+            }
+        }
+
+        if (match) {
+            string fullSequence = ic.concatenateInstructionsAsm(currInstrSeq);
+            printf("0x%10llx: %s\n", addr, fullSequence.c_str());
+        }
+
+        // LogLine();
+    }
+}
+
 void testXMLReading() {
     using namespace pugi;
 
@@ -883,11 +935,12 @@ int main(int argc, char* argv[]) {
     // testGetExecutableBytesInteractive("vulnerable.exe"); pn;
     // testKeystoneFrameworkIntegration(); pn;
     // testCapstoneFrameworkIntegration(); pn;
-    testCapstoneGetRegisterInfo(); pn;
+    // testCapstoneGetRegisterInfo(); pn;
     // testKeystoneCapstoneFrameworkIntegration(); pn;
     // testInstructionNormalization(); pn;
     // testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
     // printVMInstructionSequences("vulnerable.exe"); pn;
+    testFilterVMInstructionSequencesByRegisterInfo("vulnerable.exe"); pn;
     // testXMLReading();pn;
     // testGadgetMouldConfiguration("vulnerableHelped.exe"); pn;
     // testGadgetCatalog("vulnerableHelped.exe"); pn;

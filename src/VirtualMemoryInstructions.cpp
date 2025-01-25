@@ -281,8 +281,11 @@ ROP::VirtualMemoryInstructions::matchInstructionSequenceInVirtualMemory(std::str
 }
 
 std::vector< std::pair<unsigned long long, std::vector<std::string>> >
-ROP::VirtualMemoryInstructions::getInstructionSequences() const {
-    return this->instructionTrie.getTrieContent();
+ROP::VirtualMemoryInstructions::getInstructionSequences(std::vector<std::vector<RegisterInfo>> *outRegInfo) const {
+    assertMessage(outRegInfo == NULL || VirtualMemoryInstructions::computeRegisterInfo,
+                  "Can't get the instruction sequences with added register info since "
+                  "the instruction trie wasn't built with that extra information.");
+    return this->instructionTrie.getTrieContent(outRegInfo);
 }
 
 #pragma endregion Methods

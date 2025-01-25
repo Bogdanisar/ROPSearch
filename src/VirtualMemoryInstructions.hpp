@@ -85,7 +85,8 @@ namespace ROP {
         matchInstructionSequenceInVirtualMemory(std::string instructionSequenceAsm, AssemblySyntax asmSyntax);
 
         // Return a vector of pairs of (virtual memory address, instruction sequence).
-        std::vector< std::pair<unsigned long long, std::vector<std::string>> > getInstructionSequences() const;
+        std::vector< std::pair<unsigned long long, std::vector<std::string>> >
+        getInstructionSequences(std::vector<std::vector<RegisterInfo>> *outRegInfo = NULL) const;
     };
 
 }
