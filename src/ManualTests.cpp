@@ -674,10 +674,13 @@ void testFilterVMInstructionSequencesByRegisterInfo(string targetExecutable) {
 
     InstructionConverter ic;
 
-    printf("Found instruction sequences:\n");
     vector<vector<RegisterInfo>> allRegInfoSeqs;
     auto instrSeqs = vmInfo.getInstructionSequences(&allRegInfoSeqs);
     assert(instrSeqs.size() == allRegInfoSeqs.size());
+    LogVar(instrSeqs.size()); LogLine(); LogLine();
+    unsigned long long numMatching = 0;
+
+    printf("Found instruction sequences:\n");
     for (unsigned idx = 0; idx < instrSeqs.size(); ++idx) {
         unsigned long long addr = instrSeqs[idx].first;
         const vector<string>& currInstrSeq = instrSeqs[idx].second;
@@ -703,12 +706,15 @@ void testFilterVMInstructionSequencesByRegisterInfo(string targetExecutable) {
         }
 
         if (match) {
+            numMatching += 1;
             string fullSequence = ic.concatenateInstructionsAsm(currInstrSeq);
             printf("0x%10llx: %s\n", addr, fullSequence.c_str());
         }
 
         // LogLine();
     }
+
+    LogVar(numMatching); LogLine();
 }
 
 void testXMLReading() {
