@@ -41,9 +41,12 @@ bin/GadgetCatalog.o: src/GadgetCatalog.cpp $(shell find ./src -name "*.hpp")
 bin/Log.o: src/Log.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) -c src/Log.cpp -o $@
 
+bin/RegisterQueryX86.o: src/RegisterQueryX86.cpp $(shell find ./src -name "*.hpp")
+	g++ $(wFlags) -c src/RegisterQueryX86.cpp -o $@
+
 classObjectFiles := bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryExecutableBytes.o \
 				    bin/InstructionConverter.o bin/InsSeqTrie.o bin/VirtualMemoryInstructions.o \
-					bin/GadgetMould.o bin/GadgetCatalog.o bin/Log.o
+					bin/GadgetMould.o bin/GadgetCatalog.o bin/Log.o bin/RegisterQueryX86.o
 
 
 # Main program

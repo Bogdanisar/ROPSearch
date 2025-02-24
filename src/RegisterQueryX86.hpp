@@ -46,12 +46,12 @@ namespace ROP {
                 // For NOT operator.
                 struct {
                     ExpressionNode *child;
-                };
+                } unary;
 
                 // For binary operators.
                 struct {
                     ExpressionNode *left, *right;
-                };
+                } binary;
             };
         };
 

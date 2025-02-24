@@ -48,16 +48,16 @@ ROP::RegisterQueryX86::precomputeRegisterOperatorStrings() {
         // Keep only the part after the last '_' (e.g. just "RAX").
         regCString = strrchr(regCString, '_') + 1;
 
-        for (const std::string& op : {"read", "write"}) {
+        for (const char * const op : {"read", "write"}) {
             // Get a string like "read(RAX)" or "write(RAX)".
-            std::string currOperatorString = op + "(" + std::string(regCString) + ")";
+            std::string currOperatorString = std::string(op) + "(" + std::string(regCString) + ")";
 
             // Turn to lowercase.
             for(char& c : currOperatorString) {
                 c = tolower(c);
             }
 
-            if (op == "read") {
+            if (std::string(op) == "read") {
                 this->registerOperatorStrings.push_back({currOperatorString, ExpressionOperator::READ_REGISTER, regID});
             }
             else {
@@ -161,10 +161,12 @@ ROP::RegisterQueryX86::parseExpression(unsigned currentPrecedence) {
                 return NULL;
             }
 
+            // TODO: Deal with NOT/unary-operator case.
+
             ExpressionNode *bothNode = new ExpressionNode();
             bothNode->op = PRECEDENCE_TO_OPERATOR_TYPE[currentPrecedence];
-            bothNode->left = currentNode;
-            bothNode->right = nextNode;
+            bothNode->binary.left = currentNode;
+            bothNode->binary.right = nextNode;
 
             currentNode = bothNode;
         }
