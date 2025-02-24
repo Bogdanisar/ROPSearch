@@ -15,8 +15,25 @@ static ROP::RegisterQueryX86::ExpressionOperator PRECEDENCE_TO_OPERATOR_TYPE[] =
 
 static const int MAX_PRECEDENCE = sizeof(PRECEDENCE_TO_OPERATOR_CHAR) / sizeof(PRECEDENCE_TO_OPERATOR_CHAR[0]);
 
-static bool cStringIsPrefix(const char * const str, const char * const prefix) {
-    return (strncmp(str, prefix, strlen(prefix)) == 0);
+
+static std::string GetLowercaseString(std::string str) {
+    for (char& c : str) {
+        c = tolower(c);
+    }
+    return str;
+}
+
+static std::string GetStringNoWhitespace(const std::string& str) {
+    std::string ans;
+    ans.reserve(str.size());
+
+    for (const char& c : str) {
+        if (!isspace(c)) {
+            ans.push_back(c);
+        }
+    }
+
+    return ans;
 }
 
 
@@ -163,12 +180,12 @@ ROP::RegisterQueryX86::parseExpression(unsigned currentPrecedence) {
 }
 
 ROP::RegisterQueryX86::RegisterQueryX86(const std::string expressionString):
-    expressionString(expressionString), expressionCString(this->expressionString.c_str())
+    expressionString(GetLowercaseString(GetStringNoWhitespace(expressionString))),
+    expressionCString(this->expressionString.c_str())
 {
-    // Set value of `this->registerOperatorStrings`.
+    // Compute value of `this->registerOperatorStrings`.
     this->precomputeRegisterOperatorStrings();
 
-    // TODO: Convert to lowercase;
     // TODO: Rename expression to query.
 
     this->exprIdx = 0;
