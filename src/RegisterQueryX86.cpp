@@ -98,6 +98,11 @@ ROP::RegisterQueryX86::nextExpressionCharacterIsValid(unsigned currentPrecedence
     // or the operators for lower precedences or the ')' character or the end of the string ('\0').
     // Otherwise, the expression string is malformed.
 
+    if (this->exprIdx == this->expressionString.size() || this->expressionCString[this->exprIdx] == '\0') {
+        // All the string got parsed correctly, so we're good.
+        return true;
+    }
+
     char ch = this->expressionCString[this->exprIdx];
     if (ch == ')' || ch == '\0') {
         return true;
@@ -142,6 +147,32 @@ ROP::RegisterQueryX86::parseExpression(unsigned currentPrecedence) {
             return node;
         }
     }
+    else if (PRECEDENCE_TO_OPERATOR_TYPE[currentPrecedence] == ExpressionOperator::NOT_OPERATOR) {
+        bool shouldNegate = false;
+
+        // While the next character is the negation operator.
+        while (this->expressionCString[this->exprIdx] == PRECEDENCE_TO_OPERATOR_CHAR[currentPrecedence]) {
+            // Remember the operator and jump over it.
+            shouldNegate = !shouldNegate;
+            this->exprIdx += 1;
+        }
+
+        // No more negation operators. Try to parse the expression according to the next operator.
+        ExpressionNode *node = this->parseExpression(currentPrecedence + 1);
+        if (node == NULL) {
+            // Propagate the error.
+            return NULL;
+        }
+
+        if (shouldNegate) {
+            ExpressionNode *negationNode = new ExpressionNode();
+            negationNode->op = ExpressionOperator::NOT_OPERATOR;
+            negationNode->unary.child = node;
+            node = negationNode;
+        }
+
+        return node;
+    }
     else {
         // We are looking for "subexpr1 | subexpr2 | subexpr3 ..." (if currentPrecedence == 0),
         // or similar for the other precedences.
@@ -160,8 +191,6 @@ ROP::RegisterQueryX86::parseExpression(unsigned currentPrecedence) {
                 // Propagate the error.
                 return NULL;
             }
-
-            // TODO: Deal with NOT/unary-operator case.
 
             ExpressionNode *bothNode = new ExpressionNode();
             bothNode->op = PRECEDENCE_TO_OPERATOR_TYPE[currentPrecedence];
@@ -191,5 +220,5 @@ ROP::RegisterQueryX86::RegisterQueryX86(const std::string expressionString):
     // TODO: Rename expression to query.
 
     this->exprIdx = 0;
-    this->parseExpression(0);
+    this->expressionTreeRoot = this->parseExpression(0);
 }
