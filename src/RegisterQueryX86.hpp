@@ -7,6 +7,8 @@
 #include "common/types.hpp"
 #include "common/utils.hpp"
 
+#include "InstructionConverter.hpp"
+
 
 namespace ROP {
 
@@ -80,10 +82,22 @@ namespace ROP {
         bool nextExpressionCharacterIsValid(unsigned currentPrecedence);
         ExpressionNode* parseExpression(unsigned currentPrecedence);
 
+        /**
+         * Compute the result of the expression represented by the subtree of `currentNode`
+         * evaluating `read(reg)` and `write(reg)` operators according to the `registerInfo` parameter.
+         */
+        bool compute(ExpressionNode *currentNode, const RegisterInfo& registerInfo);
 
         public:
         RegisterQueryX86(const std::string expressionString);
 
+        /**
+         * Compute the result of the expression, evaluating `read(reg)` and `write(reg)` operators
+         * according to the `registerInfo` parameter.
+         */
+        bool compute(const RegisterInfo& registerInfo);
+
+        // TODO: Add destructor.
     };
 
 }

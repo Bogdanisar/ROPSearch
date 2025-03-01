@@ -222,3 +222,37 @@ ROP::RegisterQueryX86::RegisterQueryX86(const std::string expressionString):
     this->exprIdx = 0;
     this->expressionTreeRoot = this->parseExpression(0);
 }
+
+
+bool ROP::RegisterQueryX86::compute(ExpressionNode *currentNode, const RegisterInfo& registerInfo) {
+    if (currentNode->op == ExpressionOperator::READ_REGISTER) {
+        return registerInfo.rRegs[currentNode->registerID];
+    }
+    if (currentNode->op == ExpressionOperator::WRITE_REGISTER) {
+        return registerInfo.wRegs[currentNode->registerID];
+    }
+    if (currentNode->op == ExpressionOperator::NOT_OPERATOR) {
+        return !this->compute(currentNode->unary.child, registerInfo);
+    }
+    if (currentNode->op == ExpressionOperator::AND_OPERATOR) {
+        return this->compute(currentNode->binary.left, registerInfo) &&
+               this->compute(currentNode->binary.right, registerInfo);
+    }
+    if (currentNode->op == ExpressionOperator::XOR_OPERATOR) {
+        return this->compute(currentNode->binary.left, registerInfo) !=
+               this->compute(currentNode->binary.right, registerInfo);
+    }
+    if (currentNode->op == ExpressionOperator::OR_OPERATOR) {
+        return this->compute(currentNode->binary.left, registerInfo) ||
+               this->compute(currentNode->binary.right, registerInfo);
+    }
+
+    exitError("Got invalid operator type for current node when computing result. Type: %i",
+              (int)currentNode->op);
+}
+
+bool ROP::RegisterQueryX86::compute(const RegisterInfo& registerInfo) {
+    return this->compute(this->expressionTreeRoot, registerInfo);
+}
+
+// TODO: Add destructor.
