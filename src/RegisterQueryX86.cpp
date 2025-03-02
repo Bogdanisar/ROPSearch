@@ -135,6 +135,9 @@ ROP::RegisterQueryX86::parseExpression(unsigned currentPrecedence) {
 
             if (this->expressionCString[this->exprIdx] != ')') {
                 LogError("Didn't find expected ')' character at index %u when parsing register expression", this->exprIdx);
+
+                // Free memory.
+                this->freeTree(node);
                 return NULL;
             }
 
@@ -191,7 +194,8 @@ ROP::RegisterQueryX86::parseExpression(unsigned currentPrecedence) {
             // Parse the next term (which can be a subexpression that uses operators with higher precedence).
             ExpressionNode *nextNode = this->parseExpression(currentPrecedence + 1);
             if (nextNode == NULL) {
-                // Propagate the error.
+                // Free memory and propagate the error.
+                this->freeTree(currentNode);
                 return NULL;
             }
 
@@ -206,6 +210,9 @@ ROP::RegisterQueryX86::parseExpression(unsigned currentPrecedence) {
         if (!this->nextExpressionCharacterIsValid(currentPrecedence)) {
             LogError("Found invalid character '%c' when parsing the register expression at index %u",
                      this->expressionCString[this->exprIdx], this->exprIdx);
+
+            // Free memory.
+            this->freeTree(currentNode);
             return NULL;
         }
 
@@ -228,6 +235,7 @@ ROP::RegisterQueryX86::RegisterQueryX86(const std::string expressionString):
 
 
 bool ROP::RegisterQueryX86::compute(ExpressionNode *currentNode, const RegisterInfo& registerInfo) {
+    // TODO: Replace with switch for better performance.
     if (currentNode->op == ExpressionOperator::READ_REGISTER) {
         return registerInfo.rRegs[currentNode->registerID];
     }
