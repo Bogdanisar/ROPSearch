@@ -52,7 +52,7 @@ namespace ROP {
 
                 // For binary operators.
                 struct {
-                    ExpressionNode *left, *right;
+                    ExpressionNode *leftChild, *rightChild;
                 } binary;
             };
         };

@@ -194,8 +194,8 @@ ROP::RegisterQueryX86::parseExpression(unsigned currentPrecedence) {
 
             ExpressionNode *bothNode = new ExpressionNode();
             bothNode->op = PRECEDENCE_TO_OPERATOR_TYPE[currentPrecedence];
-            bothNode->binary.left = currentNode;
-            bothNode->binary.right = nextNode;
+            bothNode->binary.leftChild = currentNode;
+            bothNode->binary.rightChild = nextNode;
 
             currentNode = bothNode;
         }
@@ -235,16 +235,16 @@ bool ROP::RegisterQueryX86::compute(ExpressionNode *currentNode, const RegisterI
         return !this->compute(currentNode->unary.child, registerInfo);
     }
     if (currentNode->op == ExpressionOperator::AND_OPERATOR) {
-        return this->compute(currentNode->binary.left, registerInfo) &&
-               this->compute(currentNode->binary.right, registerInfo);
+        return this->compute(currentNode->binary.leftChild, registerInfo) &&
+               this->compute(currentNode->binary.rightChild, registerInfo);
     }
     if (currentNode->op == ExpressionOperator::XOR_OPERATOR) {
-        return this->compute(currentNode->binary.left, registerInfo) !=
-               this->compute(currentNode->binary.right, registerInfo);
+        return this->compute(currentNode->binary.leftChild, registerInfo) !=
+               this->compute(currentNode->binary.rightChild, registerInfo);
     }
     if (currentNode->op == ExpressionOperator::OR_OPERATOR) {
-        return this->compute(currentNode->binary.left, registerInfo) ||
-               this->compute(currentNode->binary.right, registerInfo);
+        return this->compute(currentNode->binary.leftChild, registerInfo) ||
+               this->compute(currentNode->binary.rightChild, registerInfo);
     }
 
     exitError("Got invalid operator type for current node when computing result. Type: %i",
@@ -263,8 +263,8 @@ void ROP::RegisterQueryX86::freeTree(ExpressionNode *currentNode) {
     else if (currentNode->op == ExpressionOperator::AND_OPERATOR ||
              currentNode->op == ExpressionOperator::XOR_OPERATOR ||
              currentNode->op == ExpressionOperator::OR_OPERATOR) {
-        this->freeTree(currentNode->binary.left);
-        this->freeTree(currentNode->binary.right);
+        this->freeTree(currentNode->binary.leftChild);
+        this->freeTree(currentNode->binary.rightChild);
     }
 
     delete currentNode;
