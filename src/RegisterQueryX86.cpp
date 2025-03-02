@@ -39,7 +39,7 @@ static std::string GetStringNoWhitespace(const std::string& str) {
 
 void
 ROP::RegisterQueryX86::precomputeRegisterOperatorStrings() {
-    for (unsigned regIndex = 0; regIndex < (unsigned)X86_REG_ENDING; ++regIndex) {
+    for (unsigned regIndex = X86_REG_INVALID + 1; regIndex < (unsigned)X86_REG_ENDING; ++regIndex) {
         x86_reg regID = (x86_reg)regIndex;
 
         // Get a string like "X86_REG_RAX".
@@ -75,7 +75,7 @@ ROP::RegisterQueryX86::parseLeafExpression() {
         const std::string& opString = regOperatorInfo.regString;
         const ExpressionOperator& exprOpType = regOperatorInfo.opType;
 
-        if (strcmp(this->expressionCString, opString.c_str()) == 0) {
+        if (strncmp(this->expressionCString + this->exprIdx, opString.c_str(), opString.size()) == 0) {
             // Go over the parsed string.
             this->exprIdx += (int)opString.size();
 
@@ -185,6 +185,9 @@ ROP::RegisterQueryX86::parseExpression(unsigned currentPrecedence) {
         }
 
         while (this->expressionCString[this->exprIdx] == PRECEDENCE_TO_OPERATOR_CHAR[currentPrecedence]) {
+            // Jump over the operator character.
+            this->exprIdx += 1;
+
             // Parse the next term (which can be a subexpression that uses operators with higher precedence).
             ExpressionNode *nextNode = this->parseExpression(currentPrecedence + 1);
             if (nextNode == NULL) {

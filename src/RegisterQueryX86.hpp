@@ -10,6 +10,10 @@
 #include "InstructionConverter.hpp"
 
 
+// Forward declaration for friend function.
+void testRegisterQueryTransformation();
+
+
 namespace ROP {
 
     /**
@@ -99,6 +103,10 @@ namespace ROP {
 
         void freeTree(ExpressionNode *currentNode);
         ~RegisterQueryX86();
+
+
+        // So that it can access private data (in ManualTests.cpp).
+        friend void ::testRegisterQueryTransformation();
     };
 
 }

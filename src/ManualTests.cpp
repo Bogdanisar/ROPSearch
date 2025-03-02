@@ -13,6 +13,7 @@
 #include "GadgetCatalog.hpp"
 #include "GadgetMould.hpp"
 #include "InstructionConverter.hpp"
+#include "RegisterQueryX86.hpp"
 #include "VirtualMemoryExecutableBytes.hpp"
 #include "VirtualMemoryInstructions.hpp"
 #include "VirtualMemoryMapping.hpp"
@@ -926,6 +927,23 @@ void testLoadVirtualMemoryOfExecutablePaths() {
     }
 }
 
+void testRegisterQueryTransformation() {
+    RegisterQueryX86 rq("!!!(read(RAX) | read(dh))   &  (write(ebX) ^ write(ecx)) ");
+
+    // Print precomputed basic operator strings.
+    for (const auto& regOperatorInfo : rq.registerOperatorStrings) {
+        const x86_reg& regID = regOperatorInfo.regID;
+        const char *regCString = ROP::InstructionConverter::convertCapstoneRegIdToString(regID);
+        const std::string& opString = regOperatorInfo.regString;
+
+        LogVar(opString); LogDebug("(reg = %s)", regCString);
+    }
+    LogLine();
+
+    // Print the initial query after it gets transformed internally by the object.
+    LogVar(rq.expressionString); LogLine();
+}
+
 
 int main(int argc, char* argv[]) {
     UNUSED(argc); UNUSED(argv);
@@ -946,13 +964,14 @@ int main(int argc, char* argv[]) {
     // testInstructionNormalization(); pn;
     // testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
     // printVMInstructionSequences("vulnerable.exe"); pn;
-    testFilterVMInstructionSequencesByRegisterInfo("vulnerable.exe"); pn;
+    // testFilterVMInstructionSequencesByRegisterInfo("vulnerable.exe"); pn;
     // testXMLReading();pn;
     // testGadgetMouldConfiguration("vulnerableHelped.exe"); pn;
     // testGadgetCatalog("vulnerableHelped.exe"); pn;
     // testLoggingFunctionality(); pn;
     // testBytesOfInteger(); pn;
     // testLoadVirtualMemoryOfExecutablePaths(); pn;
+    testRegisterQueryTransformation();
 
     return 0;
 }
