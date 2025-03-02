@@ -259,6 +259,68 @@ bool ROP::RegisterQueryX86::compute(const RegisterInfo& registerInfo) {
 }
 
 
+void ROP::RegisterQueryX86::getStringRepresentationOfQuery(const ExpressionNode *currentNode, std::string& repr) {
+    switch (currentNode->op) {
+        case ExpressionOperator::READ_REGISTER: {
+            repr += "read(";
+            repr += InstructionConverter::convertCapstoneRegIdToString(currentNode->registerID);
+            repr += ")";
+            break;
+        }
+        case ExpressionOperator::WRITE_REGISTER: {
+            repr += "write(";
+            repr += InstructionConverter::convertCapstoneRegIdToString(currentNode->registerID);
+            repr += ")";
+            break;
+        }
+        case ExpressionOperator::NOT_OPERATOR: {
+            repr += "!(";
+            this->getStringRepresentationOfQuery(currentNode->unary.child, repr);
+            repr += ")";
+            break;
+        }
+        case ExpressionOperator::AND_OPERATOR: {
+            repr += "(";
+            this->getStringRepresentationOfQuery(currentNode->binary.leftChild, repr);
+            repr += " & ";
+            this->getStringRepresentationOfQuery(currentNode->binary.rightChild, repr);
+            repr += ")";
+            break;
+        }
+        case ExpressionOperator::XOR_OPERATOR: {
+            repr += "(";
+            this->getStringRepresentationOfQuery(currentNode->binary.leftChild, repr);
+            repr += " ^ ";
+            this->getStringRepresentationOfQuery(currentNode->binary.rightChild, repr);
+            repr += ")";
+            break;
+        }
+        case ExpressionOperator::OR_OPERATOR: {
+            repr += "(";
+            this->getStringRepresentationOfQuery(currentNode->binary.leftChild, repr);
+            repr += " | ";
+            this->getStringRepresentationOfQuery(currentNode->binary.rightChild, repr);
+            repr += ")";
+            break;
+        }
+        default: {
+            exitError("Got invalid operator type for current node when getting string representation. Type: %i",
+                    (int)currentNode->op);
+        }
+    }
+}
+
+std::string ROP::RegisterQueryX86::getStringRepresentationOfQuery() {
+    if (this->expressionTreeRoot == NULL) {
+        return "Bad query";
+    }
+
+    std::string repr;
+    this->getStringRepresentationOfQuery(this->expressionTreeRoot, repr);
+    return repr;
+}
+
+
 void ROP::RegisterQueryX86::freeTree(ExpressionNode *currentNode) {
     if (currentNode->op == ExpressionOperator::NOT_OPERATOR) {
         this->freeTree(currentNode->unary.child);

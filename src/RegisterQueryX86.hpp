@@ -92,6 +92,11 @@ namespace ROP {
          */
         bool compute(ExpressionNode *currentNode, const RegisterInfo& registerInfo);
 
+        /**
+         * Get a string representing the query of the tree rooted at `currentNode` and place it in `repr`.
+         */
+        void getStringRepresentationOfQuery(const ExpressionNode *currentNode, std::string& repr);
+
         public:
         RegisterQueryX86(const std::string expressionString);
 
@@ -100,6 +105,8 @@ namespace ROP {
          * according to the `registerInfo` parameter.
          */
         bool compute(const RegisterInfo& registerInfo);
+
+        std::string getStringRepresentationOfQuery();
 
         void freeTree(ExpressionNode *currentNode);
         ~RegisterQueryX86();

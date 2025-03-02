@@ -928,10 +928,10 @@ void testLoadVirtualMemoryOfExecutablePaths() {
 }
 
 void testRegisterQueryTransformation() {
-    RegisterQueryX86 rq("!!!(read(RAX) | read(dh))   &  (write(ebX) ^ write(ecx)) ");
+    RegisterQueryX86 basicRQ("read(RAX)");
 
     // Print precomputed basic operator strings.
-    for (const auto& regOperatorInfo : rq.registerOperatorStrings) {
+    for (const auto& regOperatorInfo : basicRQ.registerOperatorStrings) {
         const x86_reg& regID = regOperatorInfo.regID;
         const char *regCString = ROP::InstructionConverter::convertCapstoneRegIdToString(regID);
         const std::string& opString = regOperatorInfo.regString;
@@ -940,8 +940,19 @@ void testRegisterQueryTransformation() {
     }
     LogLine();
 
-    // Print the initial query after it gets transformed internally by the object.
-    LogVar(rq.expressionString); LogLine();
+    vector<string> queryList = {
+        "!!!(read(RAX) | read(dh))   &  (write(ebX) ^ write(ecx)) ",
+        "!!!read(RAX) ^ !!write(RBX) ^ !write(RCX)",
+        "!(((( write(ah) & write(bh) & WRITE(ch) & (write(DH)) ))))"
+    };
+    for (const string& query : queryList) {
+        RegisterQueryX86 rq(query);
+
+        LogDebug("Initial query: %s", query.c_str());
+        LogDebug("Transformed query: %s", rq.expressionCString);
+        LogDebug("Query representation: %s", rq.getStringRepresentationOfQuery().c_str());
+        LogLine();
+    }
 }
 
 
