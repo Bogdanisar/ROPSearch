@@ -255,4 +255,23 @@ bool ROP::RegisterQueryX86::compute(const RegisterInfo& registerInfo) {
     return this->compute(this->expressionTreeRoot, registerInfo);
 }
 
-// TODO: Add destructor.
+
+void ROP::RegisterQueryX86::freeTree(ExpressionNode *currentNode) {
+    if (currentNode->op == ExpressionOperator::NOT_OPERATOR) {
+        this->freeTree(currentNode->unary.child);
+    }
+    else if (currentNode->op == ExpressionOperator::AND_OPERATOR ||
+             currentNode->op == ExpressionOperator::XOR_OPERATOR ||
+             currentNode->op == ExpressionOperator::OR_OPERATOR) {
+        this->freeTree(currentNode->binary.left);
+        this->freeTree(currentNode->binary.right);
+    }
+
+    delete currentNode;
+}
+
+ROP::RegisterQueryX86::~RegisterQueryX86() {
+    if (this->expressionTreeRoot) {
+        this->freeTree(this->expressionTreeRoot);
+    }
+}

@@ -97,7 +97,8 @@ namespace ROP {
          */
         bool compute(const RegisterInfo& registerInfo);
 
-        // TODO: Add destructor.
+        void freeTree(ExpressionNode *currentNode);
+        ~RegisterQueryX86();
     };
 
 }
