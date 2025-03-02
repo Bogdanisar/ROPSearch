@@ -943,7 +943,9 @@ void testRegisterQueryTransformation() {
     vector<string> queryList = {
         "!!!(read(RAX) | read(dh))   &  (write(ebX) ^ write(ecx)) ",
         "!!!read(RAX) ^ !!write(RBX) ^ !write(RCX)",
-        "!(((( write(ah) & write(bh) & WRITE(ch) & (write(DH)) ))))"
+        "!(((( write(ah) & write(bh) & WRITE(ch) & (write(DH)) ))))",
+        "read(RAX)  ((((",
+        "read(RAX)  ))))",
     };
     for (const string& query : queryList) {
         RegisterQueryX86 rq(query);

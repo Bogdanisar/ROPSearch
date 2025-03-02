@@ -231,6 +231,15 @@ ROP::RegisterQueryX86::RegisterQueryX86(const std::string expressionString):
 
     this->exprIdx = 0;
     this->expressionTreeRoot = this->parseExpression(0);
+
+    if (this->expressionTreeRoot != NULL && this->exprIdx != this->expressionString.size()) {
+        // Some of the query string got parsed correctly, but not all of it => Bad query string.
+        LogError("Found invalid character '%c' when parsing the register expression at index %u",
+                 this->expressionCString[this->exprIdx], this->exprIdx);
+
+        this->freeTree(this->expressionTreeRoot);
+        this->expressionTreeRoot = NULL;
+    }
 }
 
 
