@@ -1,6 +1,6 @@
 
 .PHONY: all
-all: bin/ROPSearch.exe bin/ManualTests.exe bin/vulnerable.exe bin/vulnerableHelped.exe
+all: bin/ROPSearch.exe bin/ManualTests.exe bin/UnitTests.exe bin/vulnerable.exe bin/vulnerableHelped.exe
 
 wFlags := -Wall -Wextra -pedantic
 KEYSTONE_LDFLAGS = -lkeystone -lstdc++ -lm

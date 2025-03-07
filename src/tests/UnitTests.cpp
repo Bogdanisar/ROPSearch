@@ -106,6 +106,7 @@ int main(int argc, char* argv[]) {
     normalizeCWD(); LogLine();
 
     testRegisterQueryValidParse();
+    LogInfo("All unit tests passed!");
 
     return 0;
 }
