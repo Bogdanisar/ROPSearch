@@ -51,35 +51,36 @@ classObjectFiles := bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemory
 
 # Main program
 
-bin/ROPSearch.exe: bin/ROPSearch.o $(classObjectFiles)
-	g++ $^ $(KEYSTONE_LDFLAGS) $(CAPSTONE_LDFLAGS) -o $@
-
 bin/ROPSearch.o: src/ROPSearch.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) -c $< -o $@
+
+bin/ROPSearch.exe: bin/ROPSearch.o $(classObjectFiles)
+	g++ $^ $(KEYSTONE_LDFLAGS) $(CAPSTONE_LDFLAGS) -o $@
 
 
 # Tests code
 
-bin/ManualTests.exe: bin/ManualTests.o $(classObjectFiles)
-	g++ $^ $(KEYSTONE_LDFLAGS) $(CAPSTONE_LDFLAGS) -o $@
-
 bin/ManualTests.o: src/tests/ManualTests.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) -c $< -o $@
 
+bin/ManualTests.exe: bin/ManualTests.o $(classObjectFiles)
+	g++ $^ $(KEYSTONE_LDFLAGS) $(CAPSTONE_LDFLAGS) -o $@
+
 
 # Vulnerable executable
-
-bin/vulnerable.exe: bin/vulnerable.o
-	gcc $^ -o $@
-
-bin/vulnerableHelped.exe: bin/vulnerable.o bin/hardcodedGadgets64bit.o
-	gcc $^ -o $@
 
 bin/vulnerable.o: src/vulnerable/vulnerable.c
 	gcc $(wFlags) -O0 -c $< -o $@
 
 bin/hardcodedGadgets64bit.o: src/vulnerable/hardcodedGadgets64bit.c
 	gcc $(wFlags) -O0 -c $< -o $@
+
+
+bin/vulnerable.exe: bin/vulnerable.o
+	gcc $^ -o $@
+
+bin/vulnerableHelped.exe: bin/vulnerable.o bin/hardcodedGadgets64bit.o
+	gcc $^ -o $@
 
 
 # Misc
