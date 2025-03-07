@@ -101,6 +101,8 @@ namespace ROP {
         public:
         RegisterQueryX86(const std::string expressionString);
 
+        bool isValidQuery() const;
+
         /**
          * Compute the result of the expression, evaluating `read(reg)` and `write(reg)` operators
          * according to the `registerInfo` parameter.

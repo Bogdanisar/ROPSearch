@@ -243,6 +243,10 @@ ROP::RegisterQueryX86::RegisterQueryX86(const std::string expressionString):
 }
 
 
+bool ROP::RegisterQueryX86::isValidQuery() const {
+    return this->expressionTreeRoot != NULL;
+}
+
 bool ROP::RegisterQueryX86::compute(ExpressionNode *currentNode, const RegisterInfo& registerInfo) {
     // TODO: Replace with switch for better performance.
     if (currentNode->op == ExpressionOperator::READ_REGISTER) {

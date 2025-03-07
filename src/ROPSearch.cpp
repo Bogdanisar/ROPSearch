@@ -8,6 +8,7 @@
 
 #include "common/utils.hpp"
 #include "InstructionConverter.hpp"
+#include "RegisterQueryX86.hpp"
 #include "VirtualMemoryInstructions.hpp"
 
 
@@ -105,6 +106,10 @@ void ConfigureListCommandSubparser() {
     gListCmdSubparser.add_argument("--no-null")
         .help("ignore instruction sequences that have a \"0x00\" byte in their virtual memory address. Note: This may print nothing on 64bit arch.")
         .flag();
+    gListCmdSubparser.add_argument("--query")
+        .help("A register query for filtering the instruction sequences. E.g. \"read(rax) & write(bx)\".")
+        .metavar("STR")
+        .nargs(1);
 
     // "Output" arguments
     gListCmdSubparser.add_usage_newline();
@@ -249,9 +254,11 @@ void SortListOutput(const vector< pair<unsigned long long, vector<string>> >& in
 }
 
 vector<unsigned>
-FilterInstructionSequencesByListCmdArgs(const vector< pair<unsigned long long, vector<string>> >& instrSeqs) {
+FilterInstructionSequencesByListCmdArgs(const vector< pair<unsigned long long, vector<string>> >& instrSeqs,
+                                        const vector<vector<RegisterInfo>>& allRegInfoSeqs) {
     const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
     const bool ignoreNullBytes = gListCmdSubparser.get<bool>("--no-null");
+    const bool haveRegisterQuery = gListCmdSubparser.is_used("--query");
 
     vector<unsigned> validIndexes;
     for (unsigned idx = 0; idx < instrSeqs.size(); ++idx) {
@@ -277,6 +284,20 @@ FilterInstructionSequencesByListCmdArgs(const vector< pair<unsigned long long, v
         }), validIndexes.end());
     }
 
+    // Apply the "--query" filter.
+    if (haveRegisterQuery) {
+        assert(instrSeqs.size() == allRegInfoSeqs.size());
+        string queryString = gListCmdSubparser.get<string>("--query");
+        RegisterQueryX86 rq(queryString);
+
+        validIndexes.erase(remove_if(validIndexes.begin(), validIndexes.end(), [&](unsigned idx) {
+            const vector<RegisterInfo>& regInfoList = allRegInfoSeqs[idx];
+            RegisterInfo reducedRegInfo = RegisterInfo::reduceRegInfoListWithOrOperator(regInfoList);
+
+            return rq.compute(reducedRegInfo) == false;
+        }), validIndexes.end());
+    }
+
     return validIndexes;
 }
 
@@ -286,6 +307,7 @@ void DoListCommand() {
     const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
     const int maxInstructions = gListCmdSubparser.get<int>("--max-instructions");
     const string asmSyntaxString = gListCmdSubparser.get<string>("--assembly-syntax");
+    const bool haveRegisterQuery = gListCmdSubparser.is_used("--query");
 
     assertMessage(1 <= minInstructions && minInstructions <= 100, "Please input a different number of min instructions...");
     assertMessage(1 <= maxInstructions && maxInstructions <= 100, "Please input a different number of max instructions...");
@@ -298,6 +320,16 @@ void DoListCommand() {
     ROP::AssemblySyntax desiredSyntax = (asmSyntaxString == "intel") ? ROP::AssemblySyntax::Intel : ROP::AssemblySyntax::ATT;
     VirtualMemoryInstructions::innerAssemblySyntax = desiredSyntax;
 
+    if (haveRegisterQuery) {
+        // Check if the query string is valid.
+        string queryString = gListCmdSubparser.get<string>("--query");
+        RegisterQueryX86 rq(queryString);
+        assertMessage(rq.isValidQuery(), "Got invalid register query: %s", queryString.c_str());
+
+        // If we have a "--query" argument, then we will have to compute the register info for each instruction.
+        VirtualMemoryInstructions::computeRegisterInfo = true;
+    }
+
     VirtualMemoryInstructions vmInstructions = [&]() {
         if (auto pid = gListCmdSubparser.present<int>("--process-id")) {
             return VirtualMemoryInstructions(*pid);
@@ -309,10 +341,18 @@ void DoListCommand() {
         }
     }();
 
-    auto instrSeqs = vmInstructions.getInstructionSequences();
+    // Get the instruction sequences found in the target.
+    vector< pair<unsigned long long, vector<string>> > instrSeqs;
+    vector<vector<RegisterInfo>> allRegInfoSeqs;
+    if (haveRegisterQuery) {
+        instrSeqs = vmInstructions.getInstructionSequences(&allRegInfoSeqs);
+    }
+    else {
+        instrSeqs = vmInstructions.getInstructionSequences(NULL);
+    }
 
     // Filter the elements according to command-line arguments.
-    vector<unsigned> validIndexes = FilterInstructionSequencesByListCmdArgs(instrSeqs);
+    vector<unsigned> validIndexes = FilterInstructionSequencesByListCmdArgs(instrSeqs, allRegInfoSeqs);
 
     // Sort the output according to the "--sort" argument.
     SortListOutput(instrSeqs, validIndexes);
