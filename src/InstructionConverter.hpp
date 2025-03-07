@@ -18,6 +18,9 @@ namespace ROP {
 
         // Registers that are written by the instruction (see "x86_reg" enum).
         std::bitset<X86_REG_ENDING> wRegs;
+
+        static RegisterInfo reduceRegInfoListWithAndOperator(const std::vector<RegisterInfo> &infoList);
+        static RegisterInfo reduceRegInfoListWithOrOperator(const std::vector<RegisterInfo> &infoList);
     };
 
     class InstructionConverter {

@@ -4,6 +4,38 @@
 #include <keystone/keystone.h>
 
 
+
+ROP::RegisterInfo ROP::RegisterInfo::reduceRegInfoListWithAndOperator(const std::vector<RegisterInfo> &infoList) {
+	if (infoList.size() == 0) {
+		LogError("Got empty register info list when applying AND operator");
+		return {};
+	}
+
+	RegisterInfo ret = infoList[0];
+	for (unsigned idx = 1; idx < infoList.size(); ++idx) {
+		ret.rRegs &= infoList[idx].rRegs;
+		ret.wRegs &= infoList[idx].wRegs;
+	}
+
+	return ret;
+}
+
+ROP::RegisterInfo ROP::RegisterInfo::reduceRegInfoListWithOrOperator(const std::vector<RegisterInfo> &infoList) {
+	if (infoList.size() == 0) {
+		LogError("Got empty register info list when applying OR operator");
+		return {};
+	}
+
+	RegisterInfo ret = infoList[0];
+	for (unsigned idx = 1; idx < infoList.size(); ++idx) {
+		ret.rRegs |= infoList[idx].rRegs;
+		ret.wRegs |= infoList[idx].wRegs;
+	}
+
+	return ret;
+}
+
+
 void ROP::InstructionConverter::initKeystone() {
     ks_err err;
 
