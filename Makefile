@@ -63,7 +63,7 @@ bin/ROPSearch.o: src/ROPSearch.cpp $(shell find ./src -name "*.hpp")
 bin/ManualTests.exe: bin/ManualTests.o $(classObjectFiles)
 	g++ $^ $(KEYSTONE_LDFLAGS) $(CAPSTONE_LDFLAGS) -o $@
 
-bin/ManualTests.o: src/ManualTests.cpp $(shell find ./src -name "*.hpp")
+bin/ManualTests.o: src/tests/ManualTests.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) -c $< -o $@
 
 

@@ -6,17 +6,17 @@
 #include <unistd.h>
 
 #define PUGIXML_HEADER_ONLY
-#include "../deps/pugixml/src/pugixml.hpp"
+#include "../../deps/pugixml/src/pugixml.hpp"
 
-#include "common/utils.hpp"
-#include "ELFParser.hpp"
-#include "GadgetCatalog.hpp"
-#include "GadgetMould.hpp"
-#include "InstructionConverter.hpp"
-#include "RegisterQueryX86.hpp"
-#include "VirtualMemoryExecutableBytes.hpp"
-#include "VirtualMemoryInstructions.hpp"
-#include "VirtualMemoryMapping.hpp"
+#include "../common/utils.hpp"
+#include "../ELFParser.hpp"
+#include "../GadgetCatalog.hpp"
+#include "../GadgetMould.hpp"
+#include "../InstructionConverter.hpp"
+#include "../RegisterQueryX86.hpp"
+#include "../VirtualMemoryExecutableBytes.hpp"
+#include "../VirtualMemoryInstructions.hpp"
+#include "../VirtualMemoryMapping.hpp"
 
 
 using namespace std;
