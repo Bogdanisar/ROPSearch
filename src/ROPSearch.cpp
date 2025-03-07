@@ -152,7 +152,9 @@ void ConfigureArgumentParser() {
 int ________List_command________;
 #endif
 
-void SortListOutput(vector< pair<unsigned long long, vector<string>> >& instrSeqs) {
+void SortListOutput(const vector< pair<unsigned long long, vector<string>> >& instrSeqs,
+                    vector<unsigned>& validIndexes)
+{
     vector<string> sortCriteria = gListCmdSubparser.get<vector<string>>("--sort");
     if (sortCriteria.size() == 0) {
         // Set default value.
@@ -177,7 +179,10 @@ void SortListOutput(vector< pair<unsigned long long, vector<string>> >& instrSeq
     }
 
     using elemType = pair<unsigned long long, vector<string>>;
-    auto comparator = [&](const elemType& a, const elemType& b){
+    auto comparator = [&](unsigned idxA, unsigned idxB){
+        const elemType& a = instrSeqs[idxA];
+        const elemType& b = instrSeqs[idxB];
+
         for (int i = 0; i < (int)sortCriteria.size(); ++i) {
             string criterion = sortCriteria[i];
             if (criterion == SORT_CRIT_ADDRESS_ASC) {
@@ -240,7 +245,7 @@ void SortListOutput(vector< pair<unsigned long long, vector<string>> >& instrSeq
         return false;
     };
 
-    sort(instrSeqs.begin(), instrSeqs.end(), comparator);
+    sort(validIndexes.begin(), validIndexes.end(), comparator);
 }
 
 vector<unsigned>
@@ -306,11 +311,11 @@ void DoListCommand() {
 
     auto instrSeqs = vmInstructions.getInstructionSequences();
 
-    // Sort the output according to the "--sort" argument.
-    SortListOutput(instrSeqs);
-
     // Filter the elements according to command-line arguments.
     vector<unsigned> validIndexes = FilterInstructionSequencesByListCmdArgs(instrSeqs);
+
+    // Sort the output according to the "--sort" argument.
+    SortListOutput(instrSeqs, validIndexes);
 
     // Print each instruction sequence.
     InstructionConverter ic;
