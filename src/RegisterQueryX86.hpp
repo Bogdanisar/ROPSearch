@@ -91,7 +91,7 @@ namespace ROP {
          * Compute the result of the expression represented by the subtree of `currentNode`
          * evaluating `read(reg)` and `write(reg)` operators according to the `registerInfo` parameter.
          */
-        bool compute(ExpressionNode *currentNode, const RegisterInfo& registerInfo);
+        bool matchesRegisterInfo(ExpressionNode *currentNode, const RegisterInfo& registerInfo);
 
         /**
          * Get a string representing the query of the tree rooted at `currentNode` and place it in `repr`.
@@ -107,7 +107,7 @@ namespace ROP {
          * Compute the result of the expression, evaluating `read(reg)` and `write(reg)` operators
          * according to the `registerInfo` parameter.
          */
-        bool compute(const RegisterInfo& registerInfo);
+        bool matchesRegisterInfo(const RegisterInfo& registerInfo);
 
         std::string getStringRepresentationOfQuery();
 

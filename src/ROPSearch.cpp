@@ -294,7 +294,7 @@ FilterInstructionSequencesByListCmdArgs(const vector< pair<unsigned long long, v
             const vector<RegisterInfo>& regInfoList = allRegInfoSeqs[idx];
             RegisterInfo reducedRegInfo = RegisterInfo::reduceRegInfoListWithOrOperator(regInfoList);
 
-            return rq.compute(reducedRegInfo) == false;
+            return rq.matchesRegisterInfo(reducedRegInfo) == false;
         }), validIndexes.end());
     }
 

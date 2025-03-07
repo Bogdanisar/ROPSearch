@@ -247,7 +247,7 @@ bool ROP::RegisterQueryX86::isValidQuery() const {
     return this->expressionTreeRoot != NULL;
 }
 
-bool ROP::RegisterQueryX86::compute(ExpressionNode *currentNode, const RegisterInfo& registerInfo) {
+bool ROP::RegisterQueryX86::matchesRegisterInfo(ExpressionNode *currentNode, const RegisterInfo& registerInfo) {
     // TODO: Replace with switch for better performance.
     if (currentNode->op == ExpressionOperator::READ_REGISTER) {
         return registerInfo.rRegs[currentNode->registerID];
@@ -256,31 +256,31 @@ bool ROP::RegisterQueryX86::compute(ExpressionNode *currentNode, const RegisterI
         return registerInfo.wRegs[currentNode->registerID];
     }
     if (currentNode->op == ExpressionOperator::NOT_OPERATOR) {
-        return !this->compute(currentNode->unary.child, registerInfo);
+        return !this->matchesRegisterInfo(currentNode->unary.child, registerInfo);
     }
     if (currentNode->op == ExpressionOperator::AND_OPERATOR) {
-        return this->compute(currentNode->binary.leftChild, registerInfo) &&
-               this->compute(currentNode->binary.rightChild, registerInfo);
+        return this->matchesRegisterInfo(currentNode->binary.leftChild, registerInfo) &&
+               this->matchesRegisterInfo(currentNode->binary.rightChild, registerInfo);
     }
     if (currentNode->op == ExpressionOperator::XOR_OPERATOR) {
-        return this->compute(currentNode->binary.leftChild, registerInfo) !=
-               this->compute(currentNode->binary.rightChild, registerInfo);
+        return this->matchesRegisterInfo(currentNode->binary.leftChild, registerInfo) !=
+               this->matchesRegisterInfo(currentNode->binary.rightChild, registerInfo);
     }
     if (currentNode->op == ExpressionOperator::OR_OPERATOR) {
-        return this->compute(currentNode->binary.leftChild, registerInfo) ||
-               this->compute(currentNode->binary.rightChild, registerInfo);
+        return this->matchesRegisterInfo(currentNode->binary.leftChild, registerInfo) ||
+               this->matchesRegisterInfo(currentNode->binary.rightChild, registerInfo);
     }
 
     exitError("Got invalid operator type for current node when computing result. Type: %i",
               (int)currentNode->op);
 }
 
-bool ROP::RegisterQueryX86::compute(const RegisterInfo& registerInfo) {
+bool ROP::RegisterQueryX86::matchesRegisterInfo(const RegisterInfo& registerInfo) {
     if (this->expressionTreeRoot == NULL) {
         return true;
     }
 
-    return this->compute(this->expressionTreeRoot, registerInfo);
+    return this->matchesRegisterInfo(this->expressionTreeRoot, registerInfo);
 }
 
 
