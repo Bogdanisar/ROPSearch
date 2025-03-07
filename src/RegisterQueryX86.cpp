@@ -87,7 +87,7 @@ ROP::RegisterQueryX86::parseLeafExpression() {
         }
     }
 
-    LogError("Expected 'read(reg)' or 'write(reg)' when parsing register expression at index %u", this->exprIdx);
+    LogError("Expected \"read(reg)\" or \"write(reg)\" when parsing register expression at index %u.", this->exprIdx);
     return NULL;
 }
 
@@ -134,7 +134,7 @@ ROP::RegisterQueryX86::parseExpression(unsigned currentPrecedence) {
             }
 
             if (this->expressionCString[this->exprIdx] != ')') {
-                LogError("Didn't find expected ')' character at index %u when parsing register expression", this->exprIdx);
+                LogError("Didn't find expected ')' character at index %u when parsing register expression.", this->exprIdx);
 
                 // Free memory.
                 this->freeTree(node);
@@ -208,7 +208,7 @@ ROP::RegisterQueryX86::parseExpression(unsigned currentPrecedence) {
         }
 
         if (!this->nextExpressionCharacterIsValid(currentPrecedence)) {
-            LogError("Found invalid character '%c' when parsing the register expression at index %u",
+            LogError("Found invalid character '%c' when parsing the register expression at index %u.",
                      this->expressionCString[this->exprIdx], this->exprIdx);
 
             // Free memory.
@@ -234,7 +234,7 @@ ROP::RegisterQueryX86::RegisterQueryX86(const std::string expressionString):
 
     if (this->expressionTreeRoot != NULL && this->exprIdx != this->expressionString.size()) {
         // Some of the query string got parsed correctly, but not all of it => Bad query string.
-        LogError("Found invalid character '%c' when parsing the register expression at index %u",
+        LogError("Found invalid character '%c' when parsing the register expression at index %u.",
                  this->expressionCString[this->exprIdx], this->exprIdx);
 
         this->freeTree(this->expressionTreeRoot);

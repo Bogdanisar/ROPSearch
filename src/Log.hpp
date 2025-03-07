@@ -9,6 +9,7 @@ class Log {
     public:
 
     enum class Level {
+        None    = 0,
         Error   = 1<<0,
         Warn    = 1<<1,
         Info    = 1<<2,

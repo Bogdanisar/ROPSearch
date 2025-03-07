@@ -10,8 +10,9 @@
 #include "InstructionConverter.hpp"
 
 
-// Forward declaration for friend function.
+// Forward declarations for friend functions.
 void testRegisterQueryTransformation();
+void testRegisterQueryValidParse();
 
 
 namespace ROP {
@@ -112,8 +113,9 @@ namespace ROP {
         ~RegisterQueryX86();
 
 
-        // So that it can access private data (in ManualTests.cpp).
+        // Mark these functions as friends so that they can access private members.
         friend void ::testRegisterQueryTransformation();
+        friend void ::testRegisterQueryValidParse();
     };
 
 }

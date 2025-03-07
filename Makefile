@@ -66,6 +66,12 @@ bin/ManualTests.o: src/tests/ManualTests.cpp $(shell find ./src -name "*.hpp")
 bin/ManualTests.exe: bin/ManualTests.o $(classObjectFiles)
 	g++ $^ $(KEYSTONE_LDFLAGS) $(CAPSTONE_LDFLAGS) -o $@
 
+bin/UnitTests.o: src/tests/UnitTests.cpp $(shell find ./src -name "*.hpp")
+	g++ $(wFlags) -c $< -o $@
+
+bin/UnitTests.exe: bin/UnitTests.o $(classObjectFiles)
+	g++ $^ $(KEYSTONE_LDFLAGS) $(CAPSTONE_LDFLAGS) -o $@
+
 
 # Vulnerable executable
 
