@@ -272,6 +272,10 @@ bool ROP::RegisterQueryX86::compute(ExpressionNode *currentNode, const RegisterI
 }
 
 bool ROP::RegisterQueryX86::compute(const RegisterInfo& registerInfo) {
+    if (this->expressionTreeRoot == NULL) {
+        return true;
+    }
+
     return this->compute(this->expressionTreeRoot, registerInfo);
 }
 

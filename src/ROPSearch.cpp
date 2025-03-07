@@ -243,13 +243,44 @@ void SortListOutput(vector< pair<unsigned long long, vector<string>> >& instrSeq
     sort(instrSeqs.begin(), instrSeqs.end(), comparator);
 }
 
+vector<unsigned>
+FilterInstructionSequencesByListCmdArgs(const vector< pair<unsigned long long, vector<string>> >& instrSeqs) {
+    const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
+    const bool ignoreNullBytes = gListCmdSubparser.get<bool>("--no-null");
+
+    vector<unsigned> validIndexes;
+    for (unsigned idx = 0; idx < instrSeqs.size(); ++idx) {
+        validIndexes.push_back(idx);
+    }
+
+    // Apply the "--min-instructions" filter.
+    validIndexes.erase(remove_if(validIndexes.begin(), validIndexes.end(), [&](unsigned idx) {
+        const auto& p = instrSeqs[idx];
+        const vector<string>& instructionSequence = p.second;
+
+        return (int)instructionSequence.size() < minInstructions;
+    }), validIndexes.end());
+
+    // Apply the "--no-null" filter
+    if (ignoreNullBytes) {
+        validIndexes.erase(remove_if(validIndexes.begin(), validIndexes.end(), [&](unsigned idx) {
+            const auto& p = instrSeqs[idx];
+            const unsigned long long& addr = p.first;
+            byteSequence addressBytes = BytesOfInteger(addr);
+
+            return find(addressBytes.begin(), addressBytes.end(), (ROP::byte)0x00) != addressBytes.end();
+        }), validIndexes.end());
+    }
+
+    return validIndexes;
+}
+
 void DoListCommand() {
     assertMessage(gListCmdSubparser, "Inner logic error...");
 
     const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
     const int maxInstructions = gListCmdSubparser.get<int>("--max-instructions");
     const string asmSyntaxString = gListCmdSubparser.get<string>("--assembly-syntax");
-    const bool ignoreNullBytes = gListCmdSubparser.get<bool>("--no-null");
 
     assertMessage(1 <= minInstructions && minInstructions <= 100, "Please input a different number of min instructions...");
     assertMessage(1 <= maxInstructions && maxInstructions <= 100, "Please input a different number of max instructions...");
@@ -273,37 +304,27 @@ void DoListCommand() {
         }
     }();
 
-    InstructionConverter ic;
     auto instrSeqs = vmInstructions.getInstructionSequences();
 
     // Sort the output according to the "--sort" argument.
     SortListOutput(instrSeqs);
 
-    unsigned long long totalPrinted = 0;
-    for (const auto& p : instrSeqs) {
-        unsigned long long addr = p.first;
-        vector<string> instructionSequence = p.second;
+    // Filter the elements according to command-line arguments.
+    vector<unsigned> validIndexes = FilterInstructionSequencesByListCmdArgs(instrSeqs);
 
-        // Apply the "--min-instructions" filter.
-        if ((int)instructionSequence.size() < minInstructions) {
-            continue;
-        }
-
-        // Apply the "--no-null" filter
-        if (ignoreNullBytes) {
-            byteSequence addressBytes = BytesOfInteger(addr);
-            if (find(addressBytes.begin(), addressBytes.end(), (ROP::byte)0x00) != addressBytes.end()) {
-                continue;
-            }
-        }
+    // Print each instruction sequence.
+    InstructionConverter ic;
+    for (unsigned idx : validIndexes) {
+        const auto& p = instrSeqs[idx];
+        const unsigned long long& addr = p.first;
+        const vector<string>& instructionSequence = p.second;
 
         string fullSequence = ic.concatenateInstructionsAsm(instructionSequence);
         LogInfo("0x%016llx: %s", addr, fullSequence.c_str());
-        totalPrinted += 1;
     }
 
     LogInfo("");
-    LogInfo("Found %llu instruction sequences.", totalPrinted);
+    LogInfo("Found %u instruction sequences.", (unsigned)validIndexes.size());
 }
 
 #pragma endregion List command
