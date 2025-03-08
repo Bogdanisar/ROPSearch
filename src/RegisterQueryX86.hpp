@@ -69,9 +69,9 @@ namespace ROP {
 
         private:
         // Auxiliary structure to store the precomputed information below.
-        struct StoredRegisterOperatorString {
+        struct StoredRegisterTermString {
             // Something like "read(rax)" or "write(rax)".
-            std::string regString;
+            std::string termString;
 
             // Either QueryNodeType::READ_REGISTER or QueryNodeType::WRITE_REGISTER.
             QueryNodeType nodeType;
@@ -82,11 +82,11 @@ namespace ROP {
 
         const std::string queryString;
         const char * const queryCString;
-        std::vector<StoredRegisterOperatorString> registerOperatorStrings;
+        std::vector<StoredRegisterTermString> registerTermStrings;
         unsigned queryIdx;
         QueryNode *queryTreeRoot;
 
-        void precomputeRegisterOperatorStrings();
+        void precomputeRegisterTermStrings();
         QueryNode* parseQueryLeaf();
         bool nextQueryCharacterIsValid(unsigned currentPrecedence);
         QueryNode* parseQuery(unsigned currentPrecedence);

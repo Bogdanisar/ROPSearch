@@ -38,7 +38,7 @@ static std::string GetStringNoWhitespace(const std::string& str) {
 
 
 void
-ROP::RegisterQueryX86::precomputeRegisterOperatorStrings() {
+ROP::RegisterQueryX86::precomputeRegisterTermStrings() {
     for (unsigned regIndex = X86_REG_INVALID + 1; regIndex < (unsigned)X86_REG_ENDING; ++regIndex) {
         x86_reg regID = (x86_reg)regIndex;
 
@@ -48,20 +48,20 @@ ROP::RegisterQueryX86::precomputeRegisterOperatorStrings() {
         // Keep only the part after the last '_' (e.g. just "RAX").
         regCString = strrchr(regCString, '_') + 1;
 
-        for (const char * const op : {"read", "write"}) {
+        for (const char * const kind : {"read", "write"}) {
             // Get a string like "read(RAX)" or "write(RAX)".
-            std::string currOperatorString = std::string(op) + "(" + std::string(regCString) + ")";
+            std::string currTermString = std::string(kind) + "(" + std::string(regCString) + ")";
 
             // Turn to lowercase.
-            for(char& c : currOperatorString) {
+            for(char& c : currTermString) {
                 c = tolower(c);
             }
 
-            if (std::string(op) == "read") {
-                this->registerOperatorStrings.push_back({currOperatorString, QueryNodeType::READ_REGISTER, regID});
+            if (std::string(kind) == "read") {
+                this->registerTermStrings.push_back({currTermString, QueryNodeType::READ_REGISTER, regID});
             }
             else {
-                this->registerOperatorStrings.push_back({currOperatorString, QueryNodeType::WRITE_REGISTER, regID});
+                this->registerTermStrings.push_back({currTermString, QueryNodeType::WRITE_REGISTER, regID});
             }
         }
     }
@@ -90,17 +90,17 @@ ROP::RegisterQueryX86::parseQueryLeaf() {
         return node;
     }
 
-    for (const auto& regOperatorInfo : this->registerOperatorStrings) {
-        const x86_reg& regID = regOperatorInfo.regID;
-        const std::string& opString = regOperatorInfo.regString;
-        const QueryNodeType& queryOpType = regOperatorInfo.nodeType;
+    for (const auto& regTermInfo : this->registerTermStrings) {
+        const x86_reg& regID = regTermInfo.regID;
+        const std::string& termString = regTermInfo.termString;
+        const QueryNodeType& queryNodeType = regTermInfo.nodeType;
 
-        if (strncmp(this->queryCString + this->queryIdx, opString.c_str(), opString.size()) == 0) {
+        if (strncmp(this->queryCString + this->queryIdx, termString.c_str(), termString.size()) == 0) {
             // Go over the parsed string.
-            this->queryIdx += (int)opString.size();
+            this->queryIdx += (int)termString.size();
 
             QueryNode *node = new QueryNode();
-            node->nodeType = queryOpType;
+            node->nodeType = queryNodeType;
             node->registerID = regID;
             return node;
         }
@@ -244,8 +244,8 @@ ROP::RegisterQueryX86::RegisterQueryX86(const std::string queryString):
     queryString(GetLowercaseString(GetStringNoWhitespace(queryString))),
     queryCString(this->queryString.c_str())
 {
-    // Compute value of `this->registerOperatorStrings`.
-    this->precomputeRegisterOperatorStrings();
+    // Compute value of `this->registerTermStrings`.
+    this->precomputeRegisterTermStrings();
 
     this->queryIdx = 0;
     this->queryTreeRoot = this->parseQuery(0);

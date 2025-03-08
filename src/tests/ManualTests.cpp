@@ -931,12 +931,12 @@ void testRegisterQueryTransformation() {
     RegisterQueryX86 basicRQ("read(RAX)");
 
     // Print precomputed basic operator strings.
-    for (const auto& regOperatorInfo : basicRQ.registerOperatorStrings) {
+    for (const auto& regOperatorInfo : basicRQ.registerTermStrings) {
         const x86_reg& regID = regOperatorInfo.regID;
         const char *regCString = ROP::InstructionConverter::convertCapstoneRegIdToString(regID);
-        const std::string& opString = regOperatorInfo.regString;
+        const std::string& termString = regOperatorInfo.termString;
 
-        LogVar(opString); LogDebug("(reg = %s)", regCString);
+        LogVar(termString); LogDebug("(reg = %s)", regCString);
     }
     LogLine();
 
