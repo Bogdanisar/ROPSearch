@@ -73,7 +73,7 @@ ROP::RegisterQueryX86::parseQueryLeaf() {
     for (const auto& regOperatorInfo : this->registerOperatorStrings) {
         const x86_reg& regID = regOperatorInfo.regID;
         const std::string& opString = regOperatorInfo.regString;
-        const QueryNodeType& queryOpType = regOperatorInfo.opType;
+        const QueryNodeType& queryOpType = regOperatorInfo.nodeType;
 
         if (strncmp(this->queryCString + this->queryIdx, opString.c_str(), opString.size()) == 0) {
             // Go over the parsed string.
@@ -81,7 +81,7 @@ ROP::RegisterQueryX86::parseQueryLeaf() {
 
             // Create and return a corresponding node structure for the parsed query.
             QueryNode *node = new QueryNode();
-            node->op = queryOpType;
+            node->nodeType = queryOpType;
             node->registerID = regID;
             return node;
         }
@@ -169,7 +169,7 @@ ROP::RegisterQueryX86::parseQuery(unsigned currentPrecedence) {
 
         if (shouldNegate) {
             QueryNode *negationNode = new QueryNode();
-            negationNode->op = QueryNodeType::NOT_OPERATOR;
+            negationNode->nodeType = QueryNodeType::NOT_OPERATOR;
             negationNode->unary.child = node;
             node = negationNode;
         }
@@ -200,7 +200,7 @@ ROP::RegisterQueryX86::parseQuery(unsigned currentPrecedence) {
             }
 
             QueryNode *bothNode = new QueryNode();
-            bothNode->op = PRECEDENCE_TO_OPERATOR_TYPE[currentPrecedence];
+            bothNode->nodeType = PRECEDENCE_TO_OPERATOR_TYPE[currentPrecedence];
             bothNode->binary.leftChild = currentNode;
             bothNode->binary.rightChild = nextNode;
 
@@ -247,7 +247,7 @@ bool ROP::RegisterQueryX86::isValidQuery() const {
 
 bool ROP::RegisterQueryX86::matchesRegisterInfo(QueryNode *currentNode, const RegisterInfo& registerInfo) {
     // This method will get called a lot. `Switch` is faster than `if` when there are a lot of cases.
-    switch (currentNode->op) {
+    switch (currentNode->nodeType) {
         case QueryNodeType::READ_REGISTER: {
             return registerInfo.rRegs[currentNode->registerID];
         }
@@ -271,7 +271,7 @@ bool ROP::RegisterQueryX86::matchesRegisterInfo(QueryNode *currentNode, const Re
         }
         default: {
             exitError("Got invalid operator type for current node when computing result. Type: %i",
-                      (int)currentNode->op);
+                      (int)currentNode->nodeType);
         }
     }
 }
@@ -286,7 +286,7 @@ bool ROP::RegisterQueryX86::matchesRegisterInfo(const RegisterInfo& registerInfo
 
 
 void ROP::RegisterQueryX86::getStringRepresentationOfQuery(const QueryNode *currentNode, std::string& repr) {
-    switch (currentNode->op) {
+    switch (currentNode->nodeType) {
         case QueryNodeType::READ_REGISTER: {
             repr += "read(";
             repr += InstructionConverter::convertCapstoneRegIdToString(currentNode->registerID);
@@ -331,7 +331,7 @@ void ROP::RegisterQueryX86::getStringRepresentationOfQuery(const QueryNode *curr
         }
         default: {
             exitError("Got invalid operator type for current node when getting string representation. Type: %i",
-                    (int)currentNode->op);
+                      (int)currentNode->nodeType);
         }
     }
 }
@@ -348,12 +348,12 @@ std::string ROP::RegisterQueryX86::getStringRepresentationOfQuery() {
 
 
 void ROP::RegisterQueryX86::freeTree(QueryNode *currentNode) {
-    if (currentNode->op == QueryNodeType::NOT_OPERATOR) {
+    if (currentNode->nodeType == QueryNodeType::NOT_OPERATOR) {
         this->freeTree(currentNode->unary.child);
     }
-    else if (currentNode->op == QueryNodeType::AND_OPERATOR ||
-             currentNode->op == QueryNodeType::XOR_OPERATOR ||
-             currentNode->op == QueryNodeType::OR_OPERATOR) {
+    else if (currentNode->nodeType == QueryNodeType::AND_OPERATOR ||
+             currentNode->nodeType == QueryNodeType::XOR_OPERATOR ||
+             currentNode->nodeType == QueryNodeType::OR_OPERATOR) {
         this->freeTree(currentNode->binary.leftChild);
         this->freeTree(currentNode->binary.rightChild);
     }

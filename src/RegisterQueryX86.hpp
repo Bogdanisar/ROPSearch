@@ -25,26 +25,29 @@ namespace ROP {
 
         public:
         /**
-         * Each node in the tree represents an operator.
-         * The values are listed in the order of operator precedence, from highest precedence to lowest.
-         * Leaf nodes are of "READ_REGISTER" or "WRITE_REGISTER" type.
-         * The rest of the nodes in the tree are binary operators, with two child nodes
-         * or a NOT operator, with one child node.
+         * Each leaf node in the query expression tree represents a simple term.
+         * Each internal node in the query expression tree represents a query operator.
+         * Operator nodes can have two child nodes or just one child node (NOT).
+         * The values are listed in the order of expression evaluation precedence,
+         * from highest precedence to lowest precedence.
          */
         enum class QueryNodeType {
+            // Leaf
             READ_REGISTER,
             WRITE_REGISTER,
+
+            // Operator
             NOT_OPERATOR,
             AND_OPERATOR,
             XOR_OPERATOR,
             OR_OPERATOR,
         };
 
-        // A struct representing a node in the query expression tree. Each node corresponds to an operator.
+        // A struct representing a node in the query expression tree.
         // Each subtree represents a subexpression of the whole expression.
         // Each tree/subtree can be evaluated to TRUE / FALSE based on given register information.
         struct QueryNode {
-            QueryNodeType op;
+            QueryNodeType nodeType;
             union {
                 // For READ(reg) or WRITE(reg) operators.
                 x86_reg registerID;
@@ -69,7 +72,7 @@ namespace ROP {
             std::string regString;
 
             // Either QueryNodeType::READ_REGISTER or QueryNodeType::WRITE_REGISTER.
-            QueryNodeType opType;
+            QueryNodeType nodeType;
 
             // Something like X86_REG_RAX.
             x86_reg regID;
