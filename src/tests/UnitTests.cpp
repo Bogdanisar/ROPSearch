@@ -28,6 +28,9 @@ void normalizeCWD() {
 void testRegisterQueryValidParse() {
     // Check that these strings are parsed successfully.
     vector<string> validQueryStrings = {
+        "true",
+        "false",
+        "TRUE ^ FALSE",
         "read(RAX)",
         "write(DH)",
         "((((read(RAX)))))",
@@ -56,6 +59,8 @@ void testRegisterQueryValidParse() {
     vector<string> invalidQueryStrings = {
         "()",
         "()()",
+        "(false)(true)",
+        "flase",
         "(read(RAX))(write(RBX))",
         "red(RAX)",
         "read()",

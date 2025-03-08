@@ -33,6 +33,8 @@ namespace ROP {
          */
         enum class QueryNodeType {
             // Leaf
+            VALUE_TRUE,
+            VALUE_FALSE,
             READ_REGISTER,
             WRITE_REGISTER,
 

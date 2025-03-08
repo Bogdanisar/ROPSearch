@@ -941,6 +941,7 @@ void testRegisterQueryTransformation() {
     LogLine();
 
     vector<string> queryList = {
+        "TRUE | false & READ(edi)",
         "!!!(read(RAX) | read(dh))   &  (write(ebX) ^ write(ecx)) ",
         "!!!read(RAX) ^ !!write(RBX) ^ !write(RCX)",
         "!(((( write(ah) & write(bh) & WRITE(ch) & (write(DH)) ))))",

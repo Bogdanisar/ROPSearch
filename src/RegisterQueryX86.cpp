@@ -69,7 +69,27 @@ ROP::RegisterQueryX86::precomputeRegisterOperatorStrings() {
 
 ROP::RegisterQueryX86::QueryNode*
 ROP::RegisterQueryX86::parseQueryLeaf() {
-    // Check if the current part of the query is of the "read(REG)" type.
+    // Check if the current part of the query is a basic expression term (e.g. "true" or "read(RSI)")
+    // and return a corresponding node structure for the parsed subquery.
+
+    if (strncmp(this->queryCString + this->queryIdx, "true", 4) == 0) {
+        // Go over the parsed string.
+        this->queryIdx += 4;
+
+        QueryNode *node = new QueryNode();
+        node->nodeType = QueryNodeType::VALUE_TRUE;
+        return node;
+    }
+
+    if (strncmp(this->queryCString + this->queryIdx, "false", 5) == 0) {
+        // Go over the parsed string.
+        this->queryIdx += 5;
+
+        QueryNode *node = new QueryNode();
+        node->nodeType = QueryNodeType::VALUE_FALSE;
+        return node;
+    }
+
     for (const auto& regOperatorInfo : this->registerOperatorStrings) {
         const x86_reg& regID = regOperatorInfo.regID;
         const std::string& opString = regOperatorInfo.regString;
@@ -79,7 +99,6 @@ ROP::RegisterQueryX86::parseQueryLeaf() {
             // Go over the parsed string.
             this->queryIdx += (int)opString.size();
 
-            // Create and return a corresponding node structure for the parsed query.
             QueryNode *node = new QueryNode();
             node->nodeType = queryOpType;
             node->registerID = regID;
@@ -87,7 +106,8 @@ ROP::RegisterQueryX86::parseQueryLeaf() {
         }
     }
 
-    LogError("Expected \"read(reg)\" or \"write(reg)\" when parsing register query at index %u.", this->queryIdx);
+    LogError("Expected \"true\", \"false\", \"read(reg)\" or \"write(reg)\" "
+             "when parsing register query at index %u.", this->queryIdx);
     return NULL;
 }
 
@@ -120,7 +140,7 @@ ROP::RegisterQueryX86::nextQueryCharacterIsValid(unsigned currentPrecedence) {
 ROP::RegisterQueryX86::QueryNode*
 ROP::RegisterQueryX86::parseQuery(unsigned currentPrecedence) {
     if (currentPrecedence == MAX_PRECEDENCE) {
-        // We want to look for "read(reg)" or "write(reg)" now.
+        // We want to look for basic terms like "true" or "read(reg)" now.
         // We could also find a subquery in parenthesis here: "(expr)".
 
         if (this->queryCString[this->queryIdx] == '(') {
@@ -145,7 +165,7 @@ ROP::RegisterQueryX86::parseQuery(unsigned currentPrecedence) {
             return node;
         }
         else {
-            // The query should be "read(reg)" or "write(reg)" now.
+            // The query should contain a basic term now.
             QueryNode *node = this->parseQueryLeaf();
             return node;
         }
@@ -248,6 +268,12 @@ bool ROP::RegisterQueryX86::isValidQuery() const {
 bool ROP::RegisterQueryX86::matchesRegisterInfo(QueryNode *currentNode, const RegisterInfo& registerInfo) {
     // This method will get called a lot. `Switch` is faster than `if` when there are a lot of cases.
     switch (currentNode->nodeType) {
+        case QueryNodeType::VALUE_TRUE: {
+            return true;
+        }
+        case QueryNodeType::VALUE_FALSE: {
+            return false;
+        }
         case QueryNodeType::READ_REGISTER: {
             return registerInfo.rRegs[currentNode->registerID];
         }
@@ -287,6 +313,14 @@ bool ROP::RegisterQueryX86::matchesRegisterInfo(const RegisterInfo& registerInfo
 
 void ROP::RegisterQueryX86::getStringRepresentationOfQuery(const QueryNode *currentNode, std::string& repr) {
     switch (currentNode->nodeType) {
+        case QueryNodeType::VALUE_TRUE: {
+            repr += "true";
+            break;
+        }
+        case QueryNodeType::VALUE_FALSE: {
+            repr += "false";
+            break;
+        }
         case QueryNodeType::READ_REGISTER: {
             repr += "read(";
             repr += InstructionConverter::convertCapstoneRegIdToString(currentNode->registerID);
