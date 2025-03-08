@@ -951,7 +951,7 @@ void testRegisterQueryTransformation() {
         RegisterQueryX86 rq(query);
 
         LogDebug("Initial query: %s", query.c_str());
-        LogDebug("Transformed query: %s", rq.expressionCString);
+        LogDebug("Transformed query: %s", rq.queryCString);
         LogDebug("Query representation: %s", rq.getStringRepresentationOfQuery().c_str());
         LogLine();
     }
