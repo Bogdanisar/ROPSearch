@@ -44,9 +44,9 @@ void testRegisterQueryValidParse() {
 
     for (unsigned idx = 0; idx < validQueryStrings.size(); ++idx) {
         const auto &queryString = validQueryStrings[idx];
-        if (RegisterQueryX86(queryString).queryTreeRoot == NULL) {
+        if (!RegisterQueryX86(queryString).isValidQuery()) {
             LogError("Test #%i; Query string: \"%s\".", idx, queryString.c_str());
-            LogError("RegisterQueryX86 parser fails on valid query string test.");
+            LogError("RegisterQueryX86 parser fails on query string test that should be successful.");
             exit(-1);
         }
     }
@@ -90,9 +90,9 @@ void testRegisterQueryValidParse() {
         RegisterQueryX86 rq(queryString);
         Log::ProgramLogLevel = Log::Level::Debug;
 
-        if (rq.queryTreeRoot != NULL) {
+        if (rq.isValidQuery()) {
             LogError("Test #%i; Query string: \"%s\".", idx, queryString.c_str());
-            LogError("RegisterQueryX86 parser succeeds on invalid query string test.");
+            LogError("RegisterQueryX86 parser succeeds on query string test that should fail.");
             exit(-1);
         }
     }

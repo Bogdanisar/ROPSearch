@@ -12,7 +12,6 @@
 
 // Forward declarations for friend functions.
 void testRegisterQueryTransformation();
-void testRegisterQueryValidParse();
 
 
 namespace ROP {
@@ -117,7 +116,6 @@ namespace ROP {
 
         // Mark these functions as friends so that they can access private members.
         friend void ::testRegisterQueryTransformation();
-        friend void ::testRegisterQueryValidParse();
     };
 
 }
