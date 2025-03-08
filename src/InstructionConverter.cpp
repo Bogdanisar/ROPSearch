@@ -7,7 +7,6 @@
 
 ROP::RegisterInfo ROP::RegisterInfo::reduceRegInfoListWithAndOperator(const std::vector<RegisterInfo> &infoList) {
 	if (infoList.size() == 0) {
-		LogError("Got empty register info list when applying AND operator");
 		return {};
 	}
 
@@ -22,7 +21,6 @@ ROP::RegisterInfo ROP::RegisterInfo::reduceRegInfoListWithAndOperator(const std:
 
 ROP::RegisterInfo ROP::RegisterInfo::reduceRegInfoListWithOrOperator(const std::vector<RegisterInfo> &infoList) {
 	if (infoList.size() == 0) {
-		LogError("Got empty register info list when applying OR operator");
 		return {};
 	}
 

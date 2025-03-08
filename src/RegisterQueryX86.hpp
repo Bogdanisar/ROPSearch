@@ -35,8 +35,10 @@ namespace ROP {
             // Leaf
             VALUE_TRUE,
             VALUE_FALSE,
-            READ_REGISTER,
-            WRITE_REGISTER,
+            ANY_READ_REGISTER, // At least one instruction reads the register.
+            ALL_READ_REGISTER, // All instructions (except the last one) read the register.
+            ANY_WRITE_REGISTER, // At least one instruction writes to the register.
+            ALL_WRITE_REGISTER, // All instructions (except the last one) write to the register.
 
             // Operator
             NOT_OPERATOR,
@@ -73,7 +75,7 @@ namespace ROP {
             // Something like "read(rax)" or "write(rax)".
             std::string termString;
 
-            // Either QueryNodeType::READ_REGISTER or QueryNodeType::WRITE_REGISTER.
+            // Either QueryNodeType::ANY/ALL_READ_REGISTER, or QueryNodeType::ANY/ALL_WRITE_REGISTER.
             QueryNodeType nodeType;
 
             // Something like X86_REG_RAX.
@@ -93,9 +95,11 @@ namespace ROP {
 
         /**
          * Compute the result of the query represented by the subtree of `currentNode`
-         * evaluating `read(reg)` and `write(reg)` operators according to the `registerInfo` parameter.
+         * evaluating `read(reg)` and `write(reg)` terms according to the `RegisterInfo` parameters.
          */
-        bool matchesRegisterInfo(QueryNode *currentNode, const RegisterInfo& registerInfo);
+        bool matchesRegisterInfo(QueryNode *currentNode,
+                                 const RegisterInfo& regInfoAny,
+                                 const RegisterInfo& regInfoAll);
 
         /**
          * Get a string representing the query of the tree rooted at `currentNode` and place it in `repr`.
@@ -108,10 +112,10 @@ namespace ROP {
         bool isValidQuery() const;
 
         /**
-         * Compute the result of the query, evaluating `read(reg)` and `write(reg)` operators
-         * according to the `registerInfo` parameter.
+         * Compute the result of the query, evaluating `read(reg)` and `write(reg)` terms
+         * according to the `RegisterInfo` objects of the instruction sequence.
          */
-        bool matchesRegisterInfo(const RegisterInfo& registerInfo);
+        bool matchesRegisterInfoOfInstructionSequence(const std::vector<RegisterInfo>& regInfoSequence);
 
         std::string getStringRepresentationOfQuery();
 

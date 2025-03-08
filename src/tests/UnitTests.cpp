@@ -32,7 +32,11 @@ void testRegisterQueryValidParse() {
         "false",
         "TRUE ^ FALSE",
         "read(RAX)",
+        "anyread(RAX)",
+        "allREAD(RAX)",
         "write(DH)",
+        "anywrite(DH)",
+        "ALLwrite(DH)",
         "((((read(RAX)))))",
         "!read(RAX)",
         "!(read(RAX))",
@@ -43,6 +47,7 @@ void testRegisterQueryValidParse() {
         "!read(XMM0) & !!write(XMM1) ^ !!!write(XMM3) | !!(((!!write(XMM4))))",
         "(read(RAX) | READ(RBX)) & (WRITE(r8) ^ wRiTe(R15))",
         "   (read(RAX)|READ(RBX))  &  (WRITE(r8)^wRiTe(R15))   ",
+        "   (read(RAX)|AnyRead(RBX))  &  (WRITE(r8)^anyWrite(R15))   ",
     };
 
     for (unsigned idx = 0; idx < validQueryStrings.size(); ++idx) {
@@ -63,11 +68,13 @@ void testRegisterQueryValidParse() {
         "flase",
         "(read(RAX))(write(RBX))",
         "red(RAX)",
+        "allred(RAX)",
         "read()",
         "read(reg)",
         "read(anything)",
         "write",
         "wrote(DH)",
+        "everywrite(DH)",
         "))read(RAX)((",
         "read!(RAX)",
         "read(!RAX)",

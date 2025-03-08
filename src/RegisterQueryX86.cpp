@@ -48,7 +48,7 @@ ROP::RegisterQueryX86::precomputeRegisterTermStrings() {
         // Keep only the part after the last '_' (e.g. just "RAX").
         regCString = strrchr(regCString, '_') + 1;
 
-        for (const char * const kind : {"read", "write"}) {
+        for (const char * const kind : {"read", "anyread", "allread", "write", "anywrite", "allwrite"}) {
             // Get a string like "read(RAX)" or "write(RAX)".
             std::string currTermString = std::string(kind) + "(" + std::string(regCString) + ")";
 
@@ -57,11 +57,18 @@ ROP::RegisterQueryX86::precomputeRegisterTermStrings() {
                 c = tolower(c);
             }
 
-            if (std::string(kind) == "read") {
-                this->registerTermStrings.push_back({currTermString, QueryNodeType::READ_REGISTER, regID});
+            if (std::string(kind) == "read" || std::string(kind) == "anyread") {
+                this->registerTermStrings.push_back({currTermString, QueryNodeType::ANY_READ_REGISTER, regID});
+            }
+            else if (std::string(kind) == "allread") {
+                this->registerTermStrings.push_back({currTermString, QueryNodeType::ALL_READ_REGISTER, regID});
+            }
+            else if (std::string(kind) == "write" || std::string(kind) == "anywrite") {
+                this->registerTermStrings.push_back({currTermString, QueryNodeType::ANY_WRITE_REGISTER, regID});
             }
             else {
-                this->registerTermStrings.push_back({currTermString, QueryNodeType::WRITE_REGISTER, regID});
+                assert(std::string(kind) == "allwrite");
+                this->registerTermStrings.push_back({currTermString, QueryNodeType::ALL_WRITE_REGISTER, regID});
             }
         }
     }
@@ -265,7 +272,9 @@ bool ROP::RegisterQueryX86::isValidQuery() const {
     return this->queryTreeRoot != NULL;
 }
 
-bool ROP::RegisterQueryX86::matchesRegisterInfo(QueryNode *currentNode, const RegisterInfo& registerInfo) {
+bool ROP::RegisterQueryX86::matchesRegisterInfo(QueryNode *currentNode,
+                                                const RegisterInfo& regInfoAny,
+                                                const RegisterInfo& regInfoAll) {
     // This method will get called a lot. `Switch` is faster than `if` when there are a lot of cases.
     switch (currentNode->nodeType) {
         case QueryNodeType::VALUE_TRUE: {
@@ -274,26 +283,32 @@ bool ROP::RegisterQueryX86::matchesRegisterInfo(QueryNode *currentNode, const Re
         case QueryNodeType::VALUE_FALSE: {
             return false;
         }
-        case QueryNodeType::READ_REGISTER: {
-            return registerInfo.rRegs[currentNode->registerID];
+        case QueryNodeType::ANY_READ_REGISTER: {
+            return regInfoAny.rRegs[currentNode->registerID];
         }
-        case QueryNodeType::WRITE_REGISTER: {
-            return registerInfo.wRegs[currentNode->registerID];
+        case QueryNodeType::ALL_READ_REGISTER: {
+            return regInfoAll.rRegs[currentNode->registerID];
+        }
+        case QueryNodeType::ANY_WRITE_REGISTER: {
+            return regInfoAny.wRegs[currentNode->registerID];
+        }
+        case QueryNodeType::ALL_WRITE_REGISTER: {
+            return regInfoAll.wRegs[currentNode->registerID];
         }
         case QueryNodeType::NOT_OPERATOR: {
-            return !this->matchesRegisterInfo(currentNode->unary.child, registerInfo);
+            return !this->matchesRegisterInfo(currentNode->unary.child, regInfoAny, regInfoAll);
         }
         case QueryNodeType::AND_OPERATOR: {
-            return this->matchesRegisterInfo(currentNode->binary.leftChild, registerInfo) &&
-                   this->matchesRegisterInfo(currentNode->binary.rightChild, registerInfo);
+            return this->matchesRegisterInfo(currentNode->binary.leftChild, regInfoAny, regInfoAll) &&
+                   this->matchesRegisterInfo(currentNode->binary.rightChild, regInfoAny, regInfoAll);
         }
         case QueryNodeType::XOR_OPERATOR: {
-            return this->matchesRegisterInfo(currentNode->binary.leftChild, registerInfo) !=
-                   this->matchesRegisterInfo(currentNode->binary.rightChild, registerInfo);
+            return this->matchesRegisterInfo(currentNode->binary.leftChild, regInfoAny, regInfoAll) !=
+                   this->matchesRegisterInfo(currentNode->binary.rightChild, regInfoAny, regInfoAll);
         }
         case QueryNodeType::OR_OPERATOR: {
-            return this->matchesRegisterInfo(currentNode->binary.leftChild, registerInfo) ||
-                   this->matchesRegisterInfo(currentNode->binary.rightChild, registerInfo);
+            return this->matchesRegisterInfo(currentNode->binary.leftChild, regInfoAny, regInfoAll) ||
+                   this->matchesRegisterInfo(currentNode->binary.rightChild, regInfoAny, regInfoAll);
         }
         default: {
             exitError("Got invalid operator type for current node when computing result. Type: %i",
@@ -302,12 +317,19 @@ bool ROP::RegisterQueryX86::matchesRegisterInfo(QueryNode *currentNode, const Re
     }
 }
 
-bool ROP::RegisterQueryX86::matchesRegisterInfo(const RegisterInfo& registerInfo) {
+bool ROP::RegisterQueryX86::matchesRegisterInfoOfInstructionSequence(const std::vector<RegisterInfo>& regInfoSequence) {
     if (this->queryTreeRoot == NULL) {
         return true;
     }
 
-    return this->matchesRegisterInfo(this->queryTreeRoot, registerInfo);
+    RegisterInfo regInfoAny = RegisterInfo::reduceRegInfoListWithOrOperator(regInfoSequence);
+
+    auto regInfoSeqCopy = regInfoSequence;
+    assert(regInfoSeqCopy.size() > 0);
+    regInfoSeqCopy.pop_back();
+    RegisterInfo regInfoAll = RegisterInfo::reduceRegInfoListWithAndOperator(regInfoSeqCopy);
+
+    return this->matchesRegisterInfo(this->queryTreeRoot, regInfoAny, regInfoAll);
 }
 
 
@@ -321,14 +343,26 @@ void ROP::RegisterQueryX86::getStringRepresentationOfQuery(const QueryNode *curr
             repr += "false";
             break;
         }
-        case QueryNodeType::READ_REGISTER: {
-            repr += "read(";
+        case QueryNodeType::ANY_READ_REGISTER: {
+            repr += "anyread(";
             repr += InstructionConverter::convertCapstoneRegIdToString(currentNode->registerID);
             repr += ")";
             break;
         }
-        case QueryNodeType::WRITE_REGISTER: {
-            repr += "write(";
+        case QueryNodeType::ALL_READ_REGISTER: {
+            repr += "allread(";
+            repr += InstructionConverter::convertCapstoneRegIdToString(currentNode->registerID);
+            repr += ")";
+            break;
+        }
+        case QueryNodeType::ANY_WRITE_REGISTER: {
+            repr += "anywrite(";
+            repr += InstructionConverter::convertCapstoneRegIdToString(currentNode->registerID);
+            repr += ")";
+            break;
+        }
+        case QueryNodeType::ALL_WRITE_REGISTER: {
+            repr += "allwrite(";
             repr += InstructionConverter::convertCapstoneRegIdToString(currentNode->registerID);
             repr += ")";
             break;

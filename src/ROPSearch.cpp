@@ -292,9 +292,7 @@ FilterInstructionSequencesByListCmdArgs(const vector< pair<unsigned long long, v
 
         validIndexes.erase(remove_if(validIndexes.begin(), validIndexes.end(), [&](unsigned idx) {
             const vector<RegisterInfo>& regInfoList = allRegInfoSeqs[idx];
-            RegisterInfo reducedRegInfo = RegisterInfo::reduceRegInfoListWithOrOperator(regInfoList);
-
-            return rq.matchesRegisterInfo(reducedRegInfo) == false;
+            return rq.matchesRegisterInfoOfInstructionSequence(regInfoList) == false;
         }), validIndexes.end());
     }
 
