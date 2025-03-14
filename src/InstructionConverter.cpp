@@ -14,6 +14,8 @@ ROP::RegisterInfo ROP::RegisterInfo::reduceRegInfoListWithAndOperator(const std:
 	for (unsigned idx = 1; idx < infoList.size(); ++idx) {
 		ret.rRegs &= infoList[idx].rRegs;
 		ret.wRegs &= infoList[idx].wRegs;
+		ret.readsMemoryOperand = ret.readsMemoryOperand && infoList[idx].readsMemoryOperand;
+		ret.writesMemoryOperand = ret.writesMemoryOperand && infoList[idx].writesMemoryOperand;
 	}
 
 	return ret;
@@ -28,6 +30,8 @@ ROP::RegisterInfo ROP::RegisterInfo::reduceRegInfoListWithOrOperator(const std::
 	for (unsigned idx = 1; idx < infoList.size(); ++idx) {
 		ret.rRegs |= infoList[idx].rRegs;
 		ret.wRegs |= infoList[idx].wRegs;
+		ret.readsMemoryOperand = ret.readsMemoryOperand || infoList[idx].readsMemoryOperand;
+		ret.writesMemoryOperand = ret.writesMemoryOperand || infoList[idx].writesMemoryOperand;
 	}
 
 	return ret;
@@ -204,6 +208,8 @@ ROP::InstructionConverter::convertInstructionSequenceToString(
         if (outRegInfo != NULL) {
             RegisterInfo ri;
 
+
+			// Determine which registers are read or written.
             cs_regs regsRead, regsWritten;
             uint8_t readCount = 0, writeCount = 0;
             cs_err regsRet = cs_regs_access(this->capstoneHandle, &decodedInstructions[idx],
@@ -221,6 +227,26 @@ ROP::InstructionConverter::convertInstructionSequenceToString(
                 size_t registerIndex = regsWritten[i];
                 ri.wRegs.set(registerIndex, true);
             }
+
+
+			// Determine if memory operands are read or written.
+			ri.readsMemoryOperand = ri.writesMemoryOperand = false;
+			uint8_t op_count = decodedInstructions[idx].detail->x86.op_count;
+
+			for (uint8_t i = 0; i < op_count; ++i) {
+				const cs_x86_op& operand = decodedInstructions[idx].detail->x86.operands[i];
+				if (operand.type != X86_OP_MEM) {
+					continue;
+				}
+
+				if (operand.access & CS_AC_READ) {
+					ri.readsMemoryOperand = true;
+				}
+				if (operand.access & CS_AC_WRITE) {
+					ri.writesMemoryOperand = true;
+				}
+			}
+
 
             (*outRegInfo).push_back(ri);
         }

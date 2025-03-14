@@ -37,8 +37,8 @@ static std::string GetStringNoWhitespace(const std::string& str) {
 }
 
 
-void
-ROP::RegisterQueryX86::precomputeRegisterTermStrings() {
+void ROP::RegisterQueryX86::precomputeTermStrings() {
+    // Precompute this->registerTermStrings.
     for (unsigned regIndex = X86_REG_INVALID + 1; regIndex < (unsigned)X86_REG_ENDING; ++regIndex) {
         x86_reg regID = (x86_reg)regIndex;
 
@@ -72,6 +72,37 @@ ROP::RegisterQueryX86::precomputeRegisterTermStrings() {
             }
         }
     }
+
+    // Precompute this->memoryOperandTermStrings.
+    for (const char * const literal : {"memop", "memory_operand"}) {
+        for (const char * const kind : {"read", "anyread", "allread", "write", "anywrite", "allwrite"}) {
+            // Get a string like "read(memop)" or "write(memop)".
+            std::string currTermString = std::string(kind) + "(" + std::string(literal) + ")";
+
+            // Turn to lowercase.
+            for(char& c : currTermString) {
+                c = tolower(c);
+            }
+
+            if (std::string(kind) == "read" || std::string(kind) == "anyread") {
+                StoredTermString term = {currTermString, QueryNodeType::ANY_READ_MEMORY_OPERAND};
+                this->memoryOperandTermStrings.push_back(term);
+            }
+            else if (std::string(kind) == "allread") {
+                StoredTermString term = {currTermString, QueryNodeType::ALL_READ_MEMORY_OPERAND};
+                this->memoryOperandTermStrings.push_back(term);
+            }
+            else if (std::string(kind) == "write" || std::string(kind) == "anywrite") {
+                StoredTermString term = {currTermString, QueryNodeType::ANY_WRITE_MEMORY_OPERAND};
+                this->memoryOperandTermStrings.push_back(term);
+            }
+            else {
+                assert(std::string(kind) == "allwrite");
+                StoredTermString term = {currTermString, QueryNodeType::ALL_WRITE_MEMORY_OPERAND};
+                this->memoryOperandTermStrings.push_back(term);
+            }
+        }
+    }
 }
 
 ROP::RegisterQueryX86::QueryNode*
@@ -97,6 +128,7 @@ ROP::RegisterQueryX86::parseQueryLeaf() {
         return node;
     }
 
+    // Look for basic terms that relate to registers, like "read(reg)" or "write(reg)".
     for (const auto& regTermInfo : this->registerTermStrings) {
         const x86_reg& regID = regTermInfo.regID;
         const std::string& termString = regTermInfo.termString;
@@ -113,7 +145,26 @@ ROP::RegisterQueryX86::parseQueryLeaf() {
         }
     }
 
-    LogError("Expected \"true\", \"false\", \"read(reg)\" or \"write(reg)\" "
+    // Look for basic terms that relate to memory_operands, like "read(reg)" or "write(reg)".
+    for (const auto& memTermInfo : this->memoryOperandTermStrings) {
+        const std::string& termString = memTermInfo.termString;
+        const QueryNodeType& queryNodeType = memTermInfo.nodeType;
+
+        if (strncmp(this->queryCString + this->queryIdx, termString.c_str(), termString.size()) == 0) {
+            // Go over the parsed string.
+            this->queryIdx += (int)termString.size();
+
+            QueryNode *node = new QueryNode();
+            node->nodeType = queryNodeType;
+            return node;
+        }
+    }
+
+    LogError("Expected \"true\", \"false\", "
+             "\"read(reg)\", \"anyread(reg)\", \"allread(reg)\", "
+             "\"write(reg)\", \"anywrite(reg)\", \"allwrite(reg)\" "
+             "\"read(memory_operand)\", \"anyread(memory_operand)\", \"allread(memory_operand)\", "
+             "\"write(memory_operand)\", \"anywrite(memory_operand)\", \"allwrite(memory_operand)\" "
              "when parsing register query at index %u.", this->queryIdx);
     return NULL;
 }
@@ -251,8 +302,7 @@ ROP::RegisterQueryX86::RegisterQueryX86(const std::string queryString):
     queryString(GetLowercaseString(GetStringNoWhitespace(queryString))),
     queryCString(this->queryString.c_str())
 {
-    // Compute value of `this->registerTermStrings`.
-    this->precomputeRegisterTermStrings();
+    this->precomputeTermStrings();
 
     this->queryIdx = 0;
     this->queryTreeRoot = this->parseQuery(0);
@@ -294,6 +344,18 @@ bool ROP::RegisterQueryX86::matchesRegisterInfo(QueryNode *currentNode,
         }
         case QueryNodeType::ALL_WRITE_REGISTER: {
             return regInfoAll.wRegs[currentNode->registerID];
+        }
+        case QueryNodeType::ANY_READ_MEMORY_OPERAND: {
+            return regInfoAny.readsMemoryOperand;
+        }
+        case QueryNodeType::ALL_READ_MEMORY_OPERAND: {
+            return regInfoAll.readsMemoryOperand;
+        }
+        case QueryNodeType::ANY_WRITE_MEMORY_OPERAND: {
+            return regInfoAny.writesMemoryOperand;
+        }
+        case QueryNodeType::ALL_WRITE_MEMORY_OPERAND: {
+            return regInfoAll.writesMemoryOperand;
         }
         case QueryNodeType::NOT_OPERATOR: {
             return !this->matchesRegisterInfo(currentNode->unary.child, regInfoAny, regInfoAll);
@@ -365,6 +427,22 @@ void ROP::RegisterQueryX86::getStringRepresentationOfQuery(const QueryNode *curr
             repr += "allwrite(";
             repr += InstructionConverter::convertCapstoneRegIdToString(currentNode->registerID);
             repr += ")";
+            break;
+        }
+        case QueryNodeType::ANY_READ_MEMORY_OPERAND: {
+            repr += "anyread(memory_operand)";
+            break;
+        }
+        case QueryNodeType::ALL_READ_MEMORY_OPERAND: {
+            repr += "allread(memory_operand)";
+            break;
+        }
+        case QueryNodeType::ANY_WRITE_MEMORY_OPERAND: {
+            repr += "anywrite(memory_operand)";
+            break;
+        }
+        case QueryNodeType::ALL_WRITE_MEMORY_OPERAND: {
+            repr += "allwrite(memory_operand)";
             break;
         }
         case QueryNodeType::NOT_OPERATOR: {

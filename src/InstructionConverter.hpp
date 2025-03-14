@@ -12,12 +12,21 @@
 
 namespace ROP {
 
+    /**
+     * Class that stores details for a given x86 instruction,
+     * such as read/write access of registers.
+     */
     struct RegisterInfo {
         // Registers that are read by the instruction (see "x86_reg" enum).
         std::bitset<X86_REG_ENDING> rRegs;
 
         // Registers that are written by the instruction (see "x86_reg" enum).
         std::bitset<X86_REG_ENDING> wRegs;
+
+        // If the instruction reads from a memory operand (e.g. [rax + 0xf]).
+        bool readsMemoryOperand;
+        // If the instruction writes to a memory operand (e.g. [rax + 0xf]).
+        bool writesMemoryOperand;
 
         static RegisterInfo reduceRegInfoListWithAndOperator(const std::vector<RegisterInfo> &infoList);
         static RegisterInfo reduceRegInfoListWithOrOperator(const std::vector<RegisterInfo> &infoList);

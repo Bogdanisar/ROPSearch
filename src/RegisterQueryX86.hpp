@@ -39,6 +39,10 @@ namespace ROP {
             ALL_READ_REGISTER, // All instructions (except the last one) read the register.
             ANY_WRITE_REGISTER, // At least one instruction writes to the register.
             ALL_WRITE_REGISTER, // All instructions (except the last one) write to the register.
+            ANY_READ_MEMORY_OPERAND, // At least one instruction reads a memory operand (e.g. [rax + 0xf]).
+            ALL_READ_MEMORY_OPERAND, // All instructions (except the last one) read a memory operand (e.g. [rax + 0xf]).
+            ANY_WRITE_MEMORY_OPERAND, // At least one instruction writes to a memory operand (e.g. [rax + 0xf]).
+            ALL_WRITE_MEMORY_OPERAND, // All instructions (except the last one) write to a memory operand (e.g. [rax + 0xf]).
 
             // Operator
             NOT_OPERATOR,
@@ -70,14 +74,22 @@ namespace ROP {
 
 
         private:
+
         // Auxiliary structure to store the precomputed information below.
-        struct StoredRegisterTermString {
-            // Something like "read(rax)" or "write(rax)".
+        struct StoredTermString {
+            // Something like "read(rax)" or "write(memory_operand)".
             std::string termString;
 
-            // Either QueryNodeType::ANY/ALL_READ_REGISTER, or QueryNodeType::ANY/ALL_WRITE_REGISTER.
+            /**
+             * Possible values:
+             * - QueryNodeType::ANY/ALL_READ_REGISTER;
+             * - QueryNodeType::ANY/ALL_WRITE_REGISTER;
+             * - QueryNodeType::ANY/ALL_READ_MEMORY_OPERAND;
+             * - QueryNodeType::ANY/ALL_WRITE_MEMORY_OPERAND;
+             */
             QueryNodeType nodeType;
-
+        };
+        struct StoredRegisterTermString : StoredTermString {
             // Something like X86_REG_RAX.
             x86_reg regID;
         };
@@ -85,10 +97,11 @@ namespace ROP {
         const std::string queryString;
         const char * const queryCString;
         std::vector<StoredRegisterTermString> registerTermStrings;
+        std::vector<StoredTermString> memoryOperandTermStrings;
         unsigned queryIdx;
         QueryNode *queryTreeRoot;
 
-        void precomputeRegisterTermStrings();
+        void precomputeTermStrings();
         QueryNode* parseQueryLeaf();
         bool nextQueryCharacterIsValid(unsigned currentPrecedence);
         QueryNode* parseQuery(unsigned currentPrecedence);

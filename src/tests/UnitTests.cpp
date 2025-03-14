@@ -37,6 +37,8 @@ void testRegisterQueryValidParse() {
         "write(DH)",
         "anywrite(DH)",
         "ALLwrite(DH)",
+        "allread(memop)",
+        "anywrite(memory_operand)",
         "((((read(RAX)))))",
         "!read(RAX)",
         "!(read(RAX))",
@@ -75,6 +77,8 @@ void testRegisterQueryValidParse() {
         "write",
         "wrote(DH)",
         "everywrite(DH)",
+        "allread(memory_op)", // It's "memop" or "memory_operand"
+        "anywrite(mem_operand)",
         "))read(RAX)((",
         "read!(RAX)",
         "read(!RAX)",
