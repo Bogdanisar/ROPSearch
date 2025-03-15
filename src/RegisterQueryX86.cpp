@@ -42,11 +42,8 @@ void ROP::RegisterQueryX86::precomputeTermStrings() {
     for (unsigned regIndex = X86_REG_INVALID + 1; regIndex < (unsigned)X86_REG_ENDING; ++regIndex) {
         x86_reg regID = (x86_reg)regIndex;
 
-        // Get a string like "X86_REG_RAX".
-        const char *regCString = ROP::InstructionConverter::convertCapstoneRegIdToString(regID);
-
-        // Keep only the part after the last '_' (e.g. just "RAX").
-        regCString = strrchr(regCString, '_') + 1;
+        // Turn a register ID (e.g. X86_REG_RAX) into a string like "RAX".
+        const char *regCString = ROP::InstructionConverter::convertCapstoneRegIdToShortString(regID);
 
         for (const char * const kind : {"read", "anyread", "allread", "write", "anywrite", "allwrite"}) {
             // Get a string like "read(RAX)" or "write(RAX)".

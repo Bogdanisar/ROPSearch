@@ -607,6 +607,20 @@ const char * ROP::InstructionConverter::convertCapstoneRegIdToString(x86_reg reg
     return "N/A";
 }
 
+const char * ROP::InstructionConverter::convertCapstoneRegIdToShortString(x86_reg regId) {
+    // Get a string like "X86_REG_RAX".
+    const char *regCString = InstructionConverter::convertCapstoneRegIdToString(regId);
+
+    if (strcmp(regCString, "N/A") == 0) {
+        return regCString;
+    }
+
+    // Keep only the part after the last '_' (e.g. just "RAX").
+    regCString = strrchr(regCString, '_') + 1;
+
+    return regCString;
+}
+
 x86_reg ROP::InstructionConverter::convertStringToCapstoneRegId(std::string regString) {
     // Convert regString to upper case.
     for (char& currChar : regString) {

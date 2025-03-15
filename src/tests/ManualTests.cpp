@@ -985,7 +985,10 @@ int main(int argc, char* argv[]) {
     // testLoggingFunctionality(); pn;
     // testBytesOfInteger(); pn;
     // testLoadVirtualMemoryOfExecutablePaths(); pn;
-    testRegisterQueryTransformation();
+    // testRegisterQueryTransformation();
+
+    LogVar(InstructionConverter::convertCapstoneRegIdToShortString(X86_REG_DH)); LogLine();
+    LogVar(InstructionConverter::convertCapstoneRegIdToShortString((x86_reg)3485)); LogLine();
 
     return 0;
 }
