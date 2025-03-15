@@ -125,6 +125,19 @@ namespace ROP {
         std::string
         concatenateInstructionsAsm(std::vector<std::string> instructionsAsm);
 
+        /**
+         * Takes the input assembly string of some instruction(s) and prints
+         * what detailed information Capstone knows about these instructions.
+         * Note: The instruction is first converted to bytes with Keystone and then converted back with Capstone.
+         * @param instructionSequenceAsm The instruction(s), given in assembly, as a string. Multiple instructions are separated by ";".
+         * @param inputAsmSyntax The assembly syntax of the input instructions.
+         * @param addr The virtual memory address of the first instruction.
+         *             This might influence the output for some instructions.
+         */
+        void printCapstoneInformationForInstructions(std::string instructionSequenceAsm,
+                                                     AssemblySyntax inputAsmSyntax,
+                                                     unsigned long long addr = 0ULL);
+
         ~InstructionConverter();
 
 

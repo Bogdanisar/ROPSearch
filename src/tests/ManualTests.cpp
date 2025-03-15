@@ -987,8 +987,10 @@ int main(int argc, char* argv[]) {
     // testLoadVirtualMemoryOfExecutablePaths(); pn;
     // testRegisterQueryTransformation();
 
-    LogVar(InstructionConverter::convertCapstoneRegIdToShortString(X86_REG_DH)); LogLine();
-    LogVar(InstructionConverter::convertCapstoneRegIdToShortString((x86_reg)3485)); LogLine();
+    auto instrSeqStr = "rol byte ptr [rdx - 0x76b60002], cl; ret; add rax, rbx; add [rax], rbx";
+    // auto instrSeqStr = "stosq qword ptr [rdi], rax; stosq qword ptr [rdi], rax";
+    InstructionConverter ic;
+    ic.printCapstoneInformationForInstructions(instrSeqStr, AssemblySyntax::Intel);
 
     return 0;
 }

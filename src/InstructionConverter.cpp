@@ -329,6 +329,210 @@ ROP::InstructionConverter::concatenateInstructionsAsm(std::vector<std::string> i
     return ret;
 }
 
+
+static std::string ConcatenateRegisterIDListIntoString(std::vector<x86_reg> regList) {
+    std::stringstream regStringStream;
+
+    unsigned count = regList.size();
+    for (unsigned i = 0; i < count; ++i) {
+        x86_reg regID = regList[i];
+        const char * regName = ROP::InstructionConverter::convertCapstoneRegIdToShortString(regID);
+        regStringStream << regName;
+        if (i != count - 1) {
+            regStringStream << ", ";
+        }
+    }
+
+    return regStringStream.str();
+}
+
+void
+ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string instructionSequenceAsm,
+                                                                   AssemblySyntax inputAsmSyntax,
+                                                                   unsigned long long addr) {
+    // Convert the input ASM string to bytes.
+	byteSequence bytesVector;
+	unsigned int parsedInputAsmInstructions;
+	auto convertedInputPair = this->convertInstructionSequenceToBytes(instructionSequenceAsm, inputAsmSyntax, addr);
+
+	bytesVector = convertedInputPair.first;
+	parsedInputAsmInstructions = convertedInputPair.second;
+
+    const byte *instrSeqBytes = (const byte *)bytesVector.data();
+    const size_t instrSeqBytesCount = bytesVector.size();
+
+
+	// Pass the bytes to Capstone to get detailed information about the instructions.
+	cs_err err;
+	cs_insn *decodedInstructions = NULL;
+	size_t decodedInstructionsCount;
+    size_t idx;
+    unsigned totalDecodedBytes = 0;
+
+	// Update the settings of the Capstone handle.
+	if (!this->updateCapstoneAssemblySetting(inputAsmSyntax)) {
+		goto cleanup;
+	}
+	if (!this->updateCapstoneDetailSetting(true)) {
+		goto cleanup;
+	}
+
+	decodedInstructionsCount = cs_disasm(this->capstoneHandle,
+                                         (const uint8_t *)instrSeqBytes,
+                                         instrSeqBytesCount,
+                                         addr, // Address of first instruction
+                                         0,
+                                         &decodedInstructions);
+    assertMessage(parsedInputAsmInstructions == decodedInstructionsCount,
+                  "Can't get back the same number of instructions when converting from bytes back to ASM string (%u != %u). "
+                  "Try removing any terminating ';' characters from the input instruction assembly string.",
+                  (unsigned)parsedInputAsmInstructions, (unsigned)decodedInstructionsCount);
+
+    err = cs_errno(this->capstoneHandle);
+    if (decodedInstructionsCount == 0 && err != CS_ERR_OK) {
+        LogError("Capstone: cs_disasm() failed with error %u", (unsigned)err);
+        goto cleanup;
+    }
+
+    for (idx = 0; idx < decodedInstructionsCount; ++idx) {
+        LogInfo("########### Instruction %u ###########", (unsigned)idx);
+        const cs_insn& instr = decodedInstructions[idx];
+
+        LogInfo("Instruction id: %u", (unsigned)instr.id);
+        LogInfo("Instruction virtual address: %llu", (unsigned long long)instr.address);
+        LogInfo("Instruction byte size: %u", (unsigned)instr.size);
+        totalDecodedBytes += (unsigned)instr.size;
+
+
+        // Print bytes
+        {
+            std::stringstream bytesStringStream;
+            bytesStringStream << '[' << std::setfill(' ');
+            for (unsigned byteIdx = 0; byteIdx < instr.size; ++byteIdx) {
+                bytesStringStream << std::setw(3) << (unsigned)instr.bytes[byteIdx];
+
+                if (byteIdx != (unsigned)(instr.size - 1)) {
+                    bytesStringStream << ", ";
+                }
+            }
+            bytesStringStream << ']';
+            LogInfo("Instruction bytes dec: %s", bytesStringStream.str().c_str());
+        }
+        {
+            std::stringstream bytesStringStream;
+            bytesStringStream << "[ " << std::hex << std::uppercase << std::setfill('0');
+            for (unsigned byteIdx = 0; byteIdx < instr.size; ++byteIdx) {
+                bytesStringStream << std::setw(2) << (unsigned)instr.bytes[byteIdx];
+
+                if (byteIdx != (unsigned)(instr.size - 1)) {
+                    bytesStringStream << ",  ";
+                }
+            }
+            bytesStringStream << ']';
+            LogInfo("Instruction bytes hex: %s", bytesStringStream.str().c_str());
+        }
+
+
+        // Print the assembly representation.
+        LogInfo("Instruction mnemonic: \"%s\"", instr.mnemonic);
+        LogInfo("Instruction operands: \"%s\"", instr.op_str);
+
+        std::string mnemonic = std::string(decodedInstructions[idx].mnemonic);
+        std::string operands = std::string(decodedInstructions[idx].op_str);
+        std::string instructionAsm = mnemonic;
+        if (operands.size() != 0) {
+            instructionAsm += " " + operands;
+        }
+        LogInfo("Instruction assembly: \"%s\"", instructionAsm.c_str());
+
+
+        // Print all registers that are *implicitly* read or written by the instruction.
+        {
+            std::vector<x86_reg> readRegList;
+            for (uint8_t i = 0; i < instr.detail->regs_read_count; ++i) {
+                x86_reg regID = (x86_reg)instr.detail->regs_read[i];
+                readRegList.push_back(regID);
+            }
+            std::string readRegString = ConcatenateRegisterIDListIntoString(readRegList);
+            LogInfo("[Implicitly]    Read registers: %s", readRegString.c_str());
+
+            std::vector<x86_reg> writtenRegList;
+            for (uint8_t i = 0; i < instr.detail->regs_write_count; ++i) {
+                x86_reg regID = (x86_reg)instr.detail->regs_write[i];
+                writtenRegList.push_back(regID);
+            }
+            std::string writtenRegString = ConcatenateRegisterIDListIntoString(writtenRegList);
+            LogInfo("[Implicitly] Written registers: %s", writtenRegString.c_str());
+        }
+
+
+        // Print all registers that are read or written by the instruction
+        // (whether implicitly or explicitly).
+        {
+            cs_regs regsRead, regsWritten;
+            uint8_t readCount = 0, writeCount = 0;
+            cs_err allRegsRet = cs_regs_access(this->capstoneHandle, &instr,
+                                               regsRead, &readCount, regsWritten, &writeCount);
+            if (allRegsRet != CS_ERR_OK) {
+                LogError("Capstone: cs_regs_access() failed with error %u", (unsigned)allRegsRet);
+                goto cleanup;
+            }
+
+            std::vector<x86_reg> readRegList;
+            for (uint8_t i = 0; i < readCount; ++i) {
+                x86_reg regID = (x86_reg)regsRead[i];
+                readRegList.push_back(regID);
+            }
+            std::string readRegString = ConcatenateRegisterIDListIntoString(readRegList);
+            LogInfo("[Implicitly or Explicitly]    Read registers: %s", readRegString.c_str());
+
+            std::vector<x86_reg> writtenRegList;
+            for (uint8_t i = 0; i < writeCount; ++i) {
+                x86_reg regID = (x86_reg)regsWritten[i];
+                writtenRegList.push_back(regID);
+            }
+            std::string writtenRegString = ConcatenateRegisterIDListIntoString(writtenRegList);
+            LogInfo("[Implicitly or Explicitly] Written registers: %s", writtenRegString.c_str());
+        }
+
+
+        // Print the groups to which this instruction belongs.
+        std::string groupsString("");
+        for (uint8_t i = 0; i < instr.detail->groups_count; ++i) {
+            cs_group_type groupID = (cs_group_type)instr.detail->groups[i];
+            const char * groupName = cs_group_name(this->capstoneHandle, (unsigned int)groupID);
+
+            groupsString += groupName;
+            if (i != (instr.detail->groups_count - 1)) {
+                groupsString += ", ";
+            }
+        }
+        LogInfo("Instruction group count: %u", (unsigned)instr.detail->groups_count);
+        LogInfo("Instruction group names: %s", groupsString.c_str());
+
+
+        // Print the "writeback" member.
+        LogInfo("Instruction has writeback operands: %i", (int)instr.detail->writeback);
+
+
+        // TODO: Check instr.detail->x86 member.
+
+
+        LogInfo(""); // Empty line.
+    }
+
+    assertMessage(instrSeqBytesCount == totalDecodedBytes,
+                  "The number of bytes decoded by Keystone from the initial string is not the same as "
+                  "the number of bytes successfully parsed back by Capstone (%u != %u).",
+                  (unsigned)instrSeqBytesCount, (unsigned)totalDecodedBytes);
+
+cleanup:
+    if (decodedInstructions != NULL) {
+        cs_free(decodedInstructions, decodedInstructionsCount);
+    }
+}
+
+
 ROP::InstructionConverter::~InstructionConverter() {
     // Close the Keystone instance.
     ks_close(this->ksEngine);
