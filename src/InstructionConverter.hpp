@@ -42,9 +42,23 @@ namespace ROP {
         // Inner disassembler framework;
         csh capstoneHandle;
         AssemblySyntax csHandleSyntax;
-        cs_opt_value csDetailOption;
+        bool csHandleDetailModeEnabled;
 
         void initCapstone();
+
+        //
+        /**
+         * Adjust the Capstone handle (if needed) to use Intel or AT&T syntax.
+         * @return `true` if the setting was changed, `false` if there was an error.
+         */
+        inline bool updateCapstoneAssemblySetting(AssemblySyntax newAsmSyntax);
+
+        //
+        /**
+         * Adjust the Capstone handle (if needed) to enable/disable DETAIL mode.
+         * @return `true` if the setting was changed, `false` if there was an error.
+         */
+        inline bool updateCapstoneDetailSetting(bool detailsEnabled);
 
         public:
         InstructionConverter();

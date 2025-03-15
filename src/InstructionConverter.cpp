@@ -75,12 +75,51 @@ void ROP::InstructionConverter::initCapstone() {
     }
 
     this->csHandleSyntax = AssemblySyntax::Intel;
-    this->csDetailOption = CS_OPT_OFF;
+    this->csHandleDetailModeEnabled = false;
 }
 
 ROP::InstructionConverter::InstructionConverter() {
     this->initKeystone();
     this->initCapstone();
+}
+
+
+inline bool ROP::InstructionConverter::updateCapstoneAssemblySetting(AssemblySyntax newAsmSyntax) {
+    if (this->csHandleSyntax == newAsmSyntax) {
+        return true;
+    }
+
+    cs_opt_value newSettingValue;
+    newSettingValue = (newAsmSyntax == AssemblySyntax::Intel) ? CS_OPT_SYNTAX_INTEL : CS_OPT_SYNTAX_ATT;
+
+    cs_err err = cs_option(this->capstoneHandle, CS_OPT_SYNTAX, newSettingValue);
+    if (err != CS_ERR_OK) {
+        LogError("Capstone: cs_option(CS_OPT_SYNTAX, %u) failed with error %u!",
+                 (unsigned)newSettingValue, (unsigned)err);
+        return false;
+    }
+
+    this->csHandleSyntax = newAsmSyntax;
+    return true;
+}
+
+inline bool ROP::InstructionConverter::updateCapstoneDetailSetting(bool detailsEnabled) {
+    if (this->csHandleDetailModeEnabled == detailsEnabled) {
+        return true;
+    }
+
+    cs_opt_value newSettingValue;
+    newSettingValue = detailsEnabled ? CS_OPT_ON : CS_OPT_OFF;
+
+    cs_err err = cs_option(this->capstoneHandle, CS_OPT_DETAIL, newSettingValue);
+    if (err != CS_ERR_OK) {
+        LogError("Capstone: cs_option(CS_OPT_DETAIL, %u) failed with error %u!",
+                 (unsigned)newSettingValue, (unsigned)err);
+        return false;
+    }
+
+    this->csHandleDetailModeEnabled = detailsEnabled;
+    return true;
 }
 
 
@@ -148,8 +187,6 @@ ROP::InstructionConverter::convertInstructionSequenceToString(
     std::vector<RegisterInfo> *outRegInfo
 ) {
     cs_err err;
-    cs_opt_value newSyntaxValue;
-    cs_opt_value newDetailOpt;
 	cs_insn *decodedInstructions = NULL;
 	size_t decodedInstructionsCount;
     size_t idx;
@@ -157,29 +194,13 @@ ROP::InstructionConverter::convertInstructionSequenceToString(
 
     (*outInstructionAsm).clear();
 
-    // Adjust the handle (if needed) to use Intel or AT&T syntax.
-    if (this->csHandleSyntax != asmSyntax) {
-        newSyntaxValue = (asmSyntax == AssemblySyntax::Intel) ? CS_OPT_SYNTAX_INTEL : CS_OPT_SYNTAX_ATT;
-        err = cs_option(this->capstoneHandle, CS_OPT_SYNTAX, newSyntaxValue);
-        if (err != CS_ERR_OK) {
-            LogError("Capstone: cs_option(CS_OPT_SYNTAX) failed with error %u!", (unsigned)err);
-            goto cleanup;
-        }
-
-        this->csHandleSyntax = asmSyntax;
-    }
-
-    // Adjust the handle (if needed) to enable/disable DETAIL mode.
-    newDetailOpt = (outRegInfo != NULL) ? CS_OPT_ON : CS_OPT_OFF;
-    if (this->csDetailOption != newDetailOpt) {
-        err = cs_option(this->capstoneHandle, CS_OPT_DETAIL, newDetailOpt);
-        if (err != CS_ERR_OK) {
-            LogError("Capstone: cs_option(CS_OPT_DETAIL) failed with error %u!", (unsigned)err);
-            goto cleanup;
-        }
-
-        this->csDetailOption = newDetailOpt;
-    }
+	// Update the settings of the Capstone handle.
+	if (!this->updateCapstoneAssemblySetting(asmSyntax)) {
+		goto cleanup;
+	}
+	if (!this->updateCapstoneDetailSetting(outRegInfo != NULL)) {
+		goto cleanup;
+	}
 
 	decodedInstructionsCount = cs_disasm(this->capstoneHandle,
                                          (const uint8_t *)instrSeqBytes,
