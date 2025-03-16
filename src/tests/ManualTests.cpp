@@ -987,8 +987,8 @@ int main(int argc, char* argv[]) {
     // testLoadVirtualMemoryOfExecutablePaths(); pn;
     // testRegisterQueryTransformation();
 
-    auto instrSeqStr = "rol byte ptr [rdx - 0x76b60002], cl; ret; add rax, rbx; add [rax], rbx";
-    // auto instrSeqStr = "stosq qword ptr [rdi], rax; stosq qword ptr [rdi], rax";
+    // auto instrSeqStr = "rol byte ptr [rdx - 0x76b60002], cl; ret; add rax, rbx; add [rax], rbx";
+    auto instrSeqStr = "stosq qword ptr [rdi], rax;";
     InstructionConverter ic;
     ic.printCapstoneInformationForInstructions(instrSeqStr, AssemblySyntax::Intel);
 

@@ -100,6 +100,11 @@ static ROP::byteSequence BytesOfInteger(integerType integer) {
     return bytes;
 }
 
+static void RightTrimString(std::string& str, const char *badChars = " \t\n\r\f\v") {
+    const std::size_t pos = str.find_last_not_of(badChars);
+    str.erase(pos + 1);
+}
+
 
 #pragma GCC diagnostic pop
 

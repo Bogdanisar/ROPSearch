@@ -350,6 +350,10 @@ void
 ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string instructionSequenceAsm,
                                                                    AssemblySyntax inputAsmSyntax,
                                                                    unsigned long long addr) {
+    // Trim a trailing ';' character if it exists, for convenience, to avoid an assert failure.
+    // The ';' character is supposed to be placed only between instructions.
+    RightTrimString(instructionSequenceAsm, "; \t\n\r\f\v");
+
     // Convert the input ASM string to bytes.
 	byteSequence bytesVector;
 	unsigned int parsedInputAsmInstructions;
