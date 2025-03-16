@@ -401,17 +401,17 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
         if (operands.size() != 0) {
             instructionAsm += " " + operands;
         }
-        LogInfo("Instruction assembly: \"%s\"", instructionAsm.c_str());
-        LogInfo("Instruction mnemonic: \"%s\"", instr.mnemonic);
-        LogInfo("Instruction operands: \"%s\"", instr.op_str);
+        LogInfo("Assembly string: \"%s\"", instructionAsm.c_str());
+        LogInfo("Mnemonic string: \"%s\"", instr.mnemonic);
+        LogInfo("Operands string: \"%s\"", instr.op_str);
 
         // Print id and virtual address. The address is derived from the `addr` function parameter.
-        LogInfo("Instruction id: %u", (unsigned)instr.id);
-        LogInfo("Instruction virtual address: %llu", (unsigned long long)instr.address);
+        LogInfo("Capstone id: %u", (unsigned)instr.id);
+        LogInfo("Virtual address: %llu", (unsigned long long)instr.address);
 
 
         // Print bytes
-        LogInfo("Instruction byte count: %u", (unsigned)instr.size);
+        LogInfo("Byte count: %u", (unsigned)instr.size);
         totalDecodedBytes += (unsigned)instr.size;
 
         {
@@ -425,7 +425,7 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
                 }
             }
             bytesStringStream << ']';
-            LogInfo("Instruction bytes dec: %s", bytesStringStream.str().c_str());
+            LogInfo("Bytes dec: %s", bytesStringStream.str().c_str());
         }
         {
             std::stringstream bytesStringStream;
@@ -438,7 +438,7 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
                 }
             }
             bytesStringStream << ']';
-            LogInfo("Instruction bytes hex: %s", bytesStringStream.str().c_str());
+            LogInfo("Bytes hex: %s", bytesStringStream.str().c_str());
         }
 
 
@@ -450,6 +450,9 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
                 readRegList.push_back(regID);
             }
             std::string readRegString = ConcatenateRegisterIDListIntoString(readRegList);
+            if (readRegString == "") {
+                readRegString = "N/A";
+            }
             LogInfo("[Implicitly]    Read registers: %s", readRegString.c_str());
 
             std::vector<x86_reg> writtenRegList;
@@ -458,6 +461,9 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
                 writtenRegList.push_back(regID);
             }
             std::string writtenRegString = ConcatenateRegisterIDListIntoString(writtenRegList);
+            if (writtenRegString == "") {
+                writtenRegString = "N/A";
+            }
             LogInfo("[Implicitly] Written registers: %s", writtenRegString.c_str());
         }
 
@@ -479,6 +485,9 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
                 readRegList.push_back(regID);
             }
             std::string readRegString = ConcatenateRegisterIDListIntoString(readRegList);
+            if (readRegString == "") {
+                readRegString = "N/A";
+            }
             LogInfo("[Implicitly or Explicitly]    Read registers: %s", readRegString.c_str());
 
             std::vector<x86_reg> writtenRegList;
@@ -487,6 +496,9 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
                 writtenRegList.push_back(regID);
             }
             std::string writtenRegString = ConcatenateRegisterIDListIntoString(writtenRegList);
+            if (writtenRegString == "") {
+                writtenRegString = "N/A";
+            }
             LogInfo("[Implicitly or Explicitly] Written registers: %s", writtenRegString.c_str());
         }
 
@@ -501,13 +513,13 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
                 groupsString += ", ";
             }
         }
-        LogInfo("Instruction instruction-group count: %u", (unsigned)instr.detail->groups_count);
+        LogInfo("Semantic instruction-group count: %u", (unsigned)instr.detail->groups_count);
         if (instr.detail->groups_count != 0) {
-            LogInfo("Instruction instruction-group names: %s", groupsString.c_str());
+            LogInfo("Semantic instruction-group names: %s", groupsString.c_str());
         }
 
         // Print the "writeback" member.
-        LogInfo("Instruction has \"writeback\" operands: %i", (int)instr.detail->writeback);
+        LogInfo("Has \"writeback\" operands: %i", (int)instr.detail->writeback);
 
 
         // Print prefix bytes.
@@ -528,7 +540,7 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
         for (unsigned prefixIdx = 0; prefixIdx < 4; ++prefixIdx) {
             unsigned char byte = instr.detail->x86.prefix[prefixIdx];
             if (byte != 0) {
-                LogVerbose("Instruction \"%s\" prefix byte: %hhu (0x%hhX)",
+                LogVerbose("\"%s\" prefix byte: %hhu (0x%hhX)",
                            prefixLogStrings[prefixIdx], byte, byte);
             }
         }
@@ -536,10 +548,10 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
 
         // Print REX byte.
         if (instr.detail->x86.rex != 0) {
-            LogVerbose("Instruction REX byte: 0x%hhX", (unsigned char)instr.detail->x86.rex);
+            LogVerbose("REX byte: 0x%hhX", (unsigned char)instr.detail->x86.rex);
         }
         else {
-            LogVerbose("Instruction REX byte: N/A");
+            LogVerbose("REX byte: N/A");
         }
 
         // Print opcode bytes.
@@ -556,31 +568,31 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
                 ++byteIdx;
             }
             bytesStringStream << ']';
-            LogVerbose("Instruction opcode bytes: %s", bytesStringStream.str().c_str());
+            LogVerbose("Opcode bytes: %s", bytesStringStream.str().c_str());
         }
 
         // Print ModR/M byte.
         if (instr.detail->x86.modrm != 0) {
-            LogVerbose("Instruction ModR/M byte: 0x%hhX", (unsigned char)instr.detail->x86.modrm);
+            LogVerbose("ModR/M byte: 0x%hhX", (unsigned char)instr.detail->x86.modrm);
         }
         else {
-            LogVerbose("Instruction ModR/M byte: N/A");
+            LogVerbose("ModR/M byte: N/A");
         }
 
         // Print SIB byte.
         if (instr.detail->x86.sib != 0) {
-            LogVerbose("Instruction SIB byte: 0x%hhX (base: %s; index: %s; scale: %hhu)",
+            LogVerbose("SIB byte: 0x%hhX (base: %s; index: %s; scale: %hhu)",
                        (unsigned char)instr.detail->x86.sib,
                        InstructionConverter::convertCapstoneRegIdToShortString(instr.detail->x86.sib_base),
                        InstructionConverter::convertCapstoneRegIdToShortString(instr.detail->x86.sib_index),
                        instr.detail->x86.sib_scale);
         }
         else {
-            LogVerbose("Instruction SIB byte: N/A");
+            LogVerbose("SIB byte: N/A");
         }
 
         // Print address-size member (not sure what this is).
-        LogVerbose("Instruction address size: %hhu", (unsigned char)instr.detail->x86.addr_size);
+        LogVerbose("Address size: %hhu", (unsigned char)instr.detail->x86.addr_size);
 
 
         // TODO: Check rest of instr.detail->x86 member.
