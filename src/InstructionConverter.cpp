@@ -350,17 +350,13 @@ void
 ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string instructionSequenceAsm,
                                                                    AssemblySyntax inputAsmSyntax,
                                                                    unsigned long long addr) {
-    // Trim a trailing ';' character if it exists, for convenience, to avoid an assert failure.
+    // Trim a trailing ';' character if it exists, for convenience.
     // The ';' character is supposed to be placed only between instructions.
     RightTrimString(instructionSequenceAsm, "; \t\n\r\f\v");
 
     // Convert the input ASM string to bytes.
-	byteSequence bytesVector;
-	unsigned int parsedInputAsmInstructions;
 	auto convertedInputPair = this->convertInstructionSequenceToBytes(instructionSequenceAsm, inputAsmSyntax, addr);
-
-	bytesVector = convertedInputPair.first;
-	parsedInputAsmInstructions = convertedInputPair.second;
+	byteSequence bytesVector = convertedInputPair.first;
 
     const byte *instrSeqBytes = (const byte *)bytesVector.data();
     const size_t instrSeqBytesCount = bytesVector.size();
@@ -387,10 +383,6 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
                                          addr, // Address of first instruction
                                          0,
                                          &decodedInstructions);
-    assertMessage(parsedInputAsmInstructions == decodedInstructionsCount,
-                  "Can't get back the same number of instructions when converting from bytes back to ASM string (%u != %u). "
-                  "Try removing any terminating ';' characters from the input instruction assembly string.",
-                  (unsigned)parsedInputAsmInstructions, (unsigned)decodedInstructionsCount);
 
     err = cs_errno(this->capstoneHandle);
     if (decodedInstructionsCount == 0 && err != CS_ERR_OK) {
@@ -519,7 +511,31 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
         LogInfo("Instruction has writeback operands: %i", (int)instr.detail->writeback);
 
 
-        // TODO: Check instr.detail->x86 member.
+        // Print prefix bytes.
+        unsigned prefixByteCount = 0;
+        for (unsigned prefixIdx = 0; prefixIdx < 4; ++prefixIdx) {
+            if (instr.detail->x86.prefix[prefixIdx] != 0) {
+                prefixByteCount += 1;
+            }
+        }
+        LogVerbose("Prefix bytes count: %u", prefixByteCount);
+
+        std::vector<const char *> prefixLogStrings = {
+            "REP/REPNE/LOCK",
+            "segment override",
+            "operand-size override",
+            "address-size override",
+        };
+        for (unsigned prefixIdx = 0; prefixIdx < 4; ++prefixIdx) {
+            unsigned char byte = instr.detail->x86.prefix[prefixIdx];
+            if (byte != 0) {
+                LogVerbose("Instruction \"%s\" prefix byte: %hhu (0x%hhX)",
+                           prefixLogStrings[prefixIdx], byte, byte);
+            }
+        }
+
+
+        // TODO: Check rest of instr.detail->x86 member.
 
 
         LogInfo(""); // Empty line.

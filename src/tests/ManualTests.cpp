@@ -988,7 +988,8 @@ int main(int argc, char* argv[]) {
     // testRegisterQueryTransformation();
 
     // auto instrSeqStr = "rol byte ptr [rdx - 0x76b60002], cl; ret; add rax, rbx; add [rax], rbx";
-    auto instrSeqStr = "stosq qword ptr [rdi], rax;";
+    // auto instrSeqStr = "stosq qword ptr [rdi], rax;";
+    auto instrSeqStr = "rep stosq qword ptr [rdi], rax";
     InstructionConverter ic;
     ic.printCapstoneInformationForInstructions(instrSeqStr, AssemblySyntax::Intel);
 
