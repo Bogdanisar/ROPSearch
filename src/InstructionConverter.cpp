@@ -402,13 +402,26 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
         LogInfo("########### Instruction %u ###########", (unsigned)idx);
         const cs_insn& instr = decodedInstructions[idx];
 
+        // Print the assembly representation.
+        std::string mnemonic = std::string(decodedInstructions[idx].mnemonic);
+        std::string operands = std::string(decodedInstructions[idx].op_str);
+        std::string instructionAsm = mnemonic;
+        if (operands.size() != 0) {
+            instructionAsm += " " + operands;
+        }
+        LogInfo("Instruction assembly: \"%s\"", instructionAsm.c_str());
+        LogInfo("Instruction mnemonic: \"%s\"", instr.mnemonic);
+        LogInfo("Instruction operands: \"%s\"", instr.op_str);
+
+
         LogInfo("Instruction id: %u", (unsigned)instr.id);
         LogInfo("Instruction virtual address: %llu", (unsigned long long)instr.address);
-        LogInfo("Instruction byte size: %u", (unsigned)instr.size);
-        totalDecodedBytes += (unsigned)instr.size;
 
 
         // Print bytes
+        LogInfo("Instruction byte count: %u", (unsigned)instr.size);
+        totalDecodedBytes += (unsigned)instr.size;
+
         {
             std::stringstream bytesStringStream;
             bytesStringStream << '[' << std::setfill(' ');
@@ -435,19 +448,6 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
             bytesStringStream << ']';
             LogInfo("Instruction bytes hex: %s", bytesStringStream.str().c_str());
         }
-
-
-        // Print the assembly representation.
-        LogInfo("Instruction mnemonic: \"%s\"", instr.mnemonic);
-        LogInfo("Instruction operands: \"%s\"", instr.op_str);
-
-        std::string mnemonic = std::string(decodedInstructions[idx].mnemonic);
-        std::string operands = std::string(decodedInstructions[idx].op_str);
-        std::string instructionAsm = mnemonic;
-        if (operands.size() != 0) {
-            instructionAsm += " " + operands;
-        }
-        LogInfo("Instruction assembly: \"%s\"", instructionAsm.c_str());
 
 
         // Print all registers that are *implicitly* read or written by the instruction.
