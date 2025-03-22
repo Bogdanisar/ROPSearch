@@ -555,8 +555,13 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
         }
 
         // Print ModR/M byte.
-        if (instr.detail->x86.modrm != 0) {
-            LogVerbose("ModR/M byte: 0x%02hhX", (unsigned char)instr.detail->x86.modrm);
+        if (instr.detail->x86.encoding.modrm_offset != 0) {
+            std::string binaryRepr = GetBinaryReprOfInteger((unsigned char)instr.detail->x86.modrm);
+            LogVerbose("ModR/M byte: 0x%02hhX (binary: %s %s %s)",
+                       (unsigned char)instr.detail->x86.modrm,
+                       binaryRepr.substr(0, 2).c_str(),
+                       binaryRepr.substr(2, 3).c_str(),
+                       binaryRepr.substr(5, 3).c_str());
         }
         else {
             LogVerbose("ModR/M byte: N/A");
@@ -637,8 +642,6 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
         else {
             LogInfo("Immediate value: N/A");
         }
-
-        // Print encoding?
 
         LogInfo(""); // New line.
 
