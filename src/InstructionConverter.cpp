@@ -587,6 +587,37 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
             LogVerbose("SIB byte: N/A");
         }
 
+        // Print displacement.
+        if (instr.detail->x86.encoding.disp_offset != 0) {
+            unsigned printWidth = 2 * instr.detail->x86.encoding.disp_size;
+            uint64_t displacement;
+
+            // The following truncations are done since it seems that the .disp value
+            // has some non-zero bytes added in the more-significant positions.
+            if (instr.detail->x86.encoding.disp_size == 1) {
+                displacement = (uint64_t)(uint8_t)instr.detail->x86.disp;
+            }
+            else if (instr.detail->x86.encoding.disp_size == 2) {
+                displacement = (uint64_t)(uint16_t)instr.detail->x86.disp;
+            }
+            else if (instr.detail->x86.encoding.disp_size == 4) {
+                displacement = (uint64_t)(uint32_t)instr.detail->x86.disp;
+            }
+            else if (instr.detail->x86.encoding.disp_size == 8) {
+                displacement = (uint64_t)instr.detail->x86.disp;
+            }
+
+            LogInfo("Displacement: 0x%0*llX (Byte size: %u; Instruction byte offset: %u)",
+                    printWidth, (unsigned long long)displacement,
+                    (unsigned)instr.detail->x86.encoding.disp_size,
+                    (unsigned)instr.detail->x86.encoding.disp_offset);
+        }
+        else {
+            LogInfo("Displacement: N/A");
+        }
+
+        // Print encoding?
+
         LogInfo(""); // New line.
 
 
