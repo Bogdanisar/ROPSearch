@@ -548,7 +548,7 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
 
         // Print REX byte.
         if (instr.detail->x86.rex != 0) {
-            LogVerbose("REX byte: 0x%hhX", (unsigned char)instr.detail->x86.rex);
+            LogVerbose("REX byte: 0x%02hhX", (unsigned char)instr.detail->x86.rex);
         }
         else {
             LogVerbose("REX byte: N/A");
@@ -573,7 +573,7 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
 
         // Print ModR/M byte.
         if (instr.detail->x86.modrm != 0) {
-            LogVerbose("ModR/M byte: 0x%hhX", (unsigned char)instr.detail->x86.modrm);
+            LogVerbose("ModR/M byte: 0x%02hhX", (unsigned char)instr.detail->x86.modrm);
         }
         else {
             LogVerbose("ModR/M byte: N/A");
@@ -581,11 +581,24 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
 
         // Print SIB byte.
         if (instr.detail->x86.sib != 0) {
-            LogVerbose("SIB byte: 0x%hhX (base: %s; index: %s; scale: %hhu)",
+            LogVerbose("SIB byte: 0x%02hhX (base: %s; index: %s; scale: %hhu)",
                        (unsigned char)instr.detail->x86.sib,
                        InstructionConverter::convertCapstoneRegIdToShortString(instr.detail->x86.sib_base),
                        InstructionConverter::convertCapstoneRegIdToShortString(instr.detail->x86.sib_index),
                        instr.detail->x86.sib_scale);
+
+            std::string binaryRepr = GetBinaryReprOfInteger((unsigned char)instr.detail->x86.sib);
+            LogVerbose("SIB byte:  0b%s  (value: 0x%02hhX)",
+                       binaryRepr.c_str(),
+                       (unsigned char)instr.detail->x86.sib);
+            LogVerbose("SIB scale:   %s        (value: %hhu)",
+                       binaryRepr.substr(0, 2).c_str(), (unsigned char)instr.detail->x86.sib_scale);
+            LogVerbose("SIB index:     %s     (meaning: %s)",
+                       binaryRepr.substr(2, 3).c_str(),
+                       InstructionConverter::convertCapstoneRegIdToShortString(instr.detail->x86.sib_index));
+            LogVerbose("SIB base:         %s  (meaning: %s)",
+                       binaryRepr.substr(5, 3).c_str(),
+                       InstructionConverter::convertCapstoneRegIdToShortString(instr.detail->x86.sib_base));
         }
         else {
             LogVerbose("SIB byte: N/A");
