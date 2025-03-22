@@ -6,6 +6,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sstream>
 #include <unistd.h>
 
 #define PUGIXML_HEADER_ONLY
@@ -98,6 +99,22 @@ static ROP::byteSequence BytesOfInteger(integerType integer) {
     }
 
     return bytes;
+}
+
+template<typename integerType>
+static std::string GetBinaryReprOfInteger(integerType integer) {
+    std::stringstream ss;
+
+    for (int k = sizeof(integer)*8 - 1; k >= 0; --k) {
+        if (integer & (1<<k)) {
+            ss << '1';
+        }
+        else {
+            ss << '0';
+        }
+    }
+
+    return ss.str();
 }
 
 static void RightTrimString(std::string& str, const char *badChars = " \t\n\r\f\v") {
