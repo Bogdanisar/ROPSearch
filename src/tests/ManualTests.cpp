@@ -970,6 +970,7 @@ int main(int argc, char* argv[]) {
     UNUSED(argc); UNUSED(argv);
 
     Log::ProgramLogLevel = Log::Level::Debug;
+    // Log::ProgramLogLevel = Log::Level::Info;
 
     printProcessInformation(argc, argv); pn;
     normalizeCWD(); pn;

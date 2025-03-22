@@ -512,26 +512,32 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
                 prefixByteCount += 1;
             }
         }
-        LogVerbose("Prefix bytes count: %u", prefixByteCount);
 
-        std::vector<const char *> prefixLogStrings = {
-            "REP/REPNE/LOCK",
-            "segment override",
-            "operand-size override",
-            "address-size override",
-        };
-        for (unsigned prefixIdx = 0; prefixIdx < 4; ++prefixIdx) {
-            unsigned char byte = instr.detail->x86.prefix[prefixIdx];
-            if (byte != 0) {
-                LogVerbose("\"%s\" prefix byte: %hhu (0x%hhX)",
-                           prefixLogStrings[prefixIdx], byte, byte);
+        if (prefixByteCount != 0) {
+            LogInfo("Prefix bytes count: %u", prefixByteCount);
+
+            std::vector<const char *> prefixLogStrings = {
+                "REP/REPNE/LOCK",
+                "segment override",
+                "operand-size override",
+                "address-size override",
+            };
+            for (unsigned prefixIdx = 0; prefixIdx < 4; ++prefixIdx) {
+                unsigned char byte = instr.detail->x86.prefix[prefixIdx];
+                if (byte != 0) {
+                    LogInfo("\"%s\" prefix byte: %hhu (0x%hhX)",
+                            prefixLogStrings[prefixIdx], byte, byte);
+                }
             }
+        }
+        else {
+            LogVerbose("No prefix bytes.");
         }
 
 
         // Print REX byte.
         if (instr.detail->x86.rex != 0) {
-            LogVerbose("REX byte: 0x%02hhX", (unsigned char)instr.detail->x86.rex);
+            LogInfo("REX byte: 0x%02hhX", (unsigned char)instr.detail->x86.rex);
         }
         else {
             LogVerbose("REX byte: N/A");
@@ -551,17 +557,17 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
                 ++byteIdx;
             }
             bytesStringStream << ']';
-            LogVerbose("Opcode bytes: %s", bytesStringStream.str().c_str());
+            LogInfo("Opcode bytes: %s", bytesStringStream.str().c_str());
         }
 
         // Print ModR/M byte.
         if (instr.detail->x86.encoding.modrm_offset != 0) {
             std::string binaryRepr = GetBinaryReprOfInteger((unsigned char)instr.detail->x86.modrm);
-            LogVerbose("ModR/M byte: 0x%02hhX (binary: %s %s %s)",
-                       (unsigned char)instr.detail->x86.modrm,
-                       binaryRepr.substr(0, 2).c_str(),
-                       binaryRepr.substr(2, 3).c_str(),
-                       binaryRepr.substr(5, 3).c_str());
+            LogInfo("ModR/M byte: 0x%02hhX (binary: %s %s %s)",
+                    (unsigned char)instr.detail->x86.modrm,
+                    binaryRepr.substr(0, 2).c_str(),
+                    binaryRepr.substr(2, 3).c_str(),
+                    binaryRepr.substr(5, 3).c_str());
         }
         else {
             LogVerbose("ModR/M byte: N/A");
@@ -569,24 +575,24 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
 
         // Print SIB byte.
         if (instr.detail->x86.sib != 0) {
-            LogVerbose("SIB byte: 0x%02hhX (base: %s; index: %s; scale: %hhu)",
-                       (unsigned char)instr.detail->x86.sib,
-                       InstructionConverter::convertCapstoneRegIdToShortString(instr.detail->x86.sib_base),
-                       InstructionConverter::convertCapstoneRegIdToShortString(instr.detail->x86.sib_index),
-                       instr.detail->x86.sib_scale);
+            LogInfo("SIB byte: 0x%02hhX (base: %s; index: %s; scale: %hhu)",
+                    (unsigned char)instr.detail->x86.sib,
+                    InstructionConverter::convertCapstoneRegIdToShortString(instr.detail->x86.sib_base),
+                    InstructionConverter::convertCapstoneRegIdToShortString(instr.detail->x86.sib_index),
+                    instr.detail->x86.sib_scale);
 
             std::string binaryRepr = GetBinaryReprOfInteger((unsigned char)instr.detail->x86.sib);
-            LogVerbose("SIB byte:  0b%s  (value: 0x%02hhX)",
-                       binaryRepr.c_str(),
-                       (unsigned char)instr.detail->x86.sib);
-            LogVerbose("SIB scale:   %s        (value: %hhu)",
-                       binaryRepr.substr(0, 2).c_str(), (unsigned char)instr.detail->x86.sib_scale);
-            LogVerbose("SIB index:     %s     (meaning: %s)",
-                       binaryRepr.substr(2, 3).c_str(),
-                       InstructionConverter::convertCapstoneRegIdToShortString(instr.detail->x86.sib_index));
-            LogVerbose("SIB base:         %s  (meaning: %s)",
-                       binaryRepr.substr(5, 3).c_str(),
-                       InstructionConverter::convertCapstoneRegIdToShortString(instr.detail->x86.sib_base));
+            LogInfo("SIB byte:  0b%s  (value: 0x%02hhX)",
+                    binaryRepr.c_str(),
+                    (unsigned char)instr.detail->x86.sib);
+            LogInfo("SIB scale:   %s        (value: %hhu)",
+                    binaryRepr.substr(0, 2).c_str(), (unsigned char)instr.detail->x86.sib_scale);
+            LogInfo("SIB index:     %s     (meaning: %s)",
+                    binaryRepr.substr(2, 3).c_str(),
+                    InstructionConverter::convertCapstoneRegIdToShortString(instr.detail->x86.sib_index));
+            LogInfo("SIB base:         %s  (meaning: %s)",
+                    binaryRepr.substr(5, 3).c_str(),
+                    InstructionConverter::convertCapstoneRegIdToShortString(instr.detail->x86.sib_base));
         }
         else {
             LogVerbose("SIB byte: N/A");
@@ -618,7 +624,7 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
                     (unsigned)instr.detail->x86.encoding.disp_offset);
         }
         else {
-            LogInfo("Displacement: N/A");
+            LogVerbose("Displacement: N/A");
         }
 
         // Print immediate value.
@@ -640,10 +646,10 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
                     (unsigned)instr.detail->x86.encoding.imm_offset);
         }
         else {
-            LogInfo("Immediate value: N/A");
+            LogVerbose("Immediate value: N/A");
         }
 
-        LogInfo(""); // New line.
+        LogVerbose(""); // New line.
 
 
         // Print the groups to which this instruction belongs.
@@ -657,13 +663,13 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
                 groupsString += ", ";
             }
         }
-        LogInfo("Semantic instruction-group count: %u", (unsigned)instr.detail->groups_count);
+        LogVerbose("Semantic instruction-group count: %u", (unsigned)instr.detail->groups_count);
         if (instr.detail->groups_count != 0) {
-            LogInfo("Semantic instruction-group names: %s", groupsString.c_str());
+            LogVerbose("Semantic instruction-group names: %s", groupsString.c_str());
         }
 
         // Print the "writeback" member.
-        LogInfo("Has \"writeback\" operands: %i", (int)instr.detail->writeback);
+        LogVerbose("Has \"writeback\" operands: %i", (int)instr.detail->writeback);
 
         // Print address-size member (not sure what this is).
         LogVerbose("Address size: %hhu", (unsigned char)instr.detail->x86.addr_size);
