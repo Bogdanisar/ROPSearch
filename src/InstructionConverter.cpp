@@ -616,6 +616,28 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
             LogInfo("Displacement: N/A");
         }
 
+        // Print immediate value.
+        if (instr.detail->x86.encoding.imm_offset != 0) {
+            unsigned printWidth = 2 * instr.detail->x86.encoding.imm_size;
+            unsigned offset = instr.detail->x86.encoding.imm_offset;
+
+            uint64_t immediate = 0;
+            for (unsigned k = 0; k < instr.detail->x86.encoding.imm_size; ++k) {
+                unsigned char byte = instr.bytes[offset + k];
+
+                // Adding at this position makes sense because x86 is always encoded as little-endian.
+                immediate = immediate | (byte << (k * 8));
+            }
+
+            LogInfo("Immediate value: 0x%0*llX (Byte size: %u; Instruction byte offset: %u)",
+                    printWidth, (unsigned long long)immediate,
+                    (unsigned)instr.detail->x86.encoding.imm_size,
+                    (unsigned)instr.detail->x86.encoding.imm_offset);
+        }
+        else {
+            LogInfo("Immediate value: N/A");
+        }
+
         // Print encoding?
 
         LogInfo(""); // New line.

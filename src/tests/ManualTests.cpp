@@ -996,11 +996,12 @@ int main(int argc, char* argv[]) {
     // testBinaryRepresentationOfInteger(); pn;
 
     // auto instrSeqStr = "rol byte ptr [rdx - 0x76b60002], cl; ret; add rax, rbx; add [rax], rbx";
-    auto instrSeqStr = "rol byte ptr [rdx - 0x76b60002], cl; mov rax, 0x10";
+    // auto instrSeqStr = "rol byte ptr [rdx - 0x76b60002], cl";
     // auto instrSeqStr = "stosq qword ptr [rdi], rax;";
     // auto instrSeqStr = "rep stosq qword ptr [rdi], rax";
     // auto instrSeqStr = "add r8, r9; stosq";
     // auto instrSeqStr = "mov qword ptr [rax + 2*rbx], rcx";
+    auto instrSeqStr = "ret; add rax, 0x12; add rax, 0x1234; add rax, 0x12345678; mov rax, 0x123456789ABCDEF0";
     InstructionConverter ic;
     ic.printCapstoneInformationForInstructions(instrSeqStr, AssemblySyntax::Intel);
 
