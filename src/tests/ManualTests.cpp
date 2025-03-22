@@ -995,11 +995,11 @@ int main(int argc, char* argv[]) {
     // testRegisterQueryTransformation(); pn;
     // testBinaryRepresentationOfInteger(); pn;
 
-    // auto instrSeqStr = "rol byte ptr [rdx - 0x76b60002], cl; ret; add rax, rbx; add [rax], rbx";
+    auto instrSeqStr = "rol byte ptr [rdx - 0x76b60002], cl; ret; add rax, rbx; add [rax], rbx";
     // auto instrSeqStr = "stosq qword ptr [rdi], rax;";
     // auto instrSeqStr = "rep stosq qword ptr [rdi], rax";
     // auto instrSeqStr = "add r8, r9; stosq";
-    auto instrSeqStr = "mov qword ptr [rax + 2*rbx], rcx";
+    // auto instrSeqStr = "mov qword ptr [rax + 2*rbx], rcx";
     InstructionConverter ic;
     ic.printCapstoneInformationForInstructions(instrSeqStr, AssemblySyntax::Intel);
 

@@ -407,39 +407,7 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
 
         // Print id and virtual address. The address is derived from the `addr` function parameter.
         LogInfo("Capstone id: %u", (unsigned)instr.id);
-        LogInfo("Virtual address: %llu", (unsigned long long)instr.address);
-
-
-        // Print bytes
-        LogInfo("Byte count: %u", (unsigned)instr.size);
-        totalDecodedBytes += (unsigned)instr.size;
-
-        {
-            std::stringstream bytesStringStream;
-            bytesStringStream << '[' << std::setfill(' ');
-            for (unsigned byteIdx = 0; byteIdx < instr.size; ++byteIdx) {
-                bytesStringStream << std::setw(3) << (unsigned)instr.bytes[byteIdx];
-
-                if (byteIdx != (unsigned)(instr.size - 1)) {
-                    bytesStringStream << ", ";
-                }
-            }
-            bytesStringStream << ']';
-            LogInfo("Bytes dec: %s", bytesStringStream.str().c_str());
-        }
-        {
-            std::stringstream bytesStringStream;
-            bytesStringStream << "[ " << std::hex << std::uppercase << std::setfill('0');
-            for (unsigned byteIdx = 0; byteIdx < instr.size; ++byteIdx) {
-                bytesStringStream << std::setw(2) << (unsigned)instr.bytes[byteIdx];
-
-                if (byteIdx != (unsigned)(instr.size - 1)) {
-                    bytesStringStream << ",  ";
-                }
-            }
-            bytesStringStream << ']';
-            LogInfo("Bytes hex: %s", bytesStringStream.str().c_str());
-        }
+        LogInfo("Virtual address: 0x%llX", (unsigned long long)instr.address);
 
 
         // Print all registers that are *implicitly* read or written by the instruction.
@@ -502,24 +470,39 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
             LogInfo("[Implicitly or Explicitly] Written registers: %s", writtenRegString.c_str());
         }
 
-        // Print the groups to which this instruction belongs.
-        std::string groupsString("");
-        for (uint8_t i = 0; i < instr.detail->groups_count; ++i) {
-            cs_group_type groupID = (cs_group_type)instr.detail->groups[i];
-            const char * groupName = cs_group_name(this->capstoneHandle, (unsigned int)groupID);
+        LogInfo(""); // New line.
 
-            groupsString += groupName;
-            if (i != (instr.detail->groups_count - 1)) {
-                groupsString += ", ";
+
+        // Print bytes
+        LogInfo("Byte count: %u", (unsigned)instr.size);
+        totalDecodedBytes += (unsigned)instr.size;
+
+        {
+            std::stringstream bytesStringStream;
+            bytesStringStream << '[' << std::setfill(' ');
+            for (unsigned byteIdx = 0; byteIdx < instr.size; ++byteIdx) {
+                bytesStringStream << std::setw(3) << (unsigned)instr.bytes[byteIdx];
+
+                if (byteIdx != (unsigned)(instr.size - 1)) {
+                    bytesStringStream << ", ";
+                }
             }
+            bytesStringStream << ']';
+            LogInfo("Bytes dec: %s", bytesStringStream.str().c_str());
         }
-        LogInfo("Semantic instruction-group count: %u", (unsigned)instr.detail->groups_count);
-        if (instr.detail->groups_count != 0) {
-            LogInfo("Semantic instruction-group names: %s", groupsString.c_str());
-        }
+        {
+            std::stringstream bytesStringStream;
+            bytesStringStream << "[ " << std::hex << std::uppercase << std::setfill('0');
+            for (unsigned byteIdx = 0; byteIdx < instr.size; ++byteIdx) {
+                bytesStringStream << std::setw(2) << (unsigned)instr.bytes[byteIdx];
 
-        // Print the "writeback" member.
-        LogInfo("Has \"writeback\" operands: %i", (int)instr.detail->writeback);
+                if (byteIdx != (unsigned)(instr.size - 1)) {
+                    bytesStringStream << ",  ";
+                }
+            }
+            bytesStringStream << ']';
+            LogInfo("Bytes hex: %s", bytesStringStream.str().c_str());
+        }
 
 
         // Print prefix bytes.
@@ -604,6 +587,28 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
             LogVerbose("SIB byte: N/A");
         }
 
+        LogInfo(""); // New line.
+
+
+        // Print the groups to which this instruction belongs.
+        std::string groupsString("");
+        for (uint8_t i = 0; i < instr.detail->groups_count; ++i) {
+            cs_group_type groupID = (cs_group_type)instr.detail->groups[i];
+            const char * groupName = cs_group_name(this->capstoneHandle, (unsigned int)groupID);
+
+            groupsString += groupName;
+            if (i != (instr.detail->groups_count - 1)) {
+                groupsString += ", ";
+            }
+        }
+        LogInfo("Semantic instruction-group count: %u", (unsigned)instr.detail->groups_count);
+        if (instr.detail->groups_count != 0) {
+            LogInfo("Semantic instruction-group names: %s", groupsString.c_str());
+        }
+
+        // Print the "writeback" member.
+        LogInfo("Has \"writeback\" operands: %i", (int)instr.detail->writeback);
+
         // Print address-size member (not sure what this is).
         LogVerbose("Address size: %hhu", (unsigned char)instr.detail->x86.addr_size);
 
@@ -611,7 +616,8 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
         // TODO: Check rest of instr.detail->x86 member.
 
 
-        LogInfo(""); // Empty line.
+        LogInfo("########### Instruction %u ###########", (unsigned)idx);
+        LogInfo(""); // New line.
     }
 
     assertMessage(instrSeqBytesCount == totalDecodedBytes,
