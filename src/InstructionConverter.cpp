@@ -714,7 +714,9 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
         LogVerbose("Address size: %hhu", (unsigned char)instr.detail->x86.addr_size);
 
 
-        // TODO: Check rest of instr.detail->x86 member.
+        // TODO: Print instr.detail->x86.eflags and instr.detail->x86.fpu_flags members as well?
+        // X86_EFLAGS_SET_AF;
+        // X86_FPU_FLAGS_SET_C0;
 
 
         LogInfo("########### Instruction %u ###########", (unsigned)idx);
