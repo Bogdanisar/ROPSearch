@@ -402,8 +402,8 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
             instructionAsm += " " + operands;
         }
         LogInfo("Assembly string: \"%s\"", instructionAsm.c_str());
-        LogInfo("Mnemonic string: \"%s\"", instr.mnemonic);
-        LogInfo("Operands string: \"%s\"", instr.op_str);
+        LogVerbose("Mnemonic string: \"%s\"", instr.mnemonic);
+        LogVerbose("Operands string: \"%s\"", instr.op_str);
 
         // Print id and virtual address. The address is derived from the `addr` function parameter.
         LogInfo("Capstone id: %u", (unsigned)instr.id);
@@ -470,6 +470,45 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
             LogInfo("[Implicitly or Explicitly] Written registers: %s", writtenRegString.c_str());
         }
 
+        if (instr.detail->x86.op_count != 0) {
+            LogInfo("Instruction has %u operand(s):", (unsigned)instr.detail->x86.op_count);
+            for (unsigned k = 0; k < instr.detail->x86.op_count; ++k) {
+                cs_x86_op& operand = instr.detail->x86.operands[k];
+
+                std::string operandTypeString = "Invalid";
+                if (operand.type == X86_OP_REG) {
+                    const char * const regName = InstructionConverter::convertCapstoneRegIdToShortString(operand.reg);
+                    std::string regNameString = regName;
+                    RightPadString(regNameString, 9, ' ');
+
+                    operandTypeString = std::string("Register ") + regNameString;
+                }
+                else if (operand.type == X86_OP_IMM) {
+                    operandTypeString = "Immediate value   ";
+                }
+                else if (operand.type == X86_OP_MEM) {
+                    operandTypeString = "Memory dereference";
+                }
+
+                std::string accessString = "none";
+                if (operand.access == CS_AC_READ_WRITE) {
+                    accessString = "read & write";
+                }
+                else if (operand.access == CS_AC_READ) {
+                    accessString = "read";
+                }
+                else if (operand.access == CS_AC_WRITE) {
+                    accessString = "write";
+                }
+
+                LogInfo("    Operand #%u: %s (Size: %u; Access: %s)",
+                        k, operandTypeString.c_str(), (unsigned)operand.size, accessString.c_str());
+            }
+        }
+        else {
+            LogVerbose("Instruction has no operands");
+        }
+
         LogInfo(""); // New line.
 
 
@@ -525,8 +564,8 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
             for (unsigned prefixIdx = 0; prefixIdx < 4; ++prefixIdx) {
                 unsigned char byte = instr.detail->x86.prefix[prefixIdx];
                 if (byte != 0) {
-                    LogInfo("\"%s\" prefix byte: %hhu (0x%hhX)",
-                            prefixLogStrings[prefixIdx], byte, byte);
+                    LogInfo("    \"%s\" prefix byte: 0x%hhX",
+                            prefixLogStrings[prefixIdx], byte);
                 }
             }
         }
@@ -640,7 +679,7 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
                 immediate = immediate | (byte << (k * 8));
             }
 
-            LogInfo("Immediate value: 0x%0*llX (Byte size: %u; Instruction byte offset: %u)",
+            LogInfo("Immediate value: 0x%0*llX (Byte count: %u; Instruction byte offset: %u)",
                     printWidth, (unsigned long long)immediate,
                     (unsigned)instr.detail->x86.encoding.imm_size,
                     (unsigned)instr.detail->x86.encoding.imm_offset);

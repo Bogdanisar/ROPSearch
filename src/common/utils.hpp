@@ -117,6 +117,12 @@ static std::string GetBinaryReprOfInteger(integerType integer) {
     return ss.str();
 }
 
+static void RightPadString(std::string& str, unsigned minSize, char padChar) {
+    if (str.size() < minSize) {
+        str += std::string(minSize - str.size(), padChar);
+    }
+}
+
 static void RightTrimString(std::string& str, const char *badChars = " \t\n\r\f\v") {
     const std::size_t pos = str.find_last_not_of(badChars);
     str.erase(pos + 1);

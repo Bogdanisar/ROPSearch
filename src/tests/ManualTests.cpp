@@ -965,6 +965,21 @@ void testBinaryRepresentationOfInteger() {
     pv(GetBinaryReprOfInteger((unsigned char)19)); pn;
 }
 
+void testShowCapstoneInstructionInfo() {
+    // auto instrSeqStr = "rol byte ptr [rdx - 0x76b60002], cl; ret; add rax, rbx; add [rax], rbx";
+    // auto instrSeqStr = "rol byte ptr [rdx - 0x76b60002], cl";
+    // auto instrSeqStr = "stosq qword ptr [rdi], rax;";
+    // auto instrSeqStr = "rep stosq qword ptr [rdi], rax";
+    // auto instrSeqStr = "add r8, r9; stosq";
+    // auto instrSeqStr = "mov qword ptr [rax + 2*rbx], rcx";
+    // auto instrSeqStr = "ret; add rax, 0x12; add rax, 0x1234; add rax, 0x12345678; mov rax, 0x123456789ABCDEF0";
+    // auto instrSeqStr = "ret; add rax, 0x12; mov rax, 0x123456789ABCDEF0; mov qword ptr [rax], 0x12";
+    auto instrSeqStr = "ret; add ah, 0x12; mov ax, 0xDEF0; mov dword ptr [rax], 0x12; xor ax, bx";
+
+    InstructionConverter ic;
+    ic.printCapstoneInformationForInstructions(instrSeqStr, AssemblySyntax::Intel);
+}
+
 
 int main(int argc, char* argv[]) {
     UNUSED(argc); UNUSED(argv);
@@ -995,16 +1010,7 @@ int main(int argc, char* argv[]) {
     // testLoadVirtualMemoryOfExecutablePaths(); pn;
     // testRegisterQueryTransformation(); pn;
     // testBinaryRepresentationOfInteger(); pn;
-
-    // auto instrSeqStr = "rol byte ptr [rdx - 0x76b60002], cl; ret; add rax, rbx; add [rax], rbx";
-    // auto instrSeqStr = "rol byte ptr [rdx - 0x76b60002], cl";
-    // auto instrSeqStr = "stosq qword ptr [rdi], rax;";
-    // auto instrSeqStr = "rep stosq qword ptr [rdi], rax";
-    // auto instrSeqStr = "add r8, r9; stosq";
-    // auto instrSeqStr = "mov qword ptr [rax + 2*rbx], rcx";
-    auto instrSeqStr = "ret; add rax, 0x12; add rax, 0x1234; add rax, 0x12345678; mov rax, 0x123456789ABCDEF0";
-    InstructionConverter ic;
-    ic.printCapstoneInformationForInstructions(instrSeqStr, AssemblySyntax::Intel);
+    testShowCapstoneInstructionInfo(); pn;
 
     return 0;
 }
