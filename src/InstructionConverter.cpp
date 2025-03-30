@@ -390,8 +390,13 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
         goto cleanup;
     }
 
+    LogInfo(""); // New line.
+
     for (idx = 0; idx < decodedInstructionsCount; ++idx) {
-        LogInfo("########### Instruction %u ###########", (unsigned)idx);
+        if (decodedInstructionsCount > 1) {
+            LogInfo("########### Instruction %u ###########", (unsigned)idx);
+        }
+
         const cs_insn& instr = decodedInstructions[idx];
 
         // Print the assembly representation.
@@ -719,7 +724,9 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
         // X86_FPU_FLAGS_SET_C0;
 
 
-        LogInfo("########### Instruction %u ###########", (unsigned)idx);
+        if (decodedInstructionsCount > 1) {
+            LogInfo("########### Instruction %u ###########", (unsigned)idx);
+        }
         LogInfo(""); // New line.
     }
 

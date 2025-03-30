@@ -36,6 +36,7 @@ int ________Configure_argument_parser________;
 
 ArgumentParser gProgramParser("ROPSearch", "1.0", default_arguments::help);
 ArgumentParser gListCmdSubparser("list", "1.0", default_arguments::help);
+ArgumentParser gAssemblyInfoCmdSubparser("asmInfo", "1.0", default_arguments::help);
 
 #define SORT_CRIT_ADDRESS_ASC "address-asc"
 #define SORT_CRIT_ADDRESS_DESC "address-desc"
@@ -135,6 +136,36 @@ void ConfigureListCommandSubparser() {
     gProgramParser.add_subparser(gListCmdSubparser);
 }
 
+void ConfigureAssemblyInfoCommandSubparser() {
+    gAssemblyInfoCmdSubparser.add_description("Print what information Capstone knows about some assembly instructions.");
+    gAssemblyInfoCmdSubparser.set_usage_max_line_width(160);
+
+    AddVerboseArgumentToParser(gAssemblyInfoCmdSubparser);
+
+    gAssemblyInfoCmdSubparser.add_usage_newline();
+
+    gAssemblyInfoCmdSubparser.add_argument("instructions")
+        .help("the instruction(s) for which info will be printed. "
+              "Multiple instructions can be separated by a ';' character.")
+        .metavar("STR")
+        .nargs(1);
+    gAssemblyInfoCmdSubparser.add_argument("-asm", "--assembly-syntax")
+        .help("assembly syntax of the input instructions. Possible values: \"intel\", \"att\"")
+        .metavar("STR")
+        .default_value("intel")
+        .choices("intel", "att")
+        .nargs(1);
+    gAssemblyInfoCmdSubparser.add_argument("-addr", "--base-address")
+        .help("the hexadecimal virtual memory address of the first instruction in the input. "
+              "This is relevant only for some instructions like relative jumps.")
+        .metavar("HEX")
+        .default_value(0)
+        .scan<'x', unsigned long long>()
+        .nargs(1);
+
+    gProgramParser.add_subparser(gAssemblyInfoCmdSubparser);
+}
+
 void ConfigureArgumentParser() {
     gProgramParser.add_argument("--version")
     .help("prints version information and exits")
@@ -147,6 +178,7 @@ void ConfigureArgumentParser() {
     .nargs(0);
 
     ConfigureListCommandSubparser();
+    ConfigureAssemblyInfoCommandSubparser();
 }
 
 #pragma endregion Configure argument parser
@@ -373,6 +405,27 @@ void DoListCommand() {
 #pragma endregion List command
 
 
+#pragma region Assembly Info command
+#if false
+int ________Assembly_Info_command________;
+#endif
+
+void DoAssemblyInfoCommand() {
+    assertMessage(gAssemblyInfoCmdSubparser, "Inner logic error...");
+
+    const string asmInstructionsString = gAssemblyInfoCmdSubparser.get<string>("instructions");
+    const string asmSyntaxString = gAssemblyInfoCmdSubparser.get<string>("--assembly-syntax");
+    const unsigned long long address = gAssemblyInfoCmdSubparser.get<unsigned long long>("--base-address");
+
+    ROP::AssemblySyntax inputAsmSyntax = (asmSyntaxString == "intel") ? ROP::AssemblySyntax::Intel : ROP::AssemblySyntax::ATT;
+
+    InstructionConverter ic;
+    ic.printCapstoneInformationForInstructions(asmInstructionsString, inputAsmSyntax, address);
+}
+
+#pragma endregion Assembly Info command
+
+
 #pragma region Main
 #if false
 int ________Main________;
@@ -395,6 +448,11 @@ int main(int argc, char* argv[]) {
 
     if (gListCmdSubparser) {
         DoListCommand();
+        return 0;
+    }
+
+    if (gAssemblyInfoCmdSubparser) {
+        DoAssemblyInfoCommand();
         return 0;
     }
 

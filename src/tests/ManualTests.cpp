@@ -966,7 +966,7 @@ void testBinaryRepresentationOfInteger() {
 }
 
 void testShowCapstoneInstructionInfo() {
-    // auto instrSeqStr = "rol byte ptr [rdx - 0x76b60002], cl; ret; add rax, rbx; add [rax], rbx";
+    auto instrSeqStr = "rol byte ptr [rdx - 0x76b60002], cl; ret; add rax, rbx; add [rax], rbx";
     // auto instrSeqStr = "rol byte ptr [rdx - 0x76b60002], cl";
     // auto instrSeqStr = "stosq qword ptr [rdi], rax;";
     // auto instrSeqStr = "rep stosq qword ptr [rdi], rax";
@@ -974,7 +974,7 @@ void testShowCapstoneInstructionInfo() {
     // auto instrSeqStr = "mov qword ptr [rax + 2*rbx], rcx";
     // auto instrSeqStr = "ret; add rax, 0x12; add rax, 0x1234; add rax, 0x12345678; mov rax, 0x123456789ABCDEF0";
     // auto instrSeqStr = "ret; add rax, 0x12; mov rax, 0x123456789ABCDEF0; mov qword ptr [rax], 0x12";
-    auto instrSeqStr = "ret; add ah, 0x12; mov ax, 0xDEF0; mov dword ptr [rax], 0x12; xor ax, bx";
+    // auto instrSeqStr = "ret; add ah, 0x12; mov ax, 0xDEF0; mov dword ptr [rax], 0x12; xor ax, bx";
 
     InstructionConverter ic;
     ic.printCapstoneInformationForInstructions(instrSeqStr, AssemblySyntax::Intel);
