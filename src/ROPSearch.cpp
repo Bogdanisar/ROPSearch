@@ -159,7 +159,7 @@ void ConfigureAssemblyInfoCommandSubparser() {
         .help("the hexadecimal virtual memory address of the first instruction in the input. "
               "This is relevant only for some instructions like relative jumps.")
         .metavar("HEX")
-        .default_value(0)
+        .default_value(0ULL)
         .scan<'x', unsigned long long>()
         .nargs(1);
 
