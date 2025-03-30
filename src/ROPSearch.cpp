@@ -81,7 +81,7 @@ void ConfigureListCommandSubparser() {
         .metavar("PATH")
         .nargs(argparse::nargs_pattern::at_least_one);
     gListCmdSubparser.add_argument("-addr", "--base-address")
-        .help("This argument is only relevant when used with \"--executable-path\". "
+        .help("this argument is only relevant when used with \"--executable-path\". "
               "It's a hexadecimal address which will be used as a base address for a loaded executable segment. "
               "Can be passed multiple times and each new address will be used for the next found segment. "
               "If not enough addresses, then the `Elf64_Phdr.p_vaddr` value is used instead")
@@ -108,7 +108,7 @@ void ConfigureListCommandSubparser() {
         .help("ignore instruction sequences that have a \"0x00\" byte in their virtual memory address. Note: This may print nothing on 64bit arch.")
         .flag();
     gListCmdSubparser.add_argument("--query")
-        .help("A register query for filtering the instruction sequences. E.g. \"read(rax) & write(bx)\".")
+        .help("a register query for filtering the instruction sequences. E.g. \"read(rax) & write(bx)\".")
         .metavar("STR")
         .nargs(1);
 
