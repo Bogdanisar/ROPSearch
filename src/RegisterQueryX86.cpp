@@ -5,16 +5,16 @@
 #include "InstructionConverter.hpp"
 
 
-static const char PRECEDENCE_TO_OPERATOR_CHAR[] = {'|', '&', '^', '=', '!'};
+static const char * const PRECEDENCE_TO_OPERATOR_TOKEN[] = {"||", "&&", "!=", "==", "!"};
 static ROP::RegisterQueryX86::QueryNodeType PRECEDENCE_TO_OPERATOR_TYPE[] = {
     ROP::RegisterQueryX86::QueryNodeType::OR_OPERATOR,
     ROP::RegisterQueryX86::QueryNodeType::AND_OPERATOR,
-    ROP::RegisterQueryX86::QueryNodeType::XOR_OPERATOR,
+    ROP::RegisterQueryX86::QueryNodeType::NOT_EQUALS_OPERATOR,
     ROP::RegisterQueryX86::QueryNodeType::EQUALS_OPERATOR,
     ROP::RegisterQueryX86::QueryNodeType::NOT_OPERATOR,
 };
 
-static const int MAX_PRECEDENCE = sizeof(PRECEDENCE_TO_OPERATOR_CHAR) / sizeof(PRECEDENCE_TO_OPERATOR_CHAR[0]);
+static const int MAX_PRECEDENCE = sizeof(PRECEDENCE_TO_OPERATOR_TOKEN) / sizeof(PRECEDENCE_TO_OPERATOR_TOKEN[0]);
 
 
 static std::string GetLowercaseString(std::string str) {
@@ -179,13 +179,13 @@ ROP::RegisterQueryX86::nextQueryCharacterIsValid(unsigned currentPrecedence) {
         return true;
     }
 
-    char ch = this->queryCString[this->queryIdx];
-    if (ch == ')') {
+    if (this->queryCString[this->queryIdx] == ')') {
         return true;
     }
 
     for (unsigned p = 0; p <= currentPrecedence; ++p) {
-        if (ch == PRECEDENCE_TO_OPERATOR_CHAR[p]) {
+        const char * const token = PRECEDENCE_TO_OPERATOR_TOKEN[p];
+        if (strncmp(this->queryCString + this->queryIdx, token, strlen(token)) == 0) {
             return true;
         }
     }
@@ -227,13 +227,15 @@ ROP::RegisterQueryX86::parseQuery(unsigned currentPrecedence) {
         }
     }
     else if (PRECEDENCE_TO_OPERATOR_TYPE[currentPrecedence] == QueryNodeType::NOT_OPERATOR) {
+        const char * const token = PRECEDENCE_TO_OPERATOR_TOKEN[currentPrecedence];
+        size_t tokenSize = strlen(token);
         bool shouldNegate = false;
 
-        // While the next character is the negation operator.
-        while (this->queryCString[this->queryIdx] == PRECEDENCE_TO_OPERATOR_CHAR[currentPrecedence]) {
+        // While the next character(s) represent the negation operator.
+        while (strncmp(this->queryCString + this->queryIdx, token, tokenSize) == 0) {
             // Remember the operator and jump over it.
             shouldNegate = !shouldNegate;
-            this->queryIdx += 1;
+            this->queryIdx += tokenSize;
         }
 
         // No more negation operators. Try to parse the query according to the next operator.
@@ -253,8 +255,9 @@ ROP::RegisterQueryX86::parseQuery(unsigned currentPrecedence) {
         return node;
     }
     else {
-        // We are looking for "subexpr1 | subexpr2 | subexpr3 ..." (if currentPrecedence == 0),
-        // or similar for the other precedences.
+        // We are looking for "subexpr1 CURRENT_OPERATOR subexpr2 CURRENT_OPERATOR subexpr3 ...".
+        const char * const token = PRECEDENCE_TO_OPERATOR_TOKEN[currentPrecedence];
+        size_t tokenSize = strlen(token);
 
         // Parse the first term (which can be a subexpression that uses operators with higher precedence).
         QueryNode *currentNode = this->parseQuery(currentPrecedence + 1);
@@ -263,9 +266,9 @@ ROP::RegisterQueryX86::parseQuery(unsigned currentPrecedence) {
             return NULL;
         }
 
-        while (this->queryCString[this->queryIdx] == PRECEDENCE_TO_OPERATOR_CHAR[currentPrecedence]) {
-            // Jump over the operator character.
-            this->queryIdx += 1;
+        while (strncmp(this->queryCString + this->queryIdx, token, tokenSize) == 0) {
+            // Jump over the operator characters.
+            this->queryIdx += tokenSize;
 
             // Parse the next term (which can be a subexpression that uses operators with higher precedence).
             QueryNode *nextNode = this->parseQuery(currentPrecedence + 1);
@@ -362,7 +365,7 @@ bool ROP::RegisterQueryX86::matchesRegisterInfo(QueryNode *currentNode,
             return this->matchesRegisterInfo(currentNode->binary.leftChild, regInfoAny, regInfoAll) ==
                    this->matchesRegisterInfo(currentNode->binary.rightChild, regInfoAny, regInfoAll);
         }
-        case QueryNodeType::XOR_OPERATOR: {
+        case QueryNodeType::NOT_EQUALS_OPERATOR: {
             return this->matchesRegisterInfo(currentNode->binary.leftChild, regInfoAny, regInfoAll) !=
                    this->matchesRegisterInfo(currentNode->binary.rightChild, regInfoAny, regInfoAll);
         }
@@ -456,15 +459,15 @@ void ROP::RegisterQueryX86::getStringRepresentationOfQuery(const QueryNode *curr
         case QueryNodeType::EQUALS_OPERATOR: {
             repr += "(";
             this->getStringRepresentationOfQuery(currentNode->binary.leftChild, repr);
-            repr += " = ";
+            repr += " == ";
             this->getStringRepresentationOfQuery(currentNode->binary.rightChild, repr);
             repr += ")";
             break;
         }
-        case QueryNodeType::XOR_OPERATOR: {
+        case QueryNodeType::NOT_EQUALS_OPERATOR: {
             repr += "(";
             this->getStringRepresentationOfQuery(currentNode->binary.leftChild, repr);
-            repr += " ^ ";
+            repr += " != ";
             this->getStringRepresentationOfQuery(currentNode->binary.rightChild, repr);
             repr += ")";
             break;
@@ -472,7 +475,7 @@ void ROP::RegisterQueryX86::getStringRepresentationOfQuery(const QueryNode *curr
         case QueryNodeType::AND_OPERATOR: {
             repr += "(";
             this->getStringRepresentationOfQuery(currentNode->binary.leftChild, repr);
-            repr += " & ";
+            repr += " && ";
             this->getStringRepresentationOfQuery(currentNode->binary.rightChild, repr);
             repr += ")";
             break;
@@ -480,7 +483,7 @@ void ROP::RegisterQueryX86::getStringRepresentationOfQuery(const QueryNode *curr
         case QueryNodeType::OR_OPERATOR: {
             repr += "(";
             this->getStringRepresentationOfQuery(currentNode->binary.leftChild, repr);
-            repr += " | ";
+            repr += " || ";
             this->getStringRepresentationOfQuery(currentNode->binary.rightChild, repr);
             repr += ")";
             break;
@@ -508,7 +511,7 @@ void ROP::RegisterQueryX86::freeTree(QueryNode *currentNode) {
         this->freeTree(currentNode->unary.child);
     }
     else if (currentNode->nodeType == QueryNodeType::EQUALS_OPERATOR ||
-             currentNode->nodeType == QueryNodeType::XOR_OPERATOR ||
+             currentNode->nodeType == QueryNodeType::NOT_EQUALS_OPERATOR ||
              currentNode->nodeType == QueryNodeType::AND_OPERATOR ||
              currentNode->nodeType == QueryNodeType::OR_OPERATOR) {
         this->freeTree(currentNode->binary.leftChild);

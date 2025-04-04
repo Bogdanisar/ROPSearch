@@ -321,6 +321,8 @@ FilterInstructionSequencesByListCmdArgs(const vector< pair<unsigned long long, v
         assert(instrSeqs.size() == allRegInfoSeqs.size());
         string queryString = gListCmdSubparser.get<string>("--query");
         RegisterQueryX86 rq(queryString);
+        LogVerbose("Query representation: %s", rq.getStringRepresentationOfQuery().c_str());
+        LogVerbose(""); // New line.
 
         validIndexes.erase(remove_if(validIndexes.begin(), validIndexes.end(), [&](unsigned idx) {
             const vector<RegisterInfo>& regInfoList = allRegInfoSeqs[idx];

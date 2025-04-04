@@ -47,7 +47,7 @@ namespace ROP {
             // Operator
             NOT_OPERATOR,
             EQUALS_OPERATOR,
-            XOR_OPERATOR,
+            NOT_EQUALS_OPERATOR,
             AND_OPERATOR,
             OR_OPERATOR,
         };
