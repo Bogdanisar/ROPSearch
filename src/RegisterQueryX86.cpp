@@ -180,7 +180,7 @@ ROP::RegisterQueryX86::nextQueryCharacterIsValid(unsigned currentPrecedence) {
     }
 
     char ch = this->queryCString[this->queryIdx];
-    if (ch == ')' || ch == '\0') {
+    if (ch == ')') {
         return true;
     }
 
