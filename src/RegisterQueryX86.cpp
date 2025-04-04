@@ -5,11 +5,11 @@
 #include "InstructionConverter.hpp"
 
 
-static const char PRECEDENCE_TO_OPERATOR_CHAR[] = {'|', '^', '&', '!'};
+static const char PRECEDENCE_TO_OPERATOR_CHAR[] = {'|', '&', '^', '!'};
 static ROP::RegisterQueryX86::QueryNodeType PRECEDENCE_TO_OPERATOR_TYPE[] = {
     ROP::RegisterQueryX86::QueryNodeType::OR_OPERATOR,
-    ROP::RegisterQueryX86::QueryNodeType::XOR_OPERATOR,
     ROP::RegisterQueryX86::QueryNodeType::AND_OPERATOR,
+    ROP::RegisterQueryX86::QueryNodeType::XOR_OPERATOR,
     ROP::RegisterQueryX86::QueryNodeType::NOT_OPERATOR,
 };
 
@@ -357,12 +357,12 @@ bool ROP::RegisterQueryX86::matchesRegisterInfo(QueryNode *currentNode,
         case QueryNodeType::NOT_OPERATOR: {
             return !this->matchesRegisterInfo(currentNode->unary.child, regInfoAny, regInfoAll);
         }
-        case QueryNodeType::AND_OPERATOR: {
-            return this->matchesRegisterInfo(currentNode->binary.leftChild, regInfoAny, regInfoAll) &&
-                   this->matchesRegisterInfo(currentNode->binary.rightChild, regInfoAny, regInfoAll);
-        }
         case QueryNodeType::XOR_OPERATOR: {
             return this->matchesRegisterInfo(currentNode->binary.leftChild, regInfoAny, regInfoAll) !=
+                   this->matchesRegisterInfo(currentNode->binary.rightChild, regInfoAny, regInfoAll);
+        }
+        case QueryNodeType::AND_OPERATOR: {
+            return this->matchesRegisterInfo(currentNode->binary.leftChild, regInfoAny, regInfoAll) &&
                    this->matchesRegisterInfo(currentNode->binary.rightChild, regInfoAny, regInfoAll);
         }
         case QueryNodeType::OR_OPERATOR: {
@@ -448,18 +448,18 @@ void ROP::RegisterQueryX86::getStringRepresentationOfQuery(const QueryNode *curr
             repr += ")";
             break;
         }
-        case QueryNodeType::AND_OPERATOR: {
-            repr += "(";
-            this->getStringRepresentationOfQuery(currentNode->binary.leftChild, repr);
-            repr += " & ";
-            this->getStringRepresentationOfQuery(currentNode->binary.rightChild, repr);
-            repr += ")";
-            break;
-        }
         case QueryNodeType::XOR_OPERATOR: {
             repr += "(";
             this->getStringRepresentationOfQuery(currentNode->binary.leftChild, repr);
             repr += " ^ ";
+            this->getStringRepresentationOfQuery(currentNode->binary.rightChild, repr);
+            repr += ")";
+            break;
+        }
+        case QueryNodeType::AND_OPERATOR: {
+            repr += "(";
+            this->getStringRepresentationOfQuery(currentNode->binary.leftChild, repr);
+            repr += " & ";
             this->getStringRepresentationOfQuery(currentNode->binary.rightChild, repr);
             repr += ")";
             break;
@@ -494,8 +494,8 @@ void ROP::RegisterQueryX86::freeTree(QueryNode *currentNode) {
     if (currentNode->nodeType == QueryNodeType::NOT_OPERATOR) {
         this->freeTree(currentNode->unary.child);
     }
-    else if (currentNode->nodeType == QueryNodeType::AND_OPERATOR ||
-             currentNode->nodeType == QueryNodeType::XOR_OPERATOR ||
+    else if (currentNode->nodeType == QueryNodeType::XOR_OPERATOR ||
+             currentNode->nodeType == QueryNodeType::AND_OPERATOR ||
              currentNode->nodeType == QueryNodeType::OR_OPERATOR) {
         this->freeTree(currentNode->binary.leftChild);
         this->freeTree(currentNode->binary.rightChild);
