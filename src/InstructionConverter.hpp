@@ -28,6 +28,9 @@ namespace ROP {
         // If the instruction writes to a memory operand (e.g. [rax + 0xf]).
         bool writesMemoryOperand;
 
+        // If the instruction contains an immediate value (e.g. "mov rax, 0x10").
+        bool hasImmediateValue;
+
         static RegisterInfo reduceRegInfoListWithAndOperator(const std::vector<RegisterInfo> &infoList);
         static RegisterInfo reduceRegInfoListWithOrOperator(const std::vector<RegisterInfo> &infoList);
     };

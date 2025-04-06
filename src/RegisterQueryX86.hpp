@@ -43,6 +43,8 @@ namespace ROP {
             ALL_READ_MEMORY_OPERAND, // All instructions (except the last one) read a memory operand (e.g. [rax + 0xf]).
             ANY_WRITE_MEMORY_OPERAND, // At least one instruction writes to a memory operand (e.g. [rax + 0xf]).
             ALL_WRITE_MEMORY_OPERAND, // All instructions (except the last one) write to a memory operand (e.g. [rax + 0xf]).
+            ANY_HAVE_IMMEDIATE_VALUE, // At least one instruction contains an immediate value (e.g. "mov rax, 0x10").
+            ALL_HAVE_IMMEDIATE_VALUE, // All instructions (except the last one) contain an immediate value (e.g. "mov rax, 0x10").
 
             // Operator
             NOT_OPERATOR,
@@ -78,7 +80,7 @@ namespace ROP {
 
         // Auxiliary structure to store the precomputed information below.
         struct StoredTermString {
-            // Something like "read(rax)" or "write(memory_operand)".
+            // Something like "read(rax)", "write(memory_operand)", "have(immediate_value)".
             std::string termString;
 
             /**
@@ -87,6 +89,7 @@ namespace ROP {
              * - QueryNodeType::ANY/ALL_WRITE_REGISTER;
              * - QueryNodeType::ANY/ALL_READ_MEMORY_OPERAND;
              * - QueryNodeType::ANY/ALL_WRITE_MEMORY_OPERAND;
+             * - QueryNodeType::ANY/ALL_HAVE_IMMEDIATE_VALUE;
              */
             QueryNodeType nodeType;
         };
@@ -99,6 +102,7 @@ namespace ROP {
         const char * const queryCString;
         std::vector<StoredRegisterTermString> registerTermStrings;
         std::vector<StoredTermString> memoryOperandTermStrings;
+        std::vector<StoredTermString> immediateValueTermStrings;
         unsigned queryIdx;
         QueryNode *queryTreeRoot;
 

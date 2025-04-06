@@ -101,6 +101,29 @@ void ROP::RegisterQueryX86::precomputeTermStrings() {
             }
         }
     }
+
+    // Precompute this->immediateValueTermStrings.
+    for (const char * const literal : {"imm", "immediate_value"}) {
+        for (const char * const kind : {"have", "anyhave", "allhave"}) {
+            // Get a string like "anyhave(imm)".
+            std::string currTermString = std::string(kind) + "(" + std::string(literal) + ")";
+
+            // Turn to lowercase.
+            for(char& c : currTermString) {
+                c = tolower(c);
+            }
+
+            if (std::string(kind) == "have" || std::string(kind) == "anyhave") {
+                StoredTermString term = {currTermString, QueryNodeType::ANY_HAVE_IMMEDIATE_VALUE};
+                this->immediateValueTermStrings.push_back(term);
+            }
+            else {
+                assert(std::string(kind) == "allhave");
+                StoredTermString term = {currTermString, QueryNodeType::ALL_HAVE_IMMEDIATE_VALUE};
+                this->immediateValueTermStrings.push_back(term);
+            }
+        }
+    }
 }
 
 ROP::RegisterQueryX86::QueryNode*
@@ -158,11 +181,27 @@ ROP::RegisterQueryX86::parseQueryLeaf() {
         }
     }
 
+    // Look for basic terms that relate to immediate values, like "anyhave(imm)" or "allhave(imm)".
+    for (const auto& immTermInfo : this->immediateValueTermStrings) {
+        const std::string& termString = immTermInfo.termString;
+        const QueryNodeType& queryNodeType = immTermInfo.nodeType;
+
+        if (strncmp(this->queryCString + this->queryIdx, termString.c_str(), termString.size()) == 0) {
+            // Go over the parsed string.
+            this->queryIdx += (int)termString.size();
+
+            QueryNode *node = new QueryNode();
+            node->nodeType = queryNodeType;
+            return node;
+        }
+    }
+
     LogError("Expected \"true\", \"false\", "
              "\"read(reg)\", \"anyread(reg)\", \"allread(reg)\", "
              "\"write(reg)\", \"anywrite(reg)\", \"allwrite(reg)\" "
              "\"read(memory_operand)\", \"anyread(memory_operand)\", \"allread(memory_operand)\", "
-             "\"write(memory_operand)\", \"anywrite(memory_operand)\", \"allwrite(memory_operand)\" "
+             "\"write(memory_operand)\", \"anywrite(memory_operand)\", \"allwrite(memory_operand)\", "
+             "\"have(immediate_value)\", \"anyhave(immediate_value)\", \"allhave(immediate_value)\" "
              "when parsing register query at index %u.", this->queryIdx);
     return NULL;
 }
@@ -358,6 +397,12 @@ bool ROP::RegisterQueryX86::matchesRegisterInfo(QueryNode *currentNode,
         case QueryNodeType::ALL_WRITE_MEMORY_OPERAND: {
             return regInfoAll.writesMemoryOperand;
         }
+        case QueryNodeType::ANY_HAVE_IMMEDIATE_VALUE: {
+            return regInfoAny.hasImmediateValue;
+        }
+        case QueryNodeType::ALL_HAVE_IMMEDIATE_VALUE: {
+            return regInfoAll.hasImmediateValue;
+        }
         case QueryNodeType::NOT_OPERATOR: {
             return !this->matchesRegisterInfo(currentNode->unary.child, regInfoAny, regInfoAll);
         }
@@ -448,6 +493,14 @@ void ROP::RegisterQueryX86::getStringRepresentationOfQuery(const QueryNode *curr
         }
         case QueryNodeType::ALL_WRITE_MEMORY_OPERAND: {
             repr += "allwrite(memory_operand)";
+            break;
+        }
+        case QueryNodeType::ANY_HAVE_IMMEDIATE_VALUE: {
+            repr += "anyhave(immediate_value)";
+            break;
+        }
+        case QueryNodeType::ALL_HAVE_IMMEDIATE_VALUE: {
+            repr += "allhave(immediate_value)";
             break;
         }
         case QueryNodeType::NOT_OPERATOR: {

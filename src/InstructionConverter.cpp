@@ -16,6 +16,7 @@ ROP::RegisterInfo ROP::RegisterInfo::reduceRegInfoListWithAndOperator(const std:
 		ret.wRegs &= infoList[idx].wRegs;
 		ret.readsMemoryOperand = ret.readsMemoryOperand && infoList[idx].readsMemoryOperand;
 		ret.writesMemoryOperand = ret.writesMemoryOperand && infoList[idx].writesMemoryOperand;
+        ret.hasImmediateValue = ret.hasImmediateValue && infoList[idx].hasImmediateValue;
 	}
 
 	return ret;
@@ -32,6 +33,7 @@ ROP::RegisterInfo ROP::RegisterInfo::reduceRegInfoListWithOrOperator(const std::
 		ret.wRegs |= infoList[idx].wRegs;
 		ret.readsMemoryOperand = ret.readsMemoryOperand || infoList[idx].readsMemoryOperand;
 		ret.writesMemoryOperand = ret.writesMemoryOperand || infoList[idx].writesMemoryOperand;
+        ret.hasImmediateValue = ret.hasImmediateValue || infoList[idx].hasImmediateValue;
 	}
 
 	return ret;
@@ -267,6 +269,10 @@ ROP::InstructionConverter::convertInstructionSequenceToString(
 					ri.writesMemoryOperand = true;
 				}
 			}
+
+
+			// Determine if the instruction has an immediate value;
+            ri.hasImmediateValue = (decodedInstructions[idx].detail->x86.encoding.imm_offset != 0);
 
 
             (*outRegInfo).push_back(ri);
