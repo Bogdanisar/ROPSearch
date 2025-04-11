@@ -111,6 +111,9 @@ void ConfigureListCommandSubparser() {
         .help("a register query for filtering the instruction sequences. E.g. \"read(rax) & write(bx)\".")
         .metavar("STR")
         .nargs(1);
+    gListCmdSubparser.add_argument("--pack", "--pack-partial-registers")
+        .help("Treat partial registers as being the same register when used in the '--query' argument.")
+        .flag();
 
     // "Output" arguments
     gListCmdSubparser.add_usage_newline();
@@ -291,6 +294,7 @@ FilterInstructionSequencesByListCmdArgs(const vector< pair<unsigned long long, v
     const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
     const bool ignoreNullBytes = gListCmdSubparser.get<bool>("--no-null");
     const bool haveRegisterQuery = gListCmdSubparser.is_used("--query");
+    const bool packPartialRegistersInQuery = gListCmdSubparser.get<bool>("--pack");
 
     vector<unsigned> validIndexes;
     for (unsigned idx = 0; idx < instrSeqs.size(); ++idx) {
@@ -321,6 +325,11 @@ FilterInstructionSequencesByListCmdArgs(const vector< pair<unsigned long long, v
         assert(instrSeqs.size() == allRegInfoSeqs.size());
         string queryString = gListCmdSubparser.get<string>("--query");
         RegisterQueryX86 rq(queryString);
+
+        if (packPartialRegistersInQuery) {
+            rq.enablePartialRegisterPacking();
+        }
+
         LogVerbose("Query representation: %s", rq.getStringRepresentationOfQuery().c_str());
         LogVerbose(""); // New line.
 
@@ -340,6 +349,7 @@ void DoListCommand() {
     const int maxInstructions = gListCmdSubparser.get<int>("--max-instructions");
     const string asmSyntaxString = gListCmdSubparser.get<string>("--assembly-syntax");
     const bool haveRegisterQuery = gListCmdSubparser.is_used("--query");
+    const bool packPartialRegistersInQuery = gListCmdSubparser.get<bool>("--pack");
 
     assertMessage(1 <= minInstructions && minInstructions <= 100, "Please input a different number of min instructions...");
     assertMessage(1 <= maxInstructions && maxInstructions <= 100, "Please input a different number of max instructions...");
@@ -360,6 +370,10 @@ void DoListCommand() {
 
         // If we have a "--query" argument, then we will have to compute the register info for each instruction.
         VirtualMemoryInstructions::computeRegisterInfo = true;
+    }
+    else {
+        assertMessage(!packPartialRegistersInQuery,
+                      "The '--pack' argument makes sense only when passed alongside the '--query' argument.");
     }
 
     VirtualMemoryInstructions vmInstructions = [&]() {
