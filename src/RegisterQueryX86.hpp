@@ -1,7 +1,6 @@
 #ifndef REGISTER_QUERY_X86_H
 #define REGISTER_QUERY_X86_H
 
-#include <map>
 #include <string>
 
 #include <capstone/capstone.h>
@@ -106,18 +105,11 @@ namespace ROP {
         std::vector<StoredTermString> immediateValueTermStrings;
         unsigned queryIdx;
         QueryNode *queryTreeRoot;
-        bool partialRegisterPackingIsEnabled;
-        std::map<x86_reg, std::bitset<X86_REG_ENDING>> registerToPartialRegisterMask;
 
         void precomputeTermStrings();
         QueryNode* parseQueryLeaf();
         bool nextQueryCharacterIsValid(unsigned currentPrecedence);
         QueryNode* parseQuery(unsigned currentPrecedence);
-
-        /**
-         * Check if a given register is part of the given bitset, taking into account the partial registers setting.
-         */
-        bool registerSetContainsRegister(const std::bitset<X86_REG_ENDING>& regSet, x86_reg regID) const;
 
         /**
          * Compute the result of the query represented by the subtree of `currentNode`
@@ -142,13 +134,8 @@ namespace ROP {
          * For example, terms read(RAX), read(EAX), read(AX), read(AH) or read(AL) will match different instruction sequences.
          * Calling this method causes all partial registers to be considered the same register.
          * In other words, read(EAX) will match instructions like "mov bx, ax" as well.
-         * Important:
-         * With packing, "allwrite(RAX)" will match "mov ax, bx; xor ax, ax; ret" or "mov eax, ebx; xor eax, eax; ret",
-         * but "allwrite(RAX)" will not match "mov ax, bx; xor eax, eax; ret".
-         * This is because it checks if the same register (which is partially equivalent to the given register)
-         * has been written in all the instructions of the sequence.
          */
-        void enablePartialRegisterPacking();
+        void transformInstrSeqsToEnablePartialRegisterPacking(std::vector<std::vector<ROP::RegisterInfo>>& regInfoSequences);
 
         /**
          * Compute the result of the query, evaluating `read(reg)` and `write(reg)` terms

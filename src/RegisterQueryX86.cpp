@@ -347,8 +347,6 @@ ROP::RegisterQueryX86::RegisterQueryX86(const std::string queryString):
     this->queryIdx = 0;
     this->queryTreeRoot = this->parseQuery(0);
 
-    this->partialRegisterPackingIsEnabled = false;
-
     if (this->queryTreeRoot != NULL && this->queryIdx != this->queryString.size()) {
         // Some of the query string got parsed correctly, but not all of it => Bad query string.
         LogError("Found invalid character '%c' when parsing the register query at index %u.",
@@ -364,13 +362,10 @@ bool ROP::RegisterQueryX86::isValidQuery() const {
     return this->queryTreeRoot != NULL;
 }
 
-void ROP::RegisterQueryX86::enablePartialRegisterPacking() {
-    if (this->partialRegisterPackingIsEnabled) {
-        // Already enabled.
-        return;
-    }
-
-    std::vector<std::vector<x86_reg>> partialRegiserGroups = {
+void ROP::RegisterQueryX86::transformInstrSeqsToEnablePartialRegisterPacking(
+    std::vector<std::vector<ROP::RegisterInfo>>& regInfoSequences
+) {
+    std::vector<std::vector<x86_reg>> partialRegisterGroups = {
         {X86_REG_RAX, X86_REG_EAX, X86_REG_AX, X86_REG_AH, X86_REG_AL},
         {X86_REG_RBX, X86_REG_EBX, X86_REG_BX, X86_REG_BH, X86_REG_BL},
         {X86_REG_RCX, X86_REG_ECX, X86_REG_CX, X86_REG_CH, X86_REG_CL},
@@ -389,39 +384,33 @@ void ROP::RegisterQueryX86::enablePartialRegisterPacking() {
         {X86_REG_R15, X86_REG_R15D, X86_REG_R15W, X86_REG_R15B},
     };
 
-    for (auto regGroup : partialRegiserGroups) {
+    std::vector<std::bitset<X86_REG_ENDING>> partialRegisterMasks;
+    for (auto regGroup : partialRegisterGroups) {
         std::bitset<X86_REG_ENDING> groupMask;
 
         for (x86_reg reg : regGroup) {
             groupMask.set(reg, true);
         }
 
-        for (x86_reg reg : regGroup) {
-            this->registerToPartialRegisterMask[reg] = groupMask;
+        partialRegisterMasks.push_back(groupMask);
+    }
+
+    for (std::vector<RegisterInfo>& currRegInfoSeq : regInfoSequences) {
+        for (RegisterInfo& currRegInfo : currRegInfoSeq) {
+            for (auto& partialRegMask : partialRegisterMasks) {
+                // If any partial register in the mask is read by this instruction, then
+                // we consider all of the partial registers in the mask as being read by this instruction.
+                if ((currRegInfo.rRegs & partialRegMask).count() != 0) {
+                    currRegInfo.rRegs |= partialRegMask;
+                }
+
+                // If any partial register in the mask is written by this instruction, then
+                // we consider all of the partial registers in the mask as being written by this instruction.
+                if ((currRegInfo.wRegs & partialRegMask).count() != 0) {
+                    currRegInfo.wRegs |= partialRegMask;
+                }
+            }
         }
-    }
-
-    this->partialRegisterPackingIsEnabled = true;
-}
-
-bool ROP::RegisterQueryX86::registerSetContainsRegister(const std::bitset<X86_REG_ENDING>& regSet, x86_reg regID) const {
-    if (!this->partialRegisterPackingIsEnabled) {
-        // If on regular flow (with no partial register packing),
-        // then just check if the register is in the set.
-        return regSet[regID];
-    }
-
-    // Partial register packing is enabled.
-    // Check if the register belongs to a partial registers group.
-
-    auto regIterator = this->registerToPartialRegisterMask.find(regID);
-    auto endIterator = this->registerToPartialRegisterMask.end();
-    if (regIterator != endIterator) {
-        const std::bitset<X86_REG_ENDING>& groupMask = regIterator->second;
-        return (regSet & groupMask).count() > 0;
-    }
-    else {
-        return regSet[regID];
     }
 }
 
@@ -437,16 +426,16 @@ bool ROP::RegisterQueryX86::matchesRegisterInfo(QueryNode *currentNode,
             return false;
         }
         case QueryNodeType::ANY_READ_REGISTER: {
-            return this->registerSetContainsRegister(regInfoAny.rRegs, currentNode->registerID);
+            return regInfoAny.rRegs[currentNode->registerID];
         }
         case QueryNodeType::ALL_READ_REGISTER: {
-            return this->registerSetContainsRegister(regInfoAll.rRegs, currentNode->registerID);
+            return regInfoAll.rRegs[currentNode->registerID];
         }
         case QueryNodeType::ANY_WRITE_REGISTER: {
-            return this->registerSetContainsRegister(regInfoAny.wRegs, currentNode->registerID);
+            return regInfoAny.wRegs[currentNode->registerID];
         }
         case QueryNodeType::ALL_WRITE_REGISTER: {
-            return this->registerSetContainsRegister(regInfoAll.wRegs, currentNode->registerID);
+            return regInfoAll.wRegs[currentNode->registerID];
         }
         case QueryNodeType::ANY_READ_MEMORY_OPERAND: {
             return regInfoAny.readsMemoryOperand;

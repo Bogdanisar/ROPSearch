@@ -290,7 +290,7 @@ void SortListOutput(const vector< pair<unsigned long long, vector<string>> >& in
 
 vector<unsigned>
 FilterInstructionSequencesByListCmdArgs(const vector< pair<unsigned long long, vector<string>> >& instrSeqs,
-                                        const vector<vector<RegisterInfo>>& allRegInfoSeqs) {
+                                        vector<vector<RegisterInfo>>& allRegInfoSeqs) {
     const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
     const bool ignoreNullBytes = gListCmdSubparser.get<bool>("--no-null");
     const bool haveRegisterQuery = gListCmdSubparser.is_used("--query");
@@ -327,7 +327,7 @@ FilterInstructionSequencesByListCmdArgs(const vector< pair<unsigned long long, v
         RegisterQueryX86 rq(queryString);
 
         if (packPartialRegistersInQuery) {
-            rq.enablePartialRegisterPacking();
+            rq.transformInstrSeqsToEnablePartialRegisterPacking(allRegInfoSeqs);
         }
 
         LogVerbose("Query representation: %s", rq.getStringRepresentationOfQuery().c_str());
