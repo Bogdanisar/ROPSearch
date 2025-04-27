@@ -32,12 +32,6 @@ bin/InsSeqTrie.o: src/InsSeqTrie.cpp $(shell find ./src -name "*.hpp")
 bin/VirtualMemoryInstructions.o: src/VirtualMemoryInstructions.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) -c src/VirtualMemoryInstructions.cpp -o $@
 
-bin/GadgetMould.o: src/GadgetMould.cpp $(shell find ./src -name "*.hpp")
-	g++ $(wFlags) -c src/GadgetMould.cpp -o $@
-
-bin/GadgetCatalog.o: src/GadgetCatalog.cpp $(shell find ./src -name "*.hpp")
-	g++ $(wFlags) -c src/GadgetCatalog.cpp -o $@
-
 bin/Log.o: src/Log.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) -c src/Log.cpp -o $@
 
@@ -46,7 +40,7 @@ bin/RegisterQueryX86.o: src/RegisterQueryX86.cpp $(shell find ./src -name "*.hpp
 
 classObjectFiles := bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryExecutableBytes.o \
 				    bin/InstructionConverter.o bin/InsSeqTrie.o bin/VirtualMemoryInstructions.o \
-					bin/GadgetMould.o bin/GadgetCatalog.o bin/Log.o bin/RegisterQueryX86.o
+					bin/Log.o bin/RegisterQueryX86.o
 
 
 # Main program

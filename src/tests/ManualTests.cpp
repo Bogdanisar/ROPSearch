@@ -10,8 +10,6 @@
 
 #include "../common/utils.hpp"
 #include "../ELFParser.hpp"
-#include "../GadgetCatalog.hpp"
-#include "../GadgetMould.hpp"
 #include "../InstructionConverter.hpp"
 #include "../RegisterQueryX86.hpp"
 #include "../VirtualMemoryExecutableBytes.hpp"
@@ -748,104 +746,6 @@ void testXMLReading() {
     pv(lowerLeftY);pn;
 }
 
-void testGadgetMouldConfiguration(string targetExecutable) {
-    pv(targetExecutable); pn;
-    int targetPid = getPidOfExecutable(targetExecutable);
-
-    // Print the Virtual Memory mapping of the target process.
-    testVirtualMemoryMapping(targetPid); pn;
-
-    VirtualMemoryInstructions vmInfo(targetPid);
-    printf("Finished initializing vmInfo object!\n\n");
-
-
-    using namespace pugi;
-
-    xml_document doc;
-    xml_parse_result loadResult = doc.load_file("../src/data/catalogHelped.xml");
-    if (!loadResult) {
-        exitError("Got error '%s' at offset %llu loading the XML string",
-                  loadResult.description(), (unsigned long long)loadResult.offset);
-    }
-
-    printf("XML document loaded!\n");
-    // printf("Value of entire XML document: \n%s\n", XmlNodeToString(doc).c_str());
-    printf("\n");
-
-    xml_node catalog = doc.child("catalog");
-
-    for (xml_node gadgetXML : catalog.children("gadget")) {
-        printf("Found '%s' gadget: \n%s\n",
-               gadgetXML.attribute("name").as_string(), XmlNodeToString(gadgetXML).c_str());
-
-        // const char * const targetGadget = "assignConstant";
-        // if (strcmp(gadgetXML.attribute("name").as_string(), targetGadget) != 0) {
-        //     continue;
-        // }
-
-
-        // Configure the mould according to the XML and the Virtual Memory of the target process.
-        GadgetMould gm;
-        bool configured = gm.configureMould(gadgetXML, vmInfo);
-        assert(configured);
-
-        printf("Bytes of stack template of gadget mould:\n");
-        for (auto byte : gm.stackTemplate) {
-            printf("0x%02X ", byte);
-        }
-        printf("\n");
-
-        // Print the stack position of each argument.
-        for (xml_node argNode : gadgetXML.child("variant").child("stack").children("arg")) {
-            const char * const argName = argNode.attribute("name").as_string();
-
-            printf("Stack position for argument '%s' is [%u, %u]\n",
-                    argName,
-                    gm.stackPositionForArgument[argName].first,
-                    gm.stackPositionForArgument[argName].second);
-        }
-
-        // Set some dummy example bytes for each argument of the gadget.
-        map<string, byteSequence> argumentBytes;
-        int argIndex = 0;
-        for (xml_node argNode : gadgetXML.child("variant").child("stack").children("arg")) {
-            const char * const argName = argNode.attribute("name").as_string();
-            ++argIndex;
-
-            byteSequence bytes;
-            for (int i = 0; i < 8; ++i) {
-                bytes.push_back(argIndex);
-            }
-
-            argumentBytes[argName] = bytes;
-        }
-
-        // Get the concrete gadget.
-        auto gadgetBytes = gm.getConcreteGadget(argumentBytes);
-
-        // Print the gadget bytes.
-        printf("Bytes of concrete gadget:\n");
-        for (auto byte : gadgetBytes) {
-            printf("0x%02X ", byte);
-        }
-        printf("\n\n\n");
-    }
-}
-
-void testGadgetCatalog(string targetExecutable) {
-    pv(targetExecutable); pn;
-    int targetPid = getPidOfExecutable(targetExecutable);
-
-    // Print the Virtual Memory mapping of the target process.
-    testVirtualMemoryMapping(targetPid); pn;
-
-    VirtualMemoryInstructions vmInfo(targetPid);
-    printf("Finished initializing vmInfo object!\n\n");
-
-    string xmlPath = "../src/data/catalogHelped.xml";
-    GadgetCatalog gc(xmlPath, vmInfo);
-}
-
 void testLoggingFunctionality() {
     printf("Logging with default level:\n");
     LogDebug("Debug flag: %i\n", (int)Log::Level::Debug);
@@ -1003,8 +903,6 @@ int main(int argc, char* argv[]) {
     // printVMInstructionSequences("vulnerable.exe"); pn;
     // testFilterVMInstructionSequencesByRegisterInfo("vulnerable.exe"); pn;
     // testXMLReading();pn;
-    // testGadgetMouldConfiguration("vulnerableHelped.exe"); pn;
-    // testGadgetCatalog("vulnerableHelped.exe"); pn;
     // testLoggingFunctionality(); pn;
     // testBytesOfInteger(); pn;
     // testLoadVirtualMemoryOfExecutablePaths(); pn;
