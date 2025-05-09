@@ -78,14 +78,14 @@ namespace ROP {
          *                      the Elf64_Phdr.p_vaddr value found in the ELF file will be used instead.
          */
         VirtualMemoryInstructions(const std::vector<std::string> execPaths,
-                                  const std::vector<unsigned long long> baseAddresses);
+                                  const std::vector<addressType> baseAddresses);
 
         // Return a vector of addresses where the instruction sequence is found in virtual memory.
-        std::vector<unsigned long long>
+        std::vector<addressType>
         matchInstructionSequenceInVirtualMemory(std::string instructionSequenceAsm, AssemblySyntax asmSyntax);
 
         // Return a vector of pairs of (virtual memory address, instruction sequence).
-        std::vector< std::pair<unsigned long long, std::vector<std::string>> >
+        std::vector< std::pair<addressType, std::vector<std::string>> >
         getInstructionSequences(std::vector<std::vector<RegisterInfo>> *outRegInfo = NULL) const;
     };
 

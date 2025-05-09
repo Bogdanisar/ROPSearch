@@ -151,7 +151,7 @@ void ROP::VirtualMemoryInstructions::disassembleSegmentBytes(const VirtualMemory
     const int maxInstructionSize = ROPConsts::MaxInstructionBytesCount;
 
     const byte *firstPtr = segm.executableBytes.data() + first;
-    const unsigned long long firstAddr = segm.startVirtualAddress + first;
+    const addressType firstAddr = segm.startVirtualAddress + first;
     int segmentSize = std::min(maxInstructionSize, (int)segm.executableBytes.size() - first);
 
     std::vector<std::string> instructions;
@@ -232,7 +232,7 @@ void ROP::VirtualMemoryInstructions::buildInstructionTrie(
 
         // Insert the instruction at this segment into the trie;
         const std::string& instruction = p.second;
-        unsigned long long vAddress = segm.startVirtualAddress + first;
+        addressType vAddress = segm.startVirtualAddress + first;
 
         RegisterInfo *regInfoPtr = NULL;
         if (VirtualMemoryInstructions::computeRegisterInfo) {
@@ -263,13 +263,13 @@ ROP::VirtualMemoryInstructions::VirtualMemoryInstructions(int processPid)
 }
 
 ROP::VirtualMemoryInstructions::VirtualMemoryInstructions(const std::vector<std::string> execPaths,
-                                                          const std::vector<unsigned long long> baseAddresses)
+                                                          const std::vector<addressType> baseAddresses)
 : vmExecBytes(execPaths, baseAddresses) {
     this->buildInstructionTrie();
 }
 
 
-std::vector<unsigned long long>
+std::vector<ROP::addressType>
 ROP::VirtualMemoryInstructions::matchInstructionSequenceInVirtualMemory(std::string origInstructionSequenceAsm, AssemblySyntax origSyntax) {
     // Normalize the instruction sequence,
     // so that we are sure it looks exactly like what we have in the internal Trie.
@@ -280,7 +280,7 @@ ROP::VirtualMemoryInstructions::matchInstructionSequenceInVirtualMemory(std::str
     return this->instructionTrie.hasInstructionSequence(instructions);
 }
 
-std::vector< std::pair<unsigned long long, std::vector<std::string>> >
+std::vector< std::pair<ROP::addressType, std::vector<std::string>> >
 ROP::VirtualMemoryInstructions::getInstructionSequences(std::vector<std::vector<RegisterInfo>> *outRegInfo) const {
     assertMessage(outRegInfo == NULL || VirtualMemoryInstructions::computeRegisterInfo,
                   "Can't get the instruction sequences with added register info since "

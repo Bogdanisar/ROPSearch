@@ -4,12 +4,14 @@
 #include <string>
 #include <vector>
 
+#include "common/types.hpp"
+
 
 namespace ROP {
 
     struct VirtualMemorySegmentMapping {
-        unsigned long long startAddress;
-        unsigned long long endAddress;
+        addressType startAddress;
+        addressType endAddress;
         char rights[5];
         unsigned int rightsMask;
         unsigned long long offset;

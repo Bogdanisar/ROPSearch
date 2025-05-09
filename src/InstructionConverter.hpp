@@ -78,7 +78,7 @@ namespace ROP {
         std::pair<byteSequence, unsigned>
         convertInstructionSequenceToBytes(std::string instructionSequenceAsm,
                                           AssemblySyntax asmSyntax,
-                                          unsigned long long addr = 0);
+                                          addressType addr = 0);
 
         /**
          * Converts / disassembles a sequence of bytes into instructions (as assembly strings).
@@ -100,7 +100,7 @@ namespace ROP {
         convertInstructionSequenceToString(const byte * const instrSeqBytes,
                                            const size_t instrSeqBytesCount,
                                            AssemblySyntax asmSyntax,
-                                           unsigned long long addr,
+                                           addressType addr,
                                            const size_t parseCount,
                                            std::vector<std::string> *outInstructionAsm,
                                            std::vector<RegisterInfo> *outRegInfo = NULL);
@@ -108,7 +108,7 @@ namespace ROP {
         unsigned
         convertInstructionSequenceToString(const byteSequence& instructionSequence,
                                            AssemblySyntax asmSyntax,
-                                           unsigned long long addr,
+                                           addressType addr,
                                            const size_t parseCount,
                                            std::vector<std::string> *outInstructionAsm,
                                            std::vector<RegisterInfo> *outRegInfo = NULL);
@@ -139,7 +139,7 @@ namespace ROP {
          */
         void printCapstoneInformationForInstructions(std::string instructionSequenceAsm,
                                                      AssemblySyntax inputAsmSyntax,
-                                                     unsigned long long addr = 0ULL);
+                                                     addressType addr = 0ULL);
 
         ~InstructionConverter();
 

@@ -86,9 +86,9 @@ void ConfigureListCommandSubparser() {
               "Can be passed multiple times and each new address will be used for the next found segment. "
               "If not enough addresses, then the `Elf64_Phdr.p_vaddr` value is used instead")
         .metavar("HEX")
-        .scan<'x', unsigned long long>()
+        .scan<'x', addressType>()
         .nargs(argparse::nargs_pattern::any)
-        .default_value(vector<unsigned long long>{});
+        .default_value(vector<addressType>{});
 
     // "Filter" arguments
     gListCmdSubparser.add_usage_newline();
@@ -163,7 +163,7 @@ void ConfigureAssemblyInfoCommandSubparser() {
               "This is relevant only for some instructions like relative jumps.")
         .metavar("HEX")
         .default_value(0ULL)
-        .scan<'x', unsigned long long>()
+        .scan<'x', addressType>()
         .nargs(1);
 
     gProgramParser.add_subparser(gAssemblyInfoCmdSubparser);
@@ -192,7 +192,7 @@ void ConfigureArgumentParser() {
 int ________List_command________;
 #endif
 
-void SortListOutput(const vector< pair<unsigned long long, vector<string>> >& instrSeqs,
+void SortListOutput(const vector< pair<addressType, vector<string>> >& instrSeqs,
                     vector<unsigned>& validIndexes)
 {
     vector<string> sortCriteria = gListCmdSubparser.get<vector<string>>("--sort");
@@ -218,7 +218,7 @@ void SortListOutput(const vector< pair<unsigned long long, vector<string>> >& in
         }
     }
 
-    using elemType = pair<unsigned long long, vector<string>>;
+    using elemType = pair<addressType, vector<string>>;
     auto comparator = [&](unsigned idxA, unsigned idxB){
         const elemType& a = instrSeqs[idxA];
         const elemType& b = instrSeqs[idxB];
@@ -289,7 +289,7 @@ void SortListOutput(const vector< pair<unsigned long long, vector<string>> >& in
 }
 
 vector<unsigned>
-FilterInstructionSequencesByListCmdArgs(const vector< pair<unsigned long long, vector<string>> >& instrSeqs,
+FilterInstructionSequencesByListCmdArgs(const vector< pair<addressType, vector<string>> >& instrSeqs,
                                         vector<vector<RegisterInfo>>& allRegInfoSeqs) {
     const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
     const bool ignoreNullBytes = gListCmdSubparser.get<bool>("--no-null");
@@ -313,7 +313,7 @@ FilterInstructionSequencesByListCmdArgs(const vector< pair<unsigned long long, v
     if (ignoreNullBytes) {
         validIndexes.erase(remove_if(validIndexes.begin(), validIndexes.end(), [&](unsigned idx) {
             const auto& p = instrSeqs[idx];
-            const unsigned long long& addr = p.first;
+            const addressType& addr = p.first;
             byteSequence addressBytes = BytesOfInteger(addr);
 
             return find(addressBytes.begin(), addressBytes.end(), (ROP::byte)0x00) != addressBytes.end();
@@ -382,13 +382,13 @@ void DoListCommand() {
         }
         else {
             vector<string> execs = gListCmdSubparser.get<vector<string>>("--executable-path");
-            vector<unsigned long long> addrs = gListCmdSubparser.get<vector<unsigned long long>>("--base-address");
+            vector<addressType> addrs = gListCmdSubparser.get<vector<addressType>>("--base-address");
             return VirtualMemoryInstructions(execs, addrs);
         }
     }();
 
     // Get the instruction sequences found in the target.
-    vector< pair<unsigned long long, vector<string>> > instrSeqs;
+    vector< pair<addressType, vector<string>> > instrSeqs;
     vector<vector<RegisterInfo>> allRegInfoSeqs;
     if (haveRegisterQuery) {
         instrSeqs = vmInstructions.getInstructionSequences(&allRegInfoSeqs);
@@ -407,7 +407,7 @@ void DoListCommand() {
     InstructionConverter ic;
     for (unsigned idx : validIndexes) {
         const auto& p = instrSeqs[idx];
-        const unsigned long long& addr = p.first;
+        const addressType& addr = p.first;
         const vector<string>& instructionSequence = p.second;
 
         string fullSequence = ic.concatenateInstructionsAsm(instructionSequence);
@@ -431,7 +431,7 @@ void DoAssemblyInfoCommand() {
 
     const string asmInstructionsString = gAssemblyInfoCmdSubparser.get<string>("instructions");
     const string asmSyntaxString = gAssemblyInfoCmdSubparser.get<string>("--assembly-syntax");
-    const unsigned long long address = gAssemblyInfoCmdSubparser.get<unsigned long long>("--base-address");
+    const addressType address = gAssemblyInfoCmdSubparser.get<addressType>("--base-address");
 
     ROP::AssemblySyntax inputAsmSyntax = (asmSyntaxString == "intel") ? ROP::AssemblySyntax::Intel : ROP::AssemblySyntax::ATT;
 

@@ -18,8 +18,8 @@ namespace ROP {
     struct VirtualMemoryExecutableSegment {
         // The end address might be larger than start + bytes.size(),
         // because of needing to be a multiple of the page size.
-        unsigned long long startVirtualAddress;
-        unsigned long long endVirtualAddress;
+        addressType startVirtualAddress;
+        addressType endVirtualAddress;
         byteSequence executableBytes;
     };
 
@@ -28,7 +28,7 @@ namespace ROP {
 
         void buildExecutableSegments(int processPid);
         void buildExecutableSegments(const std::vector<std::string> execPaths,
-                                     const std::vector<unsigned long long> baseAddresses);
+                                     const std::vector<addressType> baseAddresses);
 
         public:
         /**
@@ -46,15 +46,15 @@ namespace ROP {
          *                      the Elf64_Phdr.p_vaddr value found in the ELF file will be used instead.
          */
         VirtualMemoryExecutableBytes(const std::vector<std::string> execPaths,
-                                     const std::vector<unsigned long long> baseAddresses);
+                                     const std::vector<addressType> baseAddresses);
 
         const std::vector<VirtualMemoryExecutableSegment>& getExecutableSegments() const;
 
-        bool isValidVirtualAddressInExecutableSegment(unsigned long long vAddress) const;
-        byte getByteAtVirtualAddress(unsigned long long vAddress) const;
+        bool isValidVirtualAddressInExecutableSegment(addressType vAddress) const;
+        byte getByteAtVirtualAddress(addressType vAddress) const;
 
         // Return a vector of addresses where the bytes are found in virtual memory.
-        std::vector<unsigned long long> matchBytesInVirtualMemory(byteSequence bytes);
+        std::vector<addressType> matchBytesInVirtualMemory(byteSequence bytes);
     };
 
 }

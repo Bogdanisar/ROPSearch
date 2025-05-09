@@ -20,7 +20,7 @@ namespace ROP {
         // Therefore, each node in the structure corresponds to a valid instruction sequence.
         struct Node {
             // A list of virtual addresses where the ins sequence denoted by this node can be found.
-            std::vector<unsigned long long> matchingVirtualAddresses;
+            std::vector<addressType> matchingVirtualAddresses;
             RegisterInfo regInfo;
 
             std::map<std::string, Node *> children;
@@ -32,7 +32,7 @@ namespace ROP {
         void getTrieContent(Node *currentNode,
                             const std::vector<std::string>& currInstrSeq,
                             const std::vector<RegisterInfo>& currRegInfoSeq,
-                            std::vector< std::pair<unsigned long long, std::vector<std::string>> >& content,
+                            std::vector< std::pair<addressType, std::vector<std::string>> >& content,
                             std::vector<std::vector<RegisterInfo>> *outRegInfo) const;
 
         public:
@@ -42,18 +42,18 @@ namespace ROP {
         InsSeqTrie();
 
         Node* addInstruction(const std::string& instruction,
-                             unsigned long long vAddress,
+                             addressType vAddress,
                              const RegisterInfo *regInfo = NULL);
 
         Node* addInstruction(const std::string& instruction,
-                             unsigned long long vAddress,
+                             addressType vAddress,
                              Node *node,
                              const RegisterInfo *regInfo = NULL);
 
-        std::vector<unsigned long long> hasInstructionSequence(const std::vector<std::string>& instructionSequence) const;
+        std::vector<addressType> hasInstructionSequence(const std::vector<std::string>& instructionSequence) const;
 
         // Return a vector of pairs of (virtual memory address, instruction sequence).
-        std::vector< std::pair<unsigned long long, std::vector<std::string>> >
+        std::vector< std::pair<addressType, std::vector<std::string>> >
         getTrieContent(std::vector<std::vector<RegisterInfo>> *outRegInfo = NULL) const;
 
         ~InsSeqTrie();

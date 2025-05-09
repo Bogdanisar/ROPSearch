@@ -10,7 +10,7 @@ ROP::InsSeqTrie::InsSeqTrie() {
 
 ROP::InsSeqTrie::Node* ROP::InsSeqTrie::addInstruction(
     const std::string& instruction,
-    unsigned long long vAddress,
+    addressType vAddress,
     Node *node,
     const RegisterInfo *regInfo
 ) {
@@ -30,13 +30,13 @@ ROP::InsSeqTrie::Node* ROP::InsSeqTrie::addInstruction(
 
 ROP::InsSeqTrie::Node* ROP::InsSeqTrie::addInstruction(
     const std::string& instruction,
-    unsigned long long vAddress,
+    addressType vAddress,
     const RegisterInfo *regInfo
 ) {
     return this->addInstruction(instruction, vAddress, this->root, regInfo);
 }
 
-std::vector<unsigned long long> ROP::InsSeqTrie::hasInstructionSequence(const std::vector<std::string>& instructionSequence) const {
+std::vector<ROP::addressType> ROP::InsSeqTrie::hasInstructionSequence(const std::vector<std::string>& instructionSequence) const {
     Node *currentNode = this->root;
     for (auto it = instructionSequence.rbegin(); it != instructionSequence.rend(); ++it) {
         const std::string& instruction = *it;
@@ -53,12 +53,12 @@ std::vector<unsigned long long> ROP::InsSeqTrie::hasInstructionSequence(const st
 void ROP::InsSeqTrie::getTrieContent(Node *currentNode,
                                      const std::vector<std::string>& currInstrSeq,
                                      const std::vector<RegisterInfo>& currRegInfoSeq,
-                                     std::vector< std::pair<unsigned long long, std::vector<std::string>> >& content,
+                                     std::vector< std::pair<addressType, std::vector<std::string>> >& content,
                                      std::vector<std::vector<RegisterInfo>> *outRegInfo) const
 {
     assert(currentNode == this->root || currentNode->matchingVirtualAddresses.size() != 0);
     if (currentNode->matchingVirtualAddresses.size() != 0) {
-        for (unsigned long long addr : currentNode->matchingVirtualAddresses) {
+        for (addressType addr : currentNode->matchingVirtualAddresses) {
             content.push_back({addr, currInstrSeq});
             if (outRegInfo) {
                 (*outRegInfo).push_back(currRegInfoSeq);
@@ -85,10 +85,10 @@ void ROP::InsSeqTrie::getTrieContent(Node *currentNode,
     }
 }
 
-std::vector< std::pair<unsigned long long, std::vector<std::string>> >
+std::vector< std::pair<ROP::addressType, std::vector<std::string>> >
 ROP::InsSeqTrie::getTrieContent(std::vector<std::vector<RegisterInfo>> *outRegInfo) const
 {
-    std::vector< std::pair<unsigned long long, std::vector<std::string>> > content;
+    std::vector< std::pair<addressType, std::vector<std::string>> > content;
     this->getTrieContent(this->root, {}, {}, content, outRegInfo);
 
     // The Instruction Sequence vectors need to be reversed.

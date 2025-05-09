@@ -129,7 +129,7 @@ std::pair<ROP::byteSequence, unsigned>
 ROP::InstructionConverter::convertInstructionSequenceToBytes(
     std::string instructionSequenceAsm,
     AssemblySyntax asmSyntax,
-    unsigned long long addr
+    addressType addr
 ) {
     byteSequence instructionSequence;
 
@@ -183,7 +183,7 @@ ROP::InstructionConverter::convertInstructionSequenceToString(
     const byte * const instrSeqBytes,
     const size_t instrSeqBytesCount,
     AssemblySyntax asmSyntax,
-    unsigned long long addr,
+    addressType addr,
     const size_t parseCount,
     std::vector<std::string> *outInstructionAsm,
     std::vector<RegisterInfo> *outRegInfo
@@ -292,7 +292,7 @@ unsigned
 ROP::InstructionConverter::convertInstructionSequenceToString(
     const byteSequence& instructionSequence,
     AssemblySyntax asmSyntax,
-    unsigned long long addr,
+    addressType addr,
     const size_t parseCount,
     std::vector<std::string> *outInstructionAsm,
     std::vector<RegisterInfo> *outRegInfo
@@ -355,7 +355,7 @@ static std::string ConcatenateRegisterIDListIntoString(std::vector<x86_reg> regL
 void
 ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string instructionSequenceAsm,
                                                                    AssemblySyntax inputAsmSyntax,
-                                                                   unsigned long long addr) {
+                                                                   addressType addr) {
     // Trim a trailing ';' character if it exists, for convenience.
     // The ';' character is supposed to be placed only between instructions.
     RightTrimString(instructionSequenceAsm, "; \t\n\r\f\v");

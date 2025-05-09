@@ -131,9 +131,9 @@ void testVirtualMemoryExecutableBytes(int targetPid) {
 
         // As far as I can tell, the difference between "end" and "actualEnd"
         // is that "end" must be a multiple of the page size.
-        unsigned long long start = execSegm.startVirtualAddress;
-        unsigned long long end = execSegm.endVirtualAddress;
-        unsigned long long actualEnd = start + (unsigned long long)execSegm.executableBytes.size();
+        addressType start = execSegm.startVirtualAddress;
+        addressType end = execSegm.endVirtualAddress;
+        addressType actualEnd = start + (unsigned long long)execSegm.executableBytes.size();
         printf("0x%llx-0x%llx (real: 0x%llx-0x%llx; sz: %7llu): ",
                start, end, start, actualEnd, (unsigned long long)execSegm.executableBytes.size());
 
@@ -147,11 +147,11 @@ void testVirtualMemoryExecutableBytes(int targetPid) {
 
     if (executableSegments.size() != 0) {
         const auto& firstExecSegm = executableSegments[0];
-        unsigned long long firstSegmStart = firstExecSegm.startVirtualAddress;
+        addressType firstSegmStart = firstExecSegm.startVirtualAddress;
         size_t bytesToPrint = min((size_t)20, firstExecSegm.executableBytes.size());
 
         printf("Testing VirtualMemoryExecutableBytes::getByteAtVirtualAddress():\n");
-        for (unsigned long long addr = firstSegmStart; addr < firstSegmStart + bytesToPrint; ++addr) {
+        for (addressType addr = firstSegmStart; addr < firstSegmStart + bytesToPrint; ++addr) {
             ROP::byte b = vmBytes.getByteAtVirtualAddress(addr);
             printf("virtual_memory[0x%llx] = %02hhx\n", addr, b);
         }
@@ -221,7 +221,7 @@ void testGetExecutableBytesInteractive(string targetExecutable) {
             break;
         }
 
-        for (unsigned long long cAddr = addr; cAddr < (unsigned long long)addr + 20; ++cAddr) {
+        for (addressType cAddr = addr; cAddr < (addressType)addr + 20; ++cAddr) {
             if (!vmBytes.isValidVirtualAddressInExecutableSegment(cAddr)) {
                 printf("Address not in virtual memory...\n");
                 break;
@@ -627,9 +627,9 @@ void testFindingInstructionSequenceInMemory(string targetExecutable) {
         auto normalizedString = ic.concatenateInstructionsAsm(normalizedArray);
         printf("Normalized instruction sequence: %s\n", normalizedString.c_str());
 
-        vector<unsigned long long> matchedAddresses = vmInfo.matchInstructionSequenceInVirtualMemory(insSeq, syntax);
+        vector<addressType> matchedAddresses = vmInfo.matchInstructionSequenceInVirtualMemory(insSeq, syntax);
         if (matchedAddresses.size() != 0) {
-            for (unsigned long long addr : matchedAddresses) {
+            for (addressType addr : matchedAddresses) {
                 printf("Found at 0x%llx\n", addr);
             }
         }
@@ -656,7 +656,7 @@ void printVMInstructionSequences(string targetExecutable) {
     printf("Found instruction sequences:\n");
     auto instrSeqs = vmInfo.getInstructionSequences();
     for (const auto& p : instrSeqs) {
-        unsigned long long addr = p.first;
+        addressType addr = p.first;
         string fullSequence = ic.concatenateInstructionsAsm(p.second);
         printf("0x%10llx: %s\n", addr, fullSequence.c_str());
     }
@@ -681,7 +681,7 @@ void testFilterVMInstructionSequencesByRegisterInfo(string targetExecutable) {
 
     printf("Found instruction sequences:\n");
     for (unsigned idx = 0; idx < instrSeqs.size(); ++idx) {
-        unsigned long long addr = instrSeqs[idx].first;
+        addressType addr = instrSeqs[idx].first;
         const vector<string>& currInstrSeq = instrSeqs[idx].second;
         const vector<RegisterInfo>& currRegInfoSeq = allRegInfoSeqs[idx];
         assert(currInstrSeq.size() == currRegInfoSeq.size());
@@ -783,7 +783,7 @@ void testLoadVirtualMemoryOfExecutablePaths() {
         "/usr/lib/x86_64-linux-gnu/libc.so.6",
         "/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
     };
-    vector<unsigned long long> baseAddresses = {
+    vector<addressType> baseAddresses = {
         // 0x7ffff7c28000,
         // 0x7ffff7fc6000,
     };
@@ -814,9 +814,9 @@ void testLoadVirtualMemoryOfExecutablePaths() {
         auto normalizedString = ic.concatenateInstructionsAsm(normalizedArray);
         printf("Normalized instruction sequence: %s\n", normalizedString.c_str());
 
-        vector<unsigned long long> matchedAddresses = vmInfo.matchInstructionSequenceInVirtualMemory(insSeq, syntax);
+        vector<addressType> matchedAddresses = vmInfo.matchInstructionSequenceInVirtualMemory(insSeq, syntax);
         if (matchedAddresses.size() != 0) {
-            for (unsigned long long addr : matchedAddresses) {
+            for (addressType addr : matchedAddresses) {
                 printf("Found at 0x%llx\n", addr);
             }
         }

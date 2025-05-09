@@ -14,6 +14,7 @@ namespace ROP {
 
     using byte = unsigned char;
     using byteSequence = std::vector<byte>;
+    using addressType = unsigned long long;
 
     enum class AssemblySyntax {
         Intel, // The assembly instructions are written in Intel syntax.

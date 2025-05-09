@@ -55,7 +55,7 @@ void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(int processPid) 
 }
 
 void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(const std::vector<std::string> execPaths,
-                                                                const std::vector<unsigned long long> baseAddresses) {
+                                                                const std::vector<addressType> baseAddresses) {
     // This is used as an optimization in case we have the same ELF path multiple times.
     // (Otherwise, we would need to create more than one ELFParser for the same path).
     std::map<std::string, ELFParser> elfPathToELFParser;
@@ -105,7 +105,7 @@ ROP::VirtualMemoryExecutableBytes::VirtualMemoryExecutableBytes(int processPid) 
 }
 
 ROP::VirtualMemoryExecutableBytes::VirtualMemoryExecutableBytes(const std::vector<std::string> execPaths,
-                                                                const std::vector<unsigned long long> baseAddresses) {
+                                                                const std::vector<addressType> baseAddresses) {
     this->buildExecutableSegments(execPaths, baseAddresses);
 }
 
@@ -114,7 +114,7 @@ const std::vector<ROP::VirtualMemoryExecutableSegment>& ROP::VirtualMemoryExecut
     return this->executableSegments;
 }
 
-bool ROP::VirtualMemoryExecutableBytes::isValidVirtualAddressInExecutableSegment(unsigned long long vAddress) const {
+bool ROP::VirtualMemoryExecutableBytes::isValidVirtualAddressInExecutableSegment(addressType vAddress) const {
     for (const auto& execSegm : this->executableSegments) {
         if (execSegm.startVirtualAddress <= vAddress && vAddress < execSegm.endVirtualAddress) {
             return true;
@@ -124,14 +124,14 @@ bool ROP::VirtualMemoryExecutableBytes::isValidVirtualAddressInExecutableSegment
     return false;
 }
 
-ROP::byte ROP::VirtualMemoryExecutableBytes::getByteAtVirtualAddress(unsigned long long vAddress) const {
+ROP::byte ROP::VirtualMemoryExecutableBytes::getByteAtVirtualAddress(addressType vAddress) const {
     for (const auto& execSegm : this->executableSegments) {
 
         // As far as I can tell, the difference between "end" and "actualEnd"
         // is that "end" must be a multiple of the page size.
-        unsigned long long start = execSegm.startVirtualAddress;
-        unsigned long long end = execSegm.endVirtualAddress;
-        unsigned long long actualEnd = start + (unsigned long long)execSegm.executableBytes.size();
+        addressType start = execSegm.startVirtualAddress;
+        addressType end = execSegm.endVirtualAddress;
+        addressType actualEnd = start + (unsigned long long)execSegm.executableBytes.size();
 
         if (start <= vAddress && vAddress < actualEnd) {
             return execSegm.executableBytes[vAddress - start];
@@ -145,11 +145,11 @@ ROP::byte ROP::VirtualMemoryExecutableBytes::getByteAtVirtualAddress(unsigned lo
     return (byte)0;
 }
 
-std::vector<unsigned long long>
+std::vector<ROP::addressType>
 ROP::VirtualMemoryExecutableBytes::matchBytesInVirtualMemory(ROP::byteSequence bytes) {
     assertMessage(bytes.size() != 0, "Got empty bytes sequence...");
 
-    std::vector<unsigned long long> matchedVirtualAddresses;
+    std::vector<addressType> matchedVirtualAddresses;
 
     for (const VirtualMemoryExecutableSegment& execSegm : this->executableSegments) {
         const byteSequence& segmentBytes = execSegm.executableBytes;
