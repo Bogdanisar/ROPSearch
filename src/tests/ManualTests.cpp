@@ -865,6 +865,16 @@ void testBinaryRepresentationOfInteger() {
     pv(GetBinaryReprOfInteger((unsigned char)19)); pn;
 }
 
+void testMinimumNumberOfBytesToStoreInteger() {
+    pv(GetMinimumNumberOfBytesToStoreInteger(0)); pn;
+    pv(GetMinimumNumberOfBytesToStoreInteger(36)); pn;
+    pv(GetMinimumNumberOfBytesToStoreInteger(255)); pn;
+    pv(GetMinimumNumberOfBytesToStoreInteger(256)); pn;
+    pv(GetMinimumNumberOfBytesToStoreInteger(1024)); pn;
+    pv(GetMinimumNumberOfBytesToStoreInteger(1<<15)); pn;
+    pv(GetMinimumNumberOfBytesToStoreInteger(1<<16)); pn;
+}
+
 void testShowCapstoneInstructionInfo() {
     auto instrSeqStr = "rol byte ptr [rdx - 0x76b60002], cl; ret; add rax, rbx; add [rax], rbx";
     // auto instrSeqStr = "rol byte ptr [rdx - 0x76b60002], cl";
@@ -908,7 +918,8 @@ int main(int argc, char* argv[]) {
     // testLoadVirtualMemoryOfExecutablePaths(); pn;
     // testRegisterQueryTransformation(); pn;
     // testBinaryRepresentationOfInteger(); pn;
-    testShowCapstoneInstructionInfo(); pn;
+    testMinimumNumberOfBytesToStoreInteger(); pn;
+    // testShowCapstoneInstructionInfo(); pn;
 
     return 0;
 }

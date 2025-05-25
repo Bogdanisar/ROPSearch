@@ -93,7 +93,7 @@ template<typename integerType>
 static ROP::byteSequence BytesOfInteger(integerType integer) {
     ROP::byteSequence bytes;
 
-    for (unsigned k = 0; k < sizeof(integer); ++k, integer >>= 8) {
+    for (unsigned k = 0; k < sizeof(integerType); ++k, integer >>= 8) {
         ROP::byte b = (integer & 0xFF);
         bytes.push_back(b);
     }
@@ -115,6 +115,19 @@ static std::string GetBinaryReprOfInteger(integerType integer) {
     }
 
     return ss.str();
+}
+
+template<typename integerType>
+static unsigned GetMinimumNumberOfBytesToStoreInteger(integerType integer) {
+    unsigned numBytes = 1;
+    integer >>= 8;
+
+    while (integer != 0) {
+        numBytes += 1;
+        integer >>= 8;
+    }
+
+    return numBytes;
 }
 
 static void RightPadString(std::string& str, unsigned minSize, char padChar) {

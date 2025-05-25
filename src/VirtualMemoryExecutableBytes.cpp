@@ -1,8 +1,10 @@
 #include "VirtualMemoryExecutableBytes.hpp"
 
 #include <algorithm>
+#include <filesystem>
 
 #include "ELFParser.hpp"
+#include "VirtualMemoryMapping.hpp"
 
 
 void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(int processPid) {
@@ -42,6 +44,7 @@ void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(int processPid) 
             execSegm.startVirtualAddress = segmentMap.startAddress;
             execSegm.endVirtualAddress = segmentMap.endAddress;
             execSegm.executableBytes = codeSegmBytes;
+            execSegm.sourceName = std::filesystem::path(segmentMap.path).filename();
             this->executableSegments.push_back(execSegm);
         }
     }

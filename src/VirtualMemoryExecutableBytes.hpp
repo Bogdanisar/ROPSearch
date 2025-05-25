@@ -10,7 +10,6 @@
 
 #include "common/types.hpp"
 #include "common/utils.hpp"
-#include "VirtualMemoryMapping.hpp"
 
 
 namespace ROP {
@@ -21,6 +20,7 @@ namespace ROP {
         addressType startVirtualAddress;
         addressType endVirtualAddress;
         byteSequence executableBytes;
+        std::string sourceName;
     };
 
     class VirtualMemoryExecutableBytes {

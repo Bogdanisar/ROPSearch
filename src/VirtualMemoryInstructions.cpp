@@ -268,6 +268,11 @@ ROP::VirtualMemoryInstructions::VirtualMemoryInstructions(const std::vector<std:
     this->buildInstructionTrie();
 }
 
+const ROP::VirtualMemoryExecutableBytes
+ROP::VirtualMemoryInstructions::getExecutableBytes() const {
+    return this->vmExecBytes;
+}
+
 
 std::vector<ROP::addressType>
 ROP::VirtualMemoryInstructions::matchInstructionSequenceInVirtualMemory(std::string origInstructionSequenceAsm, AssemblySyntax origSyntax) {

@@ -117,6 +117,9 @@ void ConfigureListCommandSubparser() {
 
     // "Output" arguments
     gListCmdSubparser.add_usage_newline();
+    gListCmdSubparser.add_argument("--show-address-base")
+        .help("Print the address of each instruction sequence as \"base + offset\".")
+        .flag();
     gListCmdSubparser.add_argument("-asm", "--assembly-syntax")
         .help("desired assembly syntax for the output instructions. Possible values: \"intel\", \"att\"")
         .metavar("STR")
@@ -347,9 +350,10 @@ void DoListCommand() {
 
     const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
     const int maxInstructions = gListCmdSubparser.get<int>("--max-instructions");
-    const string asmSyntaxString = gListCmdSubparser.get<string>("--assembly-syntax");
     const bool haveRegisterQuery = gListCmdSubparser.is_used("--query");
     const bool packPartialRegistersInQuery = gListCmdSubparser.get<bool>("--pack");
+    const bool showAddressBase = gListCmdSubparser.get<bool>("--show-address-base");
+    const string asmSyntaxString = gListCmdSubparser.get<string>("--assembly-syntax");
 
     assertMessage(1 <= minInstructions && minInstructions <= 100, "Please input a different number of min instructions...");
     assertMessage(1 <= maxInstructions && maxInstructions <= 100, "Please input a different number of max instructions...");
@@ -403,19 +407,68 @@ void DoListCommand() {
     // Sort the output according to the "--sort" argument.
     SortListOutput(instrSeqs, validIndexes);
 
+    const VirtualMemoryExecutableBytes vmBytes = vmInstructions.getExecutableBytes();
+    const vector<VirtualMemoryExecutableSegment> vmSegments = vmBytes.getExecutableSegments();
+
+    // Compute a helper value for each virtual memory segment, so that
+    // we can print the output nicely if the "--show-address-base" option was passed.
+    vector<unsigned> neededNumberOfBytesForSegment;
+    for (const auto& segm : vmSegments) {
+        addressType maxOffset = segm.endVirtualAddress - segm.startVirtualAddress - 1;
+        unsigned numBytesOffset = GetMinimumNumberOfBytesToStoreInteger(maxOffset);
+        neededNumberOfBytesForSegment.push_back(numBytesOffset);
+    }
+    neededNumberOfBytesForSegment.push_back(sizeof(addressType)); // default value.
+
     // Print each instruction sequence.
     InstructionConverter ic;
     for (unsigned idx : validIndexes) {
         const auto& p = instrSeqs[idx];
         const addressType& addr = p.first;
         const vector<string>& instructionSequence = p.second;
-
         string fullSequence = ic.concatenateInstructionsAsm(instructionSequence);
-        LogInfo("0x%016llx: %s", addr, fullSequence.c_str());
+
+        if (showAddressBase) {
+            // Get the extra address information.
+            unsigned segmentIndex = vmSegments.size(); // default value.
+            addressType addressBase = 0x0;
+            addressType addressOffset = addr;
+            for (unsigned s = 0; s < vmSegments.size(); ++s) {
+                const auto& segm = vmSegments[s];
+                if (segm.startVirtualAddress <= addr && addr < segm.endVirtualAddress) {
+                    segmentIndex = s;
+                    addressBase = segm.startVirtualAddress;
+                    addressOffset = addr - addressBase;
+                    break;
+                }
+            }
+
+            LogInfo("0x%016llx + 0x%0*llx: %s",
+                    (unsigned long long)addressBase,
+                    2 * neededNumberOfBytesForSegment[segmentIndex], (unsigned long long)addressOffset,
+                    fullSequence.c_str());
+        }
+        else {
+            LogInfo("0x%016llx: %s", (unsigned long long)addr, fullSequence.c_str());
+        }
     }
 
-    LogInfo("");
+    LogInfo(""); // new line
     LogInfo("Found %u instruction sequences.", (unsigned)validIndexes.size());
+
+    if (showAddressBase) {
+        // Print each segment address space at the end of the output, for convenience.
+
+        LogInfo(""); // new line
+        LogInfo("Virtual memory segments:");
+
+        for (const auto& segm : vmSegments) {
+            LogInfo("0x%016llx - 0x%016llx (%s)",
+                    (unsigned long long)segm.startVirtualAddress,
+                    (unsigned long long)segm.endVirtualAddress,
+                    segm.sourceName.c_str());
+        }
+    }
 }
 
 #pragma endregion List command

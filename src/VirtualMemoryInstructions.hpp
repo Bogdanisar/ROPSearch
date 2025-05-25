@@ -80,6 +80,8 @@ namespace ROP {
         VirtualMemoryInstructions(const std::vector<std::string> execPaths,
                                   const std::vector<addressType> baseAddresses);
 
+        const VirtualMemoryExecutableBytes getExecutableBytes() const;
+
         // Return a vector of addresses where the instruction sequence is found in virtual memory.
         std::vector<addressType>
         matchInstructionSequenceInVirtualMemory(std::string instructionSequenceAsm, AssemblySyntax asmSyntax);
