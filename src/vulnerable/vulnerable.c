@@ -3,23 +3,27 @@
 #include <string.h>
 
 
-// gcc src/vulnerable.c -o bin/vulnerable.exe && bin/vulnerable.exe "Test Message"
-
-
-void printUserMessageVulnerable(char *msg) {
+void printUserMessageVulnerable() {
     char localBuffer[100];
-    strcpy(localBuffer, msg);
+
+    // Read the message from the standard input (as 200 bytes).
+    fread(localBuffer, 1, 200, stdin);
+
     printf("User message: %s\n", localBuffer);
 }
 
-
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        printf("Usage: %s userMessage\n", argv[0]);
+    printf("argc = %i\n", argc);
+    for (int i = 0; i < argc; ++i) {
+        printf("argv[%i] = %s\n", i, argv[i]);
+    }
+
+    if (argc != 1) {
+        printf("Usage: %s (Pass message in standard input)\n", argv[0]);
         exit(-1);
     }
 
-    printUserMessageVulnerable(argv[1]);
+    printUserMessageVulnerable();
 
     return 0;
 }

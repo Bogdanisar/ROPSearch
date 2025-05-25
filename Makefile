@@ -68,12 +68,14 @@ bin/UnitTests.exe: bin/UnitTests.o $(classObjectFiles)
 
 
 # Vulnerable executable
+# Note: You can check if an executable was compiled with various protection settings if you run
+#       $> checksec --file=yourExecutable.exe
 
 bin/vulnerable.o: src/vulnerable/vulnerable.c
-	gcc $(wFlags) -O0 -c $< -o $@
+	gcc -g -fno-stack-protector $(wFlags) -O0 -c $< -o $@
 
 bin/hardcodedGadgets64bit.o: src/vulnerable/hardcodedGadgets64bit.c
-	gcc $(wFlags) -O0 -c $< -o $@
+	gcc -g $(wFlags) -O0 -c $< -o $@
 
 
 bin/vulnerable.exe: bin/vulnerable.o
