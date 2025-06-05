@@ -38,7 +38,10 @@
 
 
 # Anything in proj/bin/*
-bin/*
+bin/
 
 # Visual Studio Code files
-.vscode/*
+.vscode/
+
+# Python cache files
+__pycache__/
