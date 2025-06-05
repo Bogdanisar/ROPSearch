@@ -486,11 +486,11 @@ bool ROP::RegisterQueryX86::matchesRegisterInfoOfInstructionSequence(const std::
         return true;
     }
 
-    RegisterInfo regInfoAny = RegisterInfo::reduceRegInfoListWithOrOperator(regInfoSequence);
-
     auto regInfoSeqCopy = regInfoSequence;
     assert(regInfoSeqCopy.size() > 0);
     regInfoSeqCopy.pop_back();
+
+    RegisterInfo regInfoAny = RegisterInfo::reduceRegInfoListWithOrOperator(regInfoSeqCopy);
     RegisterInfo regInfoAll = RegisterInfo::reduceRegInfoListWithAndOperator(regInfoSeqCopy);
 
     return this->matchesRegisterInfo(this->queryTreeRoot, regInfoAny, regInfoAll);
