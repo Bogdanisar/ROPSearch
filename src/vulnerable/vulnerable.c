@@ -7,7 +7,7 @@ void printUserMessageVulnerable() {
     char localBuffer[100];
 
     // Read the message from the standard input (as 200 bytes).
-    fread(localBuffer, 1, 200, stdin);
+    fread(localBuffer, 1, 400, stdin);
 
     printf("User message: %s\n", localBuffer);
 }
