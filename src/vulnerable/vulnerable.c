@@ -3,14 +3,26 @@
 #include <string.h>
 
 
-void printUserMessageVulnerable() {
+void printUserMessageVulnerableFread() {
     char localBuffer[100];
 
-    // Read the message from the standard input (as 200 bytes).
+    // Read the message from the standard input (as fixed number of bytes).
     fread(localBuffer, 1, 400, stdin);
 
     printf("User message: %s\n", localBuffer);
 }
+
+void
+__attribute__ ((__optimize__ ("-fno-stack-protector")))
+printUserMessageVulnerableFreadNoCanaries() {
+    char localBuffer[100];
+
+    // Read the message from the standard input (as fixed number of bytes).
+    fread(localBuffer, 1, 400, stdin);
+
+    printf("User message: %s\n", localBuffer);
+}
+
 
 int main(int argc, char* argv[]) {
     printf("argc = %i\n", argc);
@@ -23,7 +35,7 @@ int main(int argc, char* argv[]) {
         exit(-1);
     }
 
-    printUserMessageVulnerable();
+    printUserMessageVulnerableFreadNoCanaries();
 
     return 0;
 }

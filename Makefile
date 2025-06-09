@@ -72,7 +72,7 @@ bin/UnitTests.exe: bin/UnitTests.o $(classObjectFiles)
 #       $> checksec --file=yourExecutable.exe
 
 bin/vulnerable.o: src/vulnerable/vulnerable.c
-	gcc -g -fno-stack-protector $(wFlags) -O0 -c $< -o $@
+	gcc -g $(wFlags) -O0 -c $< -o $@
 
 bin/hardcodedGadgets64bit.o: src/vulnerable/hardcodedGadgets64bit.c
 	gcc -g $(wFlags) -O0 -c $< -o $@
