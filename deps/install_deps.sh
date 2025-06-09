@@ -8,6 +8,9 @@ set -x
 
 sudo apt-get update
 
+# For being able to compile 32bit x86 executables on a x86_64 operating system, by using `gcc -m32`.
+sudo apt install gcc-multilib g++-multilib
+
 echo
 
 

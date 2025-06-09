@@ -1,6 +1,6 @@
 
 .PHONY: all
-all: bin/ROPSearch.exe bin/ManualTests.exe bin/UnitTests.exe bin/vulnerable.exe bin/vulnerableHelped.exe
+all: bin/ROPSearch.exe bin/ManualTests.exe bin/UnitTests.exe vulnerable
 
 wFlags := -Wall -Wextra -pedantic
 KEYSTONE_LDFLAGS = -lkeystone -lstdc++ -lm
@@ -71,18 +71,27 @@ bin/UnitTests.exe: bin/UnitTests.o $(classObjectFiles)
 # Note: You can check if an executable was compiled with various protection settings if you run
 #       $> checksec --file=yourExecutable.exe
 
-bin/vulnerable.o: src/vulnerable/vulnerable.c
+bin/vulnerable32bit.o: src/vulnerable/vulnerable.c
+	gcc -m32 -g $(wFlags) -O0 -c $< -o $@
+
+bin/vulnerable64bit.o: src/vulnerable/vulnerable.c
 	gcc -g $(wFlags) -O0 -c $< -o $@
 
 bin/hardcodedGadgets64bit.o: src/vulnerable/hardcodedGadgets64bit.c
 	gcc -g $(wFlags) -O0 -c $< -o $@
 
 
-bin/vulnerable.exe: bin/vulnerable.o
+bin/vulnerable32bit.exe: bin/vulnerable32bit.o
+	gcc -m32 $^ -o $@
+
+bin/vulnerable64bit.exe: bin/vulnerable64bit.o
 	gcc $^ -o $@
 
-bin/vulnerableHelped.exe: bin/vulnerable.o bin/hardcodedGadgets64bit.o
+bin/vulnerableHelped64bit.exe: bin/vulnerable64bit.o bin/hardcodedGadgets64bit.o
 	gcc $^ -o $@
+
+.PHONY: vulnerable
+vulnerable: bin/vulnerable32bit.exe bin/vulnerable64bit.exe bin/vulnerableHelped64bit.exe
 
 
 # Misc

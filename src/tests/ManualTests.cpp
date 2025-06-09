@@ -182,7 +182,7 @@ void testGetExecutableBytesInteractive(string targetExecutable) {
 
     // You need to start the target executable (under GDB) before running this.
     // And, while both are running, compare the output of this with the output of GDB:
-    // $> gdb ./vulnerable.exe
+    // $> gdb ./vulnerable64bit.exe
     // (gdb) break main
     // (gdb) start
     // (gdb) x/20bx main
@@ -583,7 +583,7 @@ void testInstructionNormalization() {
 void testFindingInstructionSequenceInMemory(string targetExecutable) {
     // You need to start the target executable (under GDB) before running this.
     // And then compare the output of this function with the output of GDB:
-    // $> gdb ./vulnerable.exe
+    // $> gdb ./vulnerable64bit.exe
     // (gdb) set disassembly-flavor intel
     // (gdb) break main
     // (gdb) start
@@ -903,22 +903,22 @@ int main(int argc, char* argv[]) {
     // testVirtualMemoryMapping(getpid()); pn;
     // testPrintCodeSegmentsOfLoadedELFs(getpid()); pn;
     // testVirtualMemoryExecutableBytes(getpid()); pn;
-    // testGetExecutableBytesInteractive("vulnerable.exe"); pn;
+    // testGetExecutableBytesInteractive("vulnerable64bit.exe"); pn;
     // testKeystoneFrameworkIntegration(); pn;
     // testCapstoneFrameworkIntegration(); pn;
     // testCapstoneGetRegisterInfo(); pn;
     // testKeystoneCapstoneFrameworkIntegration(); pn;
     // testInstructionNormalization(); pn;
-    // testFindingInstructionSequenceInMemory("vulnerable.exe"); pn;
-    // printVMInstructionSequences("vulnerable.exe"); pn;
-    // testFilterVMInstructionSequencesByRegisterInfo("vulnerable.exe"); pn;
+    testFindingInstructionSequenceInMemory("vulnerable64bit.exe"); pn;
+    // printVMInstructionSequences("vulnerable64bit.exe"); pn;
+    // testFilterVMInstructionSequencesByRegisterInfo("vulnerable64bit.exe"); pn;
     // testXMLReading();pn;
     // testLoggingFunctionality(); pn;
     // testBytesOfInteger(); pn;
     // testLoadVirtualMemoryOfExecutablePaths(); pn;
     // testRegisterQueryTransformation(); pn;
     // testBinaryRepresentationOfInteger(); pn;
-    testMinimumNumberOfBytesToStoreInteger(); pn;
+    // testMinimumNumberOfBytesToStoreInteger(); pn;
     // testShowCapstoneInstructionInfo(); pn;
 
     return 0;
