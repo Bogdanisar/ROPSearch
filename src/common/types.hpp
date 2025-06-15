@@ -23,6 +23,11 @@ namespace ROP {
         ATT, // The assembly instructions are written in AT&T syntax.
     };
 
+    enum class BitSizeClass {
+        ELF32 = 1, // (same as ELFCLASS32 from elf.h)
+        ELF64 = 2, // (same as ELFCLASS64 from elf.h)
+    };
+
 }
 
 

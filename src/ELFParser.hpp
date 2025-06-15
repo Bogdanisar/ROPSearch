@@ -13,7 +13,11 @@ namespace ROP {
 
     class ELFParser {
         std::string elfPath;
+        BitSizeClass fileBitType;
         byteSequence elfBytes;
+
+        // The members of the 64bit structs are large enough to hold the data for the members of the 32bit structs as well,
+        // so we just use the 64bit structs for both 32bit and 64bit ELF files.
         Elf64_Ehdr fileHeader;
         std::vector<Elf64_Phdr> segmentHeaders;
         std::vector<Elf64_Phdr> codeSegmentHeaders;
