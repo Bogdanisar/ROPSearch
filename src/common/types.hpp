@@ -14,6 +14,8 @@ namespace ROP {
 
     using byte = unsigned char;
     using byteSequence = std::vector<byte>;
+
+    // "unsigned long long" is at least 64 bits, as per the C++ docs.
     using addressType = unsigned long long;
 
     enum class AssemblySyntax {
