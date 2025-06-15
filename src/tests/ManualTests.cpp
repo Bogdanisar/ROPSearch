@@ -430,9 +430,9 @@ void testCapstoneGetRegisterInfo() {
     LogVar(InstructionConverter::convertCapstoneRegIdToString(X86_REG_R15)); LogLine();
     LogVar(InstructionConverter::convertCapstoneRegIdToString(X86_REG_EFLAGS)); LogLine();
 
-    LogVar(InstructionConverter::convertStringToCapstoneRegId("rax")); LogLine();
-    LogVar(InstructionConverter::convertStringToCapstoneRegId("bl")); LogLine();
-    LogVar(InstructionConverter::convertStringToCapstoneRegId("r13")); LogLine();
+    LogVar(InstructionConverter::convertRegShortStringToCapstoneRegId("rax")); LogLine();
+    LogVar(InstructionConverter::convertRegShortStringToCapstoneRegId("bl")); LogLine();
+    LogVar(InstructionConverter::convertRegShortStringToCapstoneRegId("r13")); LogLine();
 }
 
 void testKeystoneCapstoneFrameworkIntegration() {
@@ -906,10 +906,10 @@ int main(int argc, char* argv[]) {
     // testGetExecutableBytesInteractive("vulnerable64bit.exe"); pn;
     // testKeystoneFrameworkIntegration(); pn;
     // testCapstoneFrameworkIntegration(); pn;
-    // testCapstoneGetRegisterInfo(); pn;
+    testCapstoneGetRegisterInfo(); pn;
     // testKeystoneCapstoneFrameworkIntegration(); pn;
     // testInstructionNormalization(); pn;
-    testFindingInstructionSequenceInMemory("vulnerable64bit.exe"); pn;
+    // testFindingInstructionSequenceInMemory("vulnerable64bit.exe"); pn;
     // printVMInstructionSequences("vulnerable64bit.exe"); pn;
     // testFilterVMInstructionSequencesByRegisterInfo("vulnerable64bit.exe"); pn;
     // testXMLReading();pn;

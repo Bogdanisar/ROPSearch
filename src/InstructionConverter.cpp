@@ -1040,7 +1040,7 @@ const char * ROP::InstructionConverter::convertCapstoneRegIdToShortString(x86_re
     return regCString;
 }
 
-x86_reg ROP::InstructionConverter::convertStringToCapstoneRegId(std::string regString) {
+x86_reg ROP::InstructionConverter::convertRegShortStringToCapstoneRegId(std::string regString) {
     // Convert regString to upper case.
     for (char& currChar : regString) {
         currChar = toupper(currChar);
