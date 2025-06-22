@@ -18,16 +18,15 @@ namespace ROP {
     // "unsigned long long" is at least 64 bits, as per the C++ docs.
     using addressType = unsigned long long;
 
+    enum class BitSizeClass {
+        BIT32 = 1, // (same int value as ELFCLASS32 from <elf.h>)
+        BIT64 = 2, // (same int value as ELFCLASS64 from <elf.h>)
+    };
+
     enum class AssemblySyntax {
         Intel, // The assembly instructions are written in Intel syntax.
         ATT, // The assembly instructions are written in AT&T syntax.
     };
-
-    enum class BitSizeClass {
-        ELF32 = 1, // (same as ELFCLASS32 from elf.h)
-        ELF64 = 2, // (same as ELFCLASS64 from elf.h)
-    };
-
 }
 
 

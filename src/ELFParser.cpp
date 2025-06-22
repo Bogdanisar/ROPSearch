@@ -110,7 +110,7 @@ void ROP::ELFParser::readAndValidateFileHeader(std::ifstream& fin) {
 
     // Read the file header.
     if (e_ident[EI_CLASS] == ELFCLASS64) {
-        this->fileBitType = BitSizeClass::ELF64;
+        this->fileBitType = BitSizeClass::BIT64;
 
         Elf64_Ehdr fileHeader64;
         fin.read((char*)&fileHeader64, sizeof(fileHeader64));
@@ -122,7 +122,7 @@ void ROP::ELFParser::readAndValidateFileHeader(std::ifstream& fin) {
         this->fileHeader = fileHeader64;
     }
     else if (e_ident[EI_CLASS] == ELFCLASS32) {
-        this->fileBitType = BitSizeClass::ELF32;
+        this->fileBitType = BitSizeClass::BIT32;
 
         Elf32_Ehdr fileHeader32;
         fin.read((char*)&fileHeader32, sizeof(fileHeader32));
@@ -164,12 +164,12 @@ void ROP::ELFParser::readSegments(std::ifstream& fin) {
         }
 
         Elf64_Phdr currentProgHeader;
-        if (this->fileBitType == BitSizeClass::ELF64) {
+        if (this->fileBitType == BitSizeClass::BIT64) {
             assert(programHeaderSize == sizeof(Elf64_Phdr));
             currentProgHeader = currProgramHeaderBytes.progHeader64;
         }
         else {
-            assert(this->fileBitType == BitSizeClass::ELF32);
+            assert(this->fileBitType == BitSizeClass::BIT32);
 
             assert(programHeaderSize == sizeof(Elf32_Phdr));
             currentProgHeader = Convert32bitSegmentHeaderTo64Bit(currProgramHeaderBytes.progHeader32);
