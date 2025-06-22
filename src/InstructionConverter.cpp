@@ -86,6 +86,25 @@ ROP::InstructionConverter::InstructionConverter() {
 }
 
 
+inline bool ROP::InstructionConverter::updateKeystoneAssemblySetting(AssemblySyntax newAsmSyntax) {
+    if (this->ksEngineSyntax == newAsmSyntax) {
+        return true;
+    }
+
+    ks_opt_value newSettingValue;
+    newSettingValue = (newAsmSyntax == AssemblySyntax::Intel) ? KS_OPT_SYNTAX_INTEL : KS_OPT_SYNTAX_ATT;
+
+    ks_err err = ks_option(this->ksEngine, KS_OPT_SYNTAX, newSettingValue);
+    if (err != KS_ERR_OK) {
+        LogError("Keystone: ks_option(KS_OPT_SYNTAX, %u) failed with error %u!",
+                 (unsigned)newSettingValue, (unsigned)err);
+        return false;
+    }
+
+    this->ksEngineSyntax = newAsmSyntax;
+    return true;
+}
+
 inline bool ROP::InstructionConverter::updateCapstoneAssemblySetting(AssemblySyntax newAsmSyntax) {
     if (this->csHandleSyntax == newAsmSyntax) {
         return true;
@@ -133,23 +152,13 @@ ROP::InstructionConverter::convertInstructionSequenceToBytes(
 ) {
     byteSequence instructionSequence;
 
-    ks_err err;
-    ks_opt_value newSyntaxValue;
     const char * const insSeqCString = instructionSequenceAsm.c_str();
     unsigned char *insSeqEncoding = NULL;
     size_t insSeqEncodingSize;
     size_t numDecodedInstructions;
 
-    // Adjust the engine (if needed) to use Intel or AT&T syntax.
-    if (this->ksEngineSyntax != asmSyntax) {
-        newSyntaxValue = (asmSyntax == AssemblySyntax::Intel) ? KS_OPT_SYNTAX_INTEL : KS_OPT_SYNTAX_ATT;
-        err = ks_option(this->ksEngine, KS_OPT_SYNTAX, newSyntaxValue);
-        if (err != KS_ERR_OK) {
-            LogError("Keystone: ks_option() failed with error %u!", (unsigned)err);
-            goto cleanup;
-        }
-
-        this->ksEngineSyntax = asmSyntax;
+    if (!this->updateKeystoneAssemblySetting(asmSyntax)) {
+        goto cleanup;
     }
 
     if (ks_asm(this->ksEngine, insSeqCString, addr, &insSeqEncoding, &insSeqEncodingSize, &numDecodedInstructions) != 0) {

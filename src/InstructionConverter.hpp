@@ -49,7 +49,11 @@ namespace ROP {
 
         void initCapstone();
 
-        //
+        /**
+         * Adjust the Keystone engine (if needed) to use Intel or AT&T syntax.
+         * @return `true` if the setting was changed, `false` if there was an error.
+         */
+        inline bool updateKeystoneAssemblySetting(AssemblySyntax newAsmSyntax);
         /**
          * Adjust the Capstone handle (if needed) to use Intel or AT&T syntax.
          * @return `true` if the setting was changed, `false` if there was an error.
