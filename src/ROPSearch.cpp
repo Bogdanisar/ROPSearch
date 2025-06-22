@@ -421,7 +421,7 @@ void DoListCommand() {
     neededNumberOfBytesForSegment.push_back(sizeof(addressType)); // default value.
 
     // Print each instruction sequence.
-    InstructionConverter ic;
+    InstructionConverter ic(BitSizeClass::BIT64);
     for (unsigned idx : validIndexes) {
         const auto& p = instrSeqs[idx];
         const addressType& addr = p.first;
@@ -488,7 +488,7 @@ void DoAssemblyInfoCommand() {
 
     ROP::AssemblySyntax inputAsmSyntax = (asmSyntaxString == "intel") ? ROP::AssemblySyntax::Intel : ROP::AssemblySyntax::ATT;
 
-    InstructionConverter ic;
+    InstructionConverter ic(BitSizeClass::BIT64);
     ic.printCapstoneInformationForInstructions(asmInstructionsString, inputAsmSyntax, address);
 }
 

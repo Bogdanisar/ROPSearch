@@ -259,7 +259,7 @@ void testKeystoneFrameworkIntegration() {
         "mov %rax, (%r10)",
     };
 
-    InstructionConverter ic;
+    InstructionConverter ic(BitSizeClass::BIT64);
     for (const string& insSeq : instructionSequences) {
         auto result = ic.convertInstructionSequenceToBytes(insSeq, syntax);
         const byteSequence& byteSeq = result.first;
@@ -275,7 +275,7 @@ void testKeystoneFrameworkIntegration() {
 }
 
 void testCapstoneFrameworkIntegration() {
-    InstructionConverter ic;
+    InstructionConverter ic(BitSizeClass::BIT64);
 
     // byteSequence bytes = {
     //     // "endbr64" instruction:
@@ -323,7 +323,7 @@ void testCapstoneFrameworkIntegration() {
 }
 
 void testCapstoneGetRegisterInfo() {
-    InstructionConverter ic;
+    InstructionConverter ic(BitSizeClass::BIT64);
 
     vector<byteSequence> byteSequences = {
         {
@@ -463,7 +463,7 @@ void testKeystoneCapstoneFrameworkIntegration() {
         "add %cl, %ch; ret",
     };
 
-    InstructionConverter ic;
+    InstructionConverter ic(BitSizeClass::BIT64);
     for (const string& originalInsSeq : instructionSequences) {
         printf("Original instructions: %s\n", originalInsSeq.c_str());
 
@@ -514,7 +514,7 @@ void testKeystoneCapstoneFrameworkIntegration() {
 }
 
 void testInstructionNormalization() {
-    InstructionConverter ic;
+    InstructionConverter ic(BitSizeClass::BIT64);
 
     // These are some sample instruction sequences found in libc.so.6
     // Note: Using Intel syntax for the instructions below.
@@ -617,7 +617,7 @@ void testFindingInstructionSequenceInMemory(string targetExecutable) {
         "xor rax, rax ; ret"
     };
 
-    InstructionConverter ic;
+    InstructionConverter ic(BitSizeClass::BIT64);
 
     printf("======= Searching for instruction sequences in virtual memory... =======\n");
     for (const string& insSeq : instructionSequences) {
@@ -651,7 +651,7 @@ void printVMInstructionSequences(string targetExecutable) {
     VirtualMemoryInstructions vmInfo(targetPid);
     printf("Finished initializing vmInfo object!\n\n");
 
-    InstructionConverter ic;
+    InstructionConverter ic(BitSizeClass::BIT64);
 
     printf("Found instruction sequences:\n");
     auto instrSeqs = vmInfo.getInstructionSequences();
@@ -671,7 +671,7 @@ void testFilterVMInstructionSequencesByRegisterInfo(string targetExecutable) {
     VirtualMemoryInstructions vmInfo(targetPid);
     printf("Finished initializing vmInfo object!\n\n");
 
-    InstructionConverter ic;
+    InstructionConverter ic(BitSizeClass::BIT64);
 
     vector<vector<RegisterInfo>> allRegInfoSeqs;
     auto instrSeqs = vmInfo.getInstructionSequences(&allRegInfoSeqs);
@@ -804,7 +804,7 @@ void testLoadVirtualMemoryOfExecutablePaths() {
         "xor rax, rax ; ret"
     };
 
-    InstructionConverter ic;
+    InstructionConverter ic(BitSizeClass::BIT64);
 
     printf("======= Searching for instruction sequences in virtual memory... =======\n");
     for (const string& insSeq : instructionSequences) {
@@ -886,7 +886,7 @@ void testShowCapstoneInstructionInfo() {
     // auto instrSeqStr = "ret; add rax, 0x12; mov rax, 0x123456789ABCDEF0; mov qword ptr [rax], 0x12";
     // auto instrSeqStr = "ret; add ah, 0x12; mov ax, 0xDEF0; mov dword ptr [rax], 0x12; xor ax, bx";
 
-    InstructionConverter ic;
+    InstructionConverter ic(BitSizeClass::BIT64);
     ic.printCapstoneInformationForInstructions(instrSeqStr, AssemblySyntax::Intel);
 }
 

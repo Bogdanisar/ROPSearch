@@ -36,6 +36,9 @@ namespace ROP {
     };
 
     class InstructionConverter {
+        // 32bit or 64bit;
+        BitSizeClass archBitSize;
+
         // Inner assembler framework;
         ks_engine *ksEngine;
         AssemblySyntax ksEngineSyntax;
@@ -68,7 +71,7 @@ namespace ROP {
         inline bool updateCapstoneDetailSetting(bool detailsEnabled);
 
         public:
-        InstructionConverter();
+        InstructionConverter(BitSizeClass archBitSize);
 
         /**
          * Convert instructions (assembly strings) to a byte sequence.

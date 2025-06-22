@@ -42,8 +42,11 @@ ROP::RegisterInfo ROP::RegisterInfo::reduceRegInfoListWithOrOperator(const std::
 
 void ROP::InstructionConverter::initKeystone() {
     ks_err err;
+    ks_mode mode;
 
-    err = ks_open(KS_ARCH_X86, KS_MODE_64, &this->ksEngine);
+    mode = (this->archBitSize == BitSizeClass::BIT32) ? KS_MODE_32 : KS_MODE_64;
+
+    err = ks_open(KS_ARCH_X86, mode, &this->ksEngine);
     if (err != KS_ERR_OK) {
         exitError("Keystone: ks_open() failed with error %u!\n", (unsigned)err);
     }
@@ -59,8 +62,11 @@ void ROP::InstructionConverter::initKeystone() {
 
 void ROP::InstructionConverter::initCapstone() {
     cs_err err;
+    cs_mode mode;
 
-	err = cs_open(CS_ARCH_X86, CS_MODE_64, &this->capstoneHandle);
+    mode = (this->archBitSize == BitSizeClass::BIT32) ? CS_MODE_32 : CS_MODE_64;
+
+	err = cs_open(CS_ARCH_X86, mode, &this->capstoneHandle);
     if (err != CS_ERR_OK) {
         exitError("Capstone: cs_open() failed with error %u!\n", (unsigned)err);
     }
@@ -80,7 +86,8 @@ void ROP::InstructionConverter::initCapstone() {
     this->csHandleDetailModeEnabled = false;
 }
 
-ROP::InstructionConverter::InstructionConverter() {
+ROP::InstructionConverter::InstructionConverter(BitSizeClass archBitSize) {
+    this->archBitSize = archBitSize;
     this->initKeystone();
     this->initCapstone();
 }
