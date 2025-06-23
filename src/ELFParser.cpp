@@ -228,6 +228,10 @@ const std::string& ROP::ELFParser::getElfPath() const {
     return this->elfPath;
 }
 
+const ROP::BitSizeClass& ROP::ELFParser::getFileBitType() const {
+    return this->fileBitType;
+}
+
 const ROP::byteSequence& ROP::ELFParser::getElfBytes() const {
     return this->elfBytes;
 }

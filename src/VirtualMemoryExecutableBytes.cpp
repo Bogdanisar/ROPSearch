@@ -14,6 +14,9 @@ void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(int processPid) 
     // (Otherwise, we would need to create an ELFParser multiple times for the same path).
     std::map<std::string, ELFParser> elfPathToELFParser;
 
+    // We'll use this to ensure that all found executables are 32bit or 64bit.
+    std::set<BitSizeClass> foundArchSizes;
+
     const std::vector<VirtualMemorySegmentMapping>& allSegmentMaps = vmSegmMapping.getSegmentMaps();
     for (const VirtualMemorySegmentMapping& segmentMap : allSegmentMaps) {
         if (!ELFParser::elfPathIsAcceptable(segmentMap.path)) {
@@ -30,6 +33,12 @@ void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(int processPid) 
         }
 
         ELFParser& elfParser = elfPathToELFParser[segmentMap.path];
+
+        // Remember the executable architecture size.
+        auto archSize = elfParser.getFileBitType();
+        foundArchSizes.insert(archSize);
+
+        // Iterate through the segments to find the ones relevant for this process.
         const std::vector<Elf64_Phdr>& elfCodeSegmentHdrs = elfParser.getCodeSegmentHeaders();
         const std::vector<byteSequence>& elfCodeSegmentBytes = elfParser.getCodeSegmentBytes();
         for (size_t i = 0; i < elfCodeSegmentHdrs.size(); ++i) {
@@ -49,11 +58,18 @@ void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(int processPid) 
         }
     }
 
+    // Remember the architecture size.
+    if (foundArchSizes.size() != 1) {
+        exitError("Found %u different architecture sizes (32bit/64bit) when loading the bytes of process with pid %u",
+                  (unsigned)foundArchSizes.size(), (unsigned)processPid);
+    }
+    this->processArchSize = *foundArchSizes.begin();
+
+    // Sort the found executable segments.
+    // They seem to come sorted by default (from /proc/PID/maps), but just in case.
     auto comparator = [](const VirtualMemoryExecutableSegment& a, const VirtualMemoryExecutableSegment& b){
         return a.startVirtualAddress < b.startVirtualAddress;
     };
-
-    // They come sorted by default (from /proc/PID/maps), but just in case.
     std::sort(this->executableSegments.begin(), this->executableSegments.end(), comparator);
 }
 
@@ -62,6 +78,9 @@ void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(const std::vecto
     // This is used as an optimization in case we have the same ELF path multiple times.
     // (Otherwise, we would need to create more than one ELFParser for the same path).
     std::map<std::string, ELFParser> elfPathToELFParser;
+
+    // We'll use this to ensure that all executables are 32bit or 64bit.
+    std::set<BitSizeClass> foundArchSizes;
 
     unsigned addrIndex = 0;
     for (const std::string& path : execPaths) {
@@ -72,9 +91,14 @@ void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(const std::vecto
         }
 
         ELFParser& elfParser = elfPathToELFParser[path];
+
+        // Remember the executable architecture size.
+        auto archSize = elfParser.getFileBitType();
+        foundArchSizes.insert(archSize);
+
+        // Iterate through all the segments to store the executable ones.
         const std::vector<Elf64_Phdr>& elfCodeSegmentHdrs = elfParser.getCodeSegmentHeaders();
         const std::vector<byteSequence>& elfCodeSegmentBytes = elfParser.getCodeSegmentBytes();
-
         for (size_t i = 0; i < elfCodeSegmentHdrs.size(); ++i) {
             const Elf64_Phdr& codeSegmHdr = elfCodeSegmentHdrs[i];
             const byteSequence& codeSegmBytes = elfCodeSegmentBytes[i];
@@ -96,10 +120,17 @@ void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(const std::vecto
         }
     }
 
+    // Remember the architecture size.
+    if (foundArchSizes.size() != 1) {
+        exitError("Found %u different architecture sizes (32bit/64bit) when loading the given executables...",
+                  (unsigned)foundArchSizes.size());
+    }
+    this->processArchSize = *foundArchSizes.begin();
+
+    // Sort the found executable segments.
     auto comparator = [](const VirtualMemoryExecutableSegment& a, const VirtualMemoryExecutableSegment& b){
         return a.startVirtualAddress < b.startVirtualAddress;
     };
-
     std::sort(this->executableSegments.begin(), this->executableSegments.end(), comparator);
 }
 
@@ -112,6 +143,10 @@ ROP::VirtualMemoryExecutableBytes::VirtualMemoryExecutableBytes(const std::vecto
     this->buildExecutableSegments(execPaths, baseAddresses);
 }
 
+
+const ROP::BitSizeClass& ROP::VirtualMemoryExecutableBytes::getProcessArchSize() const {
+    return this->processArchSize;
+}
 
 const std::vector<ROP::VirtualMemoryExecutableSegment>& ROP::VirtualMemoryExecutableBytes::getExecutableSegments() const {
     return this->executableSegments;

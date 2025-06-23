@@ -24,6 +24,7 @@ namespace ROP {
     };
 
     class VirtualMemoryExecutableBytes {
+        BitSizeClass processArchSize;
         std::vector<VirtualMemoryExecutableSegment> executableSegments;
 
         void buildExecutableSegments(int processPid);
@@ -48,6 +49,7 @@ namespace ROP {
         VirtualMemoryExecutableBytes(const std::vector<std::string> execPaths,
                                      const std::vector<addressType> baseAddresses);
 
+        const BitSizeClass& getProcessArchSize() const;
         const std::vector<VirtualMemoryExecutableSegment>& getExecutableSegments() const;
 
         bool isValidVirtualAddressInExecutableSegment(addressType vAddress) const;

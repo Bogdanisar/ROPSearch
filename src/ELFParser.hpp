@@ -38,6 +38,7 @@ namespace ROP {
         ELFParser(const std::string& elfPath);
 
         const std::string& getElfPath() const;
+        const BitSizeClass& getFileBitType() const;
         const byteSequence& getElfBytes() const;
         const Elf64_Ehdr& getFileHeader() const;
         const std::vector<Elf64_Phdr>& getSegmentHeaders() const;
