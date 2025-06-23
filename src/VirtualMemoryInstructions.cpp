@@ -258,13 +258,13 @@ void ROP::VirtualMemoryInstructions::buildInstructionTrie() {
 }
 
 ROP::VirtualMemoryInstructions::VirtualMemoryInstructions(int processPid)
-: vmExecBytes(processPid), ic(BitSizeClass::BIT64) {
+: vmExecBytes(processPid), ic(this->vmExecBytes.getProcessArchSize()) {
     this->buildInstructionTrie();
 }
 
 ROP::VirtualMemoryInstructions::VirtualMemoryInstructions(const std::vector<std::string> execPaths,
                                                           const std::vector<addressType> baseAddresses)
-: vmExecBytes(execPaths, baseAddresses), ic(BitSizeClass::BIT64) {
+: vmExecBytes(execPaths, baseAddresses), ic(this->vmExecBytes.getProcessArchSize()) {
     this->buildInstructionTrie();
 }
 
