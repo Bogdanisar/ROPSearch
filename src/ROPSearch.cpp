@@ -364,7 +364,9 @@ void DoListCommand() {
 
     assertMessage(1 <= minInstructions && minInstructions <= 100, "Please input a different number of min instructions...");
     assertMessage(1 <= maxInstructions && maxInstructions <= 100, "Please input a different number of max instructions...");
-    assertMessage(minInstructions <= maxInstructions, "Please input a different number of min/max instructions...");
+    assertMessage(minInstructions <= maxInstructions,
+                  "Please input a different number for min instructions (%i) or for max instructions (%i)...",
+                  minInstructions, maxInstructions);
 
     // Apply "--max-instructions" filter. Specifically, instructions will be filtered in the object constructor.
     VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = maxInstructions;
