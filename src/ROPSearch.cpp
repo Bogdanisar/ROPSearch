@@ -451,13 +451,21 @@ void DoListCommand() {
                 }
             }
 
-            LogInfo("0x%016llx + 0x%0*llx: %s",
-                    (unsigned long long)addressBase,
+            BitSizeClass bsc = vmBytes.getProcessArchSize();
+            unsigned addressBaseByteSize = (bsc == BitSizeClass::BIT64) ? 8 : 4;
+
+            LogInfo("0x%0*llx + 0x%0*llx: %s",
+                    2 * addressBaseByteSize, (unsigned long long)addressBase,
                     2 * neededNumberOfBytesForSegment[segmentIndex], (unsigned long long)addressOffset,
                     fullSequence.c_str());
         }
         else {
-            LogInfo("0x%016llx: %s", (unsigned long long)addr, fullSequence.c_str());
+            BitSizeClass bsc = vmBytes.getProcessArchSize();
+            unsigned addressByteSize = (bsc == BitSizeClass::BIT64) ? 8 : 4;
+
+            LogInfo("0x%0*llx: %s",
+                    2 * addressByteSize, (unsigned long long)addr,
+                    fullSequence.c_str());
         }
     }
 
