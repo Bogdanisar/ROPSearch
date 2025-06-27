@@ -430,12 +430,11 @@ void DoListCommand() {
     neededNumberOfBytesForSegment.push_back(sizeof(addressType)); // default value.
 
     // Print each instruction sequence.
-    InstructionConverter ic(BitSizeClass::BIT64);
     for (unsigned idx : validIndexes) {
         const auto& p = instrSeqs[idx];
         const addressType& addr = p.first;
         const vector<string>& instructionSequence = p.second;
-        string fullSequence = ic.concatenateInstructionsAsm(instructionSequence);
+        string fullSequence = InstructionConverter::concatenateInstructionsAsm(instructionSequence);
 
         if (showAddressBase) {
             // Get the extra address information.

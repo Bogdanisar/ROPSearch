@@ -132,8 +132,8 @@ namespace ROP {
         /**
          * Concatenates instructions with "; " between them.
          */
-        std::string
-        concatenateInstructionsAsm(std::vector<std::string> instructionsAsm);
+        static
+        std::string concatenateInstructionsAsm(std::vector<std::string> instructionsAsm);
 
         /**
          * Takes the input assembly string of some instruction(s) and prints

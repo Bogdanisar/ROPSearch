@@ -337,8 +337,8 @@ ROP::InstructionConverter::normalizeInstructionAsm(std::string origInsSequenceAs
     return instructions;
 }
 
-std::string
-ROP::InstructionConverter::concatenateInstructionsAsm(std::vector<std::string> instructionsAsm) {
+// static method
+std::string ROP::InstructionConverter::concatenateInstructionsAsm(std::vector<std::string> instructionsAsm) {
     std::string ret = "";
 
     for (size_t i = 0; i < instructionsAsm.size(); ++i) {
