@@ -161,6 +161,13 @@ void ConfigureAssemblyInfoCommandSubparser() {
         .default_value("intel")
         .choices("intel", "att")
         .nargs(1);
+    gAssemblyInfoCmdSubparser.add_argument("-asize", "--arch-bit-size")
+        .help("The bit size of the instruction architecture. Possible values: 32, 64")
+        .metavar("INT")
+        .default_value(64)
+        .choices(32, 64)
+        .scan<'i', int>()
+        .nargs(1);
     gAssemblyInfoCmdSubparser.add_argument("-addr", "--base-address")
         .help("the hexadecimal virtual memory address of the first instruction in the input. "
               "This is relevant only for some instructions like relative jumps.")
@@ -484,11 +491,13 @@ void DoAssemblyInfoCommand() {
 
     const string asmInstructionsString = gAssemblyInfoCmdSubparser.get<string>("instructions");
     const string asmSyntaxString = gAssemblyInfoCmdSubparser.get<string>("--assembly-syntax");
+    const int architectureBitSize = gAssemblyInfoCmdSubparser.get<int>("--arch-bit-size");
     const addressType address = gAssemblyInfoCmdSubparser.get<addressType>("--base-address");
 
     ROP::AssemblySyntax inputAsmSyntax = (asmSyntaxString == "intel") ? ROP::AssemblySyntax::Intel : ROP::AssemblySyntax::ATT;
+    BitSizeClass bsc = (architectureBitSize == 64) ? BitSizeClass::BIT64 : BitSizeClass::BIT32;
 
-    InstructionConverter ic(BitSizeClass::BIT64);
+    InstructionConverter ic(bsc);
     ic.printCapstoneInformationForInstructions(asmInstructionsString, inputAsmSyntax, address);
 }
 
