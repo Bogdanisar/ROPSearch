@@ -342,7 +342,7 @@ std::string ROP::InstructionConverter::concatenateInstructionsAsm(std::vector<st
     std::string ret = "";
 
     for (size_t i = 0; i < instructionsAsm.size(); ++i) {
-        ret = (ret + instructionsAsm[i]);
+        ret += instructionsAsm[i];
         if (i != instructionsAsm.size() - 1) {
             ret += "; ";
         }
