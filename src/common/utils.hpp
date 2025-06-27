@@ -103,7 +103,7 @@ static ROP::byteSequence BytesOfInteger(integerType integer) {
 
 template<typename integerType>
 static std::string GetBinaryReprOfInteger(integerType integer) {
-    std::stringstream ss;
+    std::ostringstream ss;
 
     for (int k = sizeof(integer)*8 - 1; k >= 0; --k) {
         if (integer & (1<<k)) {

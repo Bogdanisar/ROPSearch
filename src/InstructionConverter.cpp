@@ -353,7 +353,7 @@ std::string ROP::InstructionConverter::concatenateInstructionsAsm(std::vector<st
 
 
 static std::string ConcatenateRegisterIDListIntoString(std::vector<x86_reg> regList) {
-    std::stringstream regStringStream;
+    std::ostringstream regStringStream;
 
     unsigned count = regList.size();
     for (unsigned i = 0; i < count; ++i) {
@@ -544,7 +544,7 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
         totalDecodedBytes += (unsigned)instr.size;
 
         {
-            std::stringstream bytesStringStream;
+            std::ostringstream bytesStringStream;
             bytesStringStream << '[' << std::setfill(' ');
             for (unsigned byteIdx = 0; byteIdx < instr.size; ++byteIdx) {
                 bytesStringStream << std::setw(3) << (unsigned)instr.bytes[byteIdx];
@@ -557,7 +557,7 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
             LogInfo("Bytes dec: %s", bytesStringStream.str().c_str());
         }
         {
-            std::stringstream bytesStringStream;
+            std::ostringstream bytesStringStream;
             bytesStringStream << "[ " << std::hex << std::uppercase << std::setfill('0');
             for (unsigned byteIdx = 0; byteIdx < instr.size; ++byteIdx) {
                 bytesStringStream << std::setw(2) << (unsigned)instr.bytes[byteIdx];
@@ -611,7 +611,7 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
 
         // Print opcode bytes.
         {
-            std::stringstream bytesStringStream;
+            std::ostringstream bytesStringStream;
             bytesStringStream << '[' << std::hex << std::uppercase << std::setfill('0');
             unsigned byteIdx = 0;
             while (instr.detail->x86.opcode[byteIdx] != 0) {

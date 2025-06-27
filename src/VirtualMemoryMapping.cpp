@@ -16,7 +16,7 @@ void ROP::VirtualMemorySegmentMapping::printSegment() const {
 
 ROP::VirtualMemoryMapping::VirtualMemoryMapping(int processPid) {
 
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << "/proc/" << processPid << "/maps";
     std::string mapsPath = ss.str();
 

@@ -30,7 +30,7 @@ class Log {
  * @warning
  * Incorrect usage (Undefined behavior): `char *ptr = CSTR(obj); func(ptr);`
  */
-#define CSTR(obj) (((std::stringstream&)(std::stringstream() << (obj))).str().c_str())
+#define CSTR(obj) (((std::ostringstream&)(std::ostringstream() << (obj))).str().c_str())
 
 
 #define LogBase(fmt, ...) printf(fmt, ##__VA_ARGS__)
