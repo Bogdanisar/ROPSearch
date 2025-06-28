@@ -30,12 +30,21 @@ int main(int argc, char* argv[]) {
         printf("argv[%i] = %s\n", i, argv[i]);
     }
 
-    if (argc != 1) {
-        printf("Usage: %s (Pass message in standard input)\n", argv[0]);
+    if (argc < 2) {
+        printf("Usage: %s function ... \n", argv[0]);
+        printf("Notes:\n");
+        printf("- The 'function' argument means which vulnerable code branch to take. Options: 'fread'.\n");
+        printf("- Using further arguments or the standard input depends on the chosen 'function' argument.\n");
         exit(-1);
     }
 
-    printUserMessageVulnerableFreadNoCanaries();
+    if (strcmp(argv[1], "fread") == 0) {
+        printUserMessageVulnerableFreadNoCanaries();
+    }
+    else {
+        printf("Got wrong 'function' CLI argument.\n");
+        exit(-1);
+    }
 
     return 0;
 }
