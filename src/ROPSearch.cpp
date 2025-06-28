@@ -299,12 +299,14 @@ void SortListOutput(const vector< pair<addressType, vector<string>> >& instrSeqs
 }
 
 vector<unsigned>
-FilterInstructionSequencesByListCmdArgs(const vector< pair<addressType, vector<string>> >& instrSeqs,
+FilterInstructionSequencesByListCmdArgs(const VirtualMemoryInstructions& vmInstructions,
+                                        const vector< pair<addressType, vector<string>> >& instrSeqs,
                                         vector<vector<RegisterInfo>>& allRegInfoSeqs) {
     const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
     const bool ignoreNullBytes = gListCmdSubparser.get<bool>("--no-null");
     const bool haveRegisterQuery = gListCmdSubparser.is_used("--query");
     const bool packPartialRegistersInQuery = gListCmdSubparser.get<bool>("--pack");
+    BitSizeClass bsc = vmInstructions.getExecutableBytes().getProcessArchSize();
 
     vector<unsigned> validIndexes;
     for (unsigned idx = 0; idx < instrSeqs.size(); ++idx) {
@@ -324,7 +326,14 @@ FilterInstructionSequencesByListCmdArgs(const vector< pair<addressType, vector<s
         validIndexes.erase(remove_if(validIndexes.begin(), validIndexes.end(), [&](unsigned idx) {
             const auto& p = instrSeqs[idx];
             const addressType& addr = p.first;
-            byteSequence addressBytes = BytesOfInteger(addr);
+
+            byteSequence addressBytes;
+            if (bsc == BitSizeClass::BIT64) {
+                addressBytes = BytesOfInteger((uint64_t)addr);
+            }
+            else {
+                addressBytes = BytesOfInteger((uint32_t)addr);
+            }
 
             return find(addressBytes.begin(), addressBytes.end(), (ROP::byte)0x00) != addressBytes.end();
         }), validIndexes.end());
@@ -411,7 +420,7 @@ void DoListCommand() {
     }
 
     // Filter the elements according to command-line arguments.
-    vector<unsigned> validIndexes = FilterInstructionSequencesByListCmdArgs(instrSeqs, allRegInfoSeqs);
+    vector<unsigned> validIndexes = FilterInstructionSequencesByListCmdArgs(vmInstructions, instrSeqs, allRegInfoSeqs);
 
     // Sort the output according to the "--sort" argument.
     SortListOutput(instrSeqs, validIndexes);
