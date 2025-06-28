@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -15,10 +16,16 @@ void printUserMessageVulnerableFread() {
 void
 __attribute__ ((__optimize__ ("-fno-stack-protector")))
 printUserMessageVulnerableFreadNoCanaries() {
+    int32_t inputSize;
     char localBuffer[100];
 
-    // Read the message from the standard input (as fixed number of bytes).
-    fread(localBuffer, 1, 400, stdin);
+    // Read the size of the input buffer;
+    fread(&inputSize, sizeof(inputSize), 1, stdin);
+    printf("Input size: %i\n", (int)inputSize);
+
+    // Read the message from the standard input.
+    // Not checking the size => Vulnerability.
+    fread(localBuffer, 1, inputSize, stdin);
 
     printf("User message: %s\n", localBuffer);
 }
