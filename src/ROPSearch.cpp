@@ -304,7 +304,7 @@ FilterInstructionSequencesByListCmdArgs(const VirtualMemoryInstructions& vmInstr
                                         vector<vector<RegisterInfo>>& allRegInfoSeqs) {
     const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
     const bool ignoreNullBytes = gListCmdSubparser.get<bool>("--no-null");
-    const bool haveRegisterQuery = gListCmdSubparser.is_used("--query");
+    const bool hasRegisterQueryArg = gListCmdSubparser.is_used("--query");
     const bool packPartialRegistersInQuery = gListCmdSubparser.get<bool>("--pack");
     BitSizeClass bsc = vmInstructions.getExecutableBytes().getProcessArchSize();
 
@@ -340,7 +340,7 @@ FilterInstructionSequencesByListCmdArgs(const VirtualMemoryInstructions& vmInstr
     }
 
     // Apply the "--query" filter.
-    if (haveRegisterQuery) {
+    if (hasRegisterQueryArg) {
         assert(instrSeqs.size() == allRegInfoSeqs.size());
         string queryString = gListCmdSubparser.get<string>("--query");
         RegisterQueryX86 rq(queryString);
@@ -366,7 +366,7 @@ void DoListCommand() {
 
     const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
     const int maxInstructions = gListCmdSubparser.get<int>("--max-instructions");
-    const bool haveRegisterQuery = gListCmdSubparser.is_used("--query");
+    const bool hasRegisterQueryArg = gListCmdSubparser.is_used("--query");
     const bool packPartialRegistersInQuery = gListCmdSubparser.get<bool>("--pack");
     const bool showAddressBase = gListCmdSubparser.get<bool>("--show-address-base");
     const string asmSyntaxString = gListCmdSubparser.get<string>("--assembly-syntax");
@@ -384,7 +384,7 @@ void DoListCommand() {
     ROP::AssemblySyntax desiredSyntax = (asmSyntaxString == "intel") ? ROP::AssemblySyntax::Intel : ROP::AssemblySyntax::ATT;
     VirtualMemoryInstructions::innerAssemblySyntax = desiredSyntax;
 
-    if (haveRegisterQuery) {
+    if (hasRegisterQueryArg) {
         // Check if the query string is valid.
         string queryString = gListCmdSubparser.get<string>("--query");
         RegisterQueryX86 rq(queryString);
@@ -412,7 +412,7 @@ void DoListCommand() {
     // Get the instruction sequences found in the target.
     vector< pair<addressType, vector<string>> > instrSeqs;
     vector<vector<RegisterInfo>> allRegInfoSeqs;
-    if (haveRegisterQuery) {
+    if (hasRegisterQueryArg) {
         instrSeqs = vmInstructions.getInstructionSequences(&allRegInfoSeqs);
     }
     else {
