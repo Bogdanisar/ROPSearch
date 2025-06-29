@@ -17,7 +17,7 @@ void printUserMessageSafe() {
 
 void
 __attribute__ ((__optimize__ ("-fno-stack-protector")))
-printUserMessageVulnerableFreadNoCanaries() {
+printUserMessageVulnerableFread() {
     uint32_t inputSize;
     char localBuffer[100];
     memset(localBuffer, 0x00, sizeof(localBuffer));
@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
         printUserMessageSafe();
     }
     else if (strcmp(argv[1], "fread") == 0) {
-        printUserMessageVulnerableFreadNoCanaries();
+        printUserMessageVulnerableFread();
     }
     else {
         printf("Got wrong 'function' CLI argument.\n");
