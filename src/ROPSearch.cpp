@@ -107,6 +107,12 @@ void ConfigureListCommandSubparser() {
     gListCmdSubparser.add_argument("--no-null")
         .help("ignore instruction sequences that have a \"0x00\" byte in their virtual memory address. Note: This may print nothing on 64bit arch.")
         .flag();
+    gListCmdSubparser.add_argument("--bad-bytes")
+        .help("ignore instruction sequences that have any of the specified bytes in their virtual memory address. "
+              "Example: --bad-bytes 0x12 213 0o11. "
+              "This will ignore any result whose address contains any of these bytes: 0x12 (hex), 213 (decimal) or 0o11 (octal).")
+        .metavar("BYTE")
+        .nargs(argparse::nargs_pattern::at_least_one);
     gListCmdSubparser.add_argument("--query")
         .help("a register query for filtering the instruction sequences. E.g. \"read(rax) & write(bx)\".")
         .metavar("STR")
@@ -298,12 +304,64 @@ void SortListOutput(const vector< pair<addressType, vector<string>> >& instrSeqs
     sort(validIndexes.begin(), validIndexes.end(), comparator);
 }
 
+bitset<256> GetBadBytesArguments() {
+    vector<string> badBytesUnparsed = gListCmdSubparser.get<vector<string>>("--bad-bytes");
+    bitset<256> badBytes;
+
+    for (const string& byteString : badBytesUnparsed) {
+        unsigned long long currentInteger;
+
+        if (byteString.size() > 2 && byteString.compare(0, 2, "0x") == 0) {
+            // Look for hexadecimal byte.
+            int numCharsParsed;
+            sscanf(byteString.c_str(), "0x%llx%n", &currentInteger, &numCharsParsed);
+
+            // Check if we parsed the entire string as a hexadecimal integer.
+            assertMessage(numCharsParsed == (int)byteString.size(),
+                          "Invalid hex format for input byte: %s", byteString.c_str());
+        }
+        else if (byteString.find_first_not_of("0123456789") == string::npos) {
+            // Look for decimal byte.
+            int numCharsParsed;
+            sscanf(byteString.c_str(), "%llu%n", &currentInteger, &numCharsParsed);
+
+            // Check if we parsed the entire string as a decimal integer.
+            assertMessage(numCharsParsed == (int)byteString.size(),
+                          "Invalid decimal format for input byte: %s", byteString.c_str());
+        }
+        else if (byteString.size() > 2 && byteString.compare(0, 2, "0o") == 0) {
+            // Look for octal byte.
+            int numCharsParsed;
+            sscanf(byteString.c_str(), "0o%llo%n", &currentInteger, &numCharsParsed);
+
+            // Check if we parsed the entire string as an octal integer.
+            assertMessage(numCharsParsed == (int)byteString.size(),
+                          "Invalid octal format for input byte: %s", byteString.c_str());
+        }
+        else {
+            exitError("Got wrong format for input byte: %s", byteString.c_str());
+        }
+
+        // Check if the value is a byte.
+        assertMessage(currentInteger < 256,
+                      "Integer value %s is too big for a byte!", byteString.c_str());
+
+        badBytes.set(currentInteger, true);
+    }
+
+    const bool ignoreNullBytes = gListCmdSubparser.get<bool>("--no-null");
+    if (ignoreNullBytes) {
+        badBytes.set(0x00, true);
+    }
+
+    return badBytes;
+}
+
 vector<unsigned>
 FilterInstructionSequencesByListCmdArgs(const VirtualMemoryInstructions& vmInstructions,
                                         const vector< pair<addressType, vector<string>> >& instrSeqs,
                                         vector<vector<RegisterInfo>>& allRegInfoSeqs) {
     const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
-    const bool ignoreNullBytes = gListCmdSubparser.get<bool>("--no-null");
     const bool hasRegisterQueryArg = gListCmdSubparser.is_used("--query");
     const bool packPartialRegistersInQuery = gListCmdSubparser.get<bool>("--pack");
     BitSizeClass bsc = vmInstructions.getExecutableBytes().getProcessArchSize();
@@ -321,8 +379,9 @@ FilterInstructionSequencesByListCmdArgs(const VirtualMemoryInstructions& vmInstr
         return (int)instructionSequence.size() < minInstructions;
     }), validIndexes.end());
 
-    // Apply the "--no-null" filter
-    if (ignoreNullBytes) {
+    // Apply the "--bad-bytes", "--no-null" filters.
+    bitset<256> badBytes = GetBadBytesArguments();
+    if (badBytes.size() > 0) {
         validIndexes.erase(remove_if(validIndexes.begin(), validIndexes.end(), [&](unsigned idx) {
             const auto& p = instrSeqs[idx];
             const addressType& addr = p.first;
@@ -335,7 +394,15 @@ FilterInstructionSequencesByListCmdArgs(const VirtualMemoryInstructions& vmInstr
                 addressBytes = BytesOfInteger((uint32_t)addr);
             }
 
-            return find(addressBytes.begin(), addressBytes.end(), (ROP::byte)0x00) != addressBytes.end();
+            for (const ROP::byte& currentAddressByte : addressBytes) {
+                if (badBytes.test(currentAddressByte) == true) {
+                    // Remove this instruction sequence from the list of results;
+                    return true;
+                }
+            }
+
+            // Keep this instruction sequence in the list of results;
+            return false;
         }), validIndexes.end());
     }
 
@@ -366,6 +433,7 @@ void DoListCommand() {
 
     const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
     const int maxInstructions = gListCmdSubparser.get<int>("--max-instructions");
+    const bool hasBadBytesArg = gListCmdSubparser.is_used("--bad-bytes");
     const bool hasRegisterQueryArg = gListCmdSubparser.is_used("--query");
     const bool packPartialRegistersInQuery = gListCmdSubparser.get<bool>("--pack");
     const bool showAddressBase = gListCmdSubparser.get<bool>("--show-address-base");
@@ -383,6 +451,11 @@ void DoListCommand() {
     // Apply "--assembly-syntax" output option.
     ROP::AssemblySyntax desiredSyntax = (asmSyntaxString == "intel") ? ROP::AssemblySyntax::Intel : ROP::AssemblySyntax::ATT;
     VirtualMemoryInstructions::innerAssemblySyntax = desiredSyntax;
+
+    if (hasBadBytesArg) {
+        // Check if the input byte strings are formatted correctly.
+        GetBadBytesArguments();
+    }
 
     if (hasRegisterQueryArg) {
         // Check if the query string is valid.
