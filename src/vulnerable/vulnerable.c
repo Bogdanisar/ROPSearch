@@ -18,12 +18,13 @@ void printUserMessageSafe() {
 void
 __attribute__ ((__optimize__ ("-fno-stack-protector")))
 printUserMessageVulnerableFreadNoCanaries() {
-    int32_t inputSize;
+    uint32_t inputSize;
     char localBuffer[100];
+    memset(localBuffer, 0x00, sizeof(localBuffer));
 
     // Read the size of the input buffer;
     fread(&inputSize, sizeof(inputSize), 1, stdin);
-    printf("Input size: %i\n", (int)inputSize);
+    printf("Input size: %u\n", (unsigned)inputSize);
 
     // Read the message from the standard input.
     // Not checking the size => Vulnerability.
