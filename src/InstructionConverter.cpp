@@ -169,8 +169,7 @@ ROP::InstructionConverter::convertInstructionSequenceToBytes(
     }
 
     if (ks_asm(this->ksEngine, insSeqCString, addr, &insSeqEncoding, &insSeqEncodingSize, &numDecodedInstructions) != 0) {
-        LogError("Keystone: ks_asm() failed with error %u; Number of decoded instructions = %u;",
-                 (unsigned)ks_errno(this->ksEngine), (unsigned)numDecodedInstructions);
+        LogError("Keystone: ks_asm() failed with error %u", (unsigned)ks_errno(this->ksEngine));
         goto cleanup;
     }
 
@@ -186,8 +185,8 @@ cleanup:
 
 // Final
     if (instructionSequence.size() == 0) {
-        pv(instructionSequenceAsm); pn;
-        pv(numDecodedInstructions); pn;
+        LogError("instructionSequenceAsm = \"%s\"", CSTR(instructionSequenceAsm));
+        LogError("numDecodedInstructions = %s", CSTR(numDecodedInstructions));
         exitError("Keystone conversion from instruction sequence string to instruction sequence bytes failed");
     }
 
