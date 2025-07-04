@@ -322,6 +322,87 @@ void testCapstoneFrameworkIntegration() {
     }
 }
 
+// The point of this function is to see how
+// direct JMP instructions are byte-encoded in x86 and x64.
+// (direct JMP instructions have a hardcoded relative offset or absolute address)
+// (indirect JMP instructions get their info from a register or a memory location)
+void testCapstoneConvertBytesOfDirectJMPInstructions() {
+    vector<BitSizeClass> instrConverters = {
+        BitSizeClass::BIT32,
+        BitSizeClass::BIT64,
+    };
+
+    vector<byteSequence> inputBytesList = {
+        {
+            // "JMP rel8" instruction.
+            0xEB,
+            0x01,
+            0x02,
+            0x03,
+            0x04,
+            0x05,
+            0x06,
+            0x07,
+            0x08,
+        },
+        {
+            // "JMP rel16" / "JMP rel32" instruction.
+            0xE9,
+            0x01,
+            0x02,
+            0x03,
+            0x04,
+            0x05,
+            0x06,
+            0x07,
+            0x08,
+        },
+        {
+            // "JMP ptr16:16" /  "JMP ptr16:32" instruction.
+            0xEA,
+            0x01,
+            0x02,
+            0x03,
+            0x04,
+            0x05,
+            0x06,
+            0x07,
+            0x08,
+        }
+    };
+
+    for (const BitSizeClass& bsc : instrConverters) {
+        printf("_____________ Arch bit size: %i _____________\n", bsc == BitSizeClass::BIT64 ? 64 : 32);
+        InstructionConverter ic(bsc);
+
+        for (const byteSequence& bytes: inputBytesList) {
+            printf("Current bytes: ");
+            for (const ROP::byte byte : bytes) {
+                printf("0x%02hhX ", byte);
+            }
+            printf("\n");
+
+            // Disassemble these bytes and stop at the first disassembled instruction.
+            vector<string> instructions;
+            unsigned disassembledBytes;
+            disassembledBytes = ic.convertInstructionSequenceToString(bytes,
+                                                                      ROP::AssemblySyntax::Intel,
+                                                                      0,
+                                                                      1,
+                                                                      &instructions);
+
+            printf("Number of input bytes: %u\n", (unsigned)bytes.size());
+            printf("Number of disassembled bytes: %u\n", disassembledBytes);
+
+            printf("Disassembled instructions:\n");
+            for (size_t i = 0; i < instructions.size(); ++i) {
+                printf("    instr[%i] = %s\n", (int)i, instructions[i].c_str());
+            }
+            printf("\n");
+        }
+    }
+}
+
 void testCapstoneGetRegisterInfo() {
     InstructionConverter ic(BitSizeClass::BIT64);
 
@@ -906,7 +987,8 @@ int main(int argc, char* argv[]) {
     // testGetExecutableBytesInteractive("vulnerable64bit.exe"); pn;
     // testKeystoneFrameworkIntegration(); pn;
     // testCapstoneFrameworkIntegration(); pn;
-    testCapstoneGetRegisterInfo(); pn;
+    testCapstoneConvertBytesOfDirectJMPInstructions(); pn;
+    // testCapstoneGetRegisterInfo(); pn;
     // testKeystoneCapstoneFrameworkIntegration(); pn;
     // testInstructionNormalization(); pn;
     // testFindingInstructionSequenceInMemory("vulnerable64bit.exe"); pn;
