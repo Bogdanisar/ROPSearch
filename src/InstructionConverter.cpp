@@ -92,6 +92,10 @@ ROP::InstructionConverter::InstructionConverter(BitSizeClass archBitSize) {
     this->initCapstone();
 }
 
+ROP::BitSizeClass ROP::InstructionConverter::getArchBitSize() const {
+    return this->archBitSize;
+}
+
 
 inline bool ROP::InstructionConverter::updateKeystoneAssemblySetting(AssemblySyntax newAsmSyntax) {
     if (this->ksEngineSyntax == newAsmSyntax) {

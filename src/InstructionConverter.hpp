@@ -73,6 +73,8 @@ namespace ROP {
         public:
         InstructionConverter(BitSizeClass archBitSize);
 
+        BitSizeClass getArchBitSize() const;
+
         /**
          * Convert instructions (assembly strings) to a byte sequence.
          * @param instructionSequenceAsm The assemby strings. Multiple instructions can be separated by ";".
