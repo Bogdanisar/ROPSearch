@@ -335,7 +335,7 @@ void testCapstoneConvertBytesOfDirectJMPInstructions() {
     vector<byteSequence> inputBytesList = {
         {
             // "JMP rel8" instruction.
-            0xEB,
+            0xEB, // opcode
             0x01,
             0x02,
             0x03,
@@ -347,7 +347,7 @@ void testCapstoneConvertBytesOfDirectJMPInstructions() {
         },
         {
             // "JMP rel16" / "JMP rel32" instruction.
-            0xE9,
+            0xE9, // opcode
             0x01,
             0x02,
             0x03,
@@ -359,7 +359,7 @@ void testCapstoneConvertBytesOfDirectJMPInstructions() {
         },
         {
             // "JMP ptr16:16" /  "JMP ptr16:32" instruction.
-            0xEA,
+            0xEA, // opcode
             0x01,
             0x02,
             0x03,
@@ -371,33 +371,57 @@ void testCapstoneConvertBytesOfDirectJMPInstructions() {
         }
     };
 
+    printf("Trying to disassemble each byte sequence and stopping at the first disassembled instruction...\n\n");
+
     for (const BitSizeClass& bsc : instrConverters) {
         printf("_____________ Arch bit size: %i _____________\n", bsc == BitSizeClass::BIT64 ? 64 : 32);
         InstructionConverter ic(bsc);
 
-        for (const byteSequence& bytes: inputBytesList) {
-            printf("Current bytes: ");
-            for (const ROP::byte byte : bytes) {
-                printf("0x%02hhX ", byte);
-            }
+        for (byteSequence& originalBytes: inputBytesList) {
+
+            auto lambda = [&](byteSequence bytes, bool addPrefixByte) {
+                if (!addPrefixByte) {
+                    printf("Current bytes:\n");
+                }
+                else {
+                    // Add the operand-size override prefix byte (0x66) at the start.
+                    // This can change the byte-size of the value placed after the opcode.
+                    bytes.insert(bytes.begin(), 0x66);
+                    printf("Current bytes (with operand-size override prefix byte):\n");
+                }
+
+                printf("    ");
+                for (const ROP::byte byte : bytes) {
+                    printf("0x%02hhX ", byte);
+                }
+                printf("\n");
+
+                // Disassemble these bytes and stop at the first disassembled instruction.
+                vector<string> instructions;
+                unsigned disassembledBytes;
+                disassembledBytes = ic.convertInstructionSequenceToString(bytes,
+                                                                        ROP::AssemblySyntax::Intel,
+                                                                        0,
+                                                                        1,
+                                                                        &instructions);
+
+                printf("Number of disassembled bytes: %u\n", disassembledBytes);
+                printf("Disassembled bytes: ");
+                for (unsigned idx = 0; idx < disassembledBytes; ++idx) {
+                    printf("0x%02hhX ", bytes[idx]);
+                }
+                printf("\n");
+
+                printf("Disassembled instructions:\n");
+                for (size_t i = 0; i < instructions.size(); ++i) {
+                    printf("    instr[%i] = %s\n", (int)i, instructions[i].c_str());
+                }
+            };
+
+            lambda(originalBytes, false);
             printf("\n");
 
-            // Disassemble these bytes and stop at the first disassembled instruction.
-            vector<string> instructions;
-            unsigned disassembledBytes;
-            disassembledBytes = ic.convertInstructionSequenceToString(bytes,
-                                                                      ROP::AssemblySyntax::Intel,
-                                                                      0,
-                                                                      1,
-                                                                      &instructions);
-
-            printf("Number of input bytes: %u\n", (unsigned)bytes.size());
-            printf("Number of disassembled bytes: %u\n", disassembledBytes);
-
-            printf("Disassembled instructions:\n");
-            for (size_t i = 0; i < instructions.size(); ++i) {
-                printf("    instr[%i] = %s\n", (int)i, instructions[i].c_str());
-            }
+            lambda(originalBytes, true);
             printf("\n");
         }
     }
