@@ -19,42 +19,42 @@ int ________Parse_key_instructions________;
 #endif
 
 /** Check if this byte represents an instruction prefix byte in x86. */
-static inline bool ByteIsInstructionPrefix(ROP::byte b) {
+static inline ROP::PrefixByteX86 ByteIsInstructionPrefix(ROP::byte b) {
     switch (b) {
         // LOCK prefix
-        case 0xF0: return true;
+        case 0xF0: return ROP::PrefixByteX86::LOCK;
 
         // REPNE/REPNZ prefix
-        case 0xF2: return true;
+        case 0xF2: return ROP::PrefixByteX86::REPNE;
 
         // REP or REPE/REPZ prefix
-        case 0xF3: return true;
+        case 0xF3: return ROP::PrefixByteX86::REP;
 
         // CS segment override / Branch not taken
-        case 0x2E: return true;
+        case 0x2E: return ROP::PrefixByteX86::CS_SEGMENT_OVERRIDE;
 
         // SS segment override
-        case 0x36: return true;
+        case 0x36: return ROP::PrefixByteX86::SS_SEGMENT_OVERRIDE;
 
         // DS segment override / Branch taken
-        case 0x3E: return true;
+        case 0x3E: return ROP::PrefixByteX86::DS_SEGMENT_OVERRIDE;
 
         // ES segment override
-        case 0x26: return true;
+        case 0x26: return ROP::PrefixByteX86::ES_SEGMENT_OVERRIDE;
 
         // FS segment override
-        case 0x64: return true;
+        case 0x64: return ROP::PrefixByteX86::FS_SEGMENT_OVERRIDE;
 
         // GS segment override
-        case 0x65: return true;
+        case 0x65: return ROP::PrefixByteX86::GS_SEGMENT_OVERRIDE;
 
         // Operand-size override prefix
-        case 0x66: return true;
+        case 0x66: return ROP::PrefixByteX86::OPERAND_SIZE_OVERRIDE;
 
         // Address-size override prefix
-        case 0x67: return true;
+        case 0x67: return ROP::PrefixByteX86::ADDRESS_SIZE_OVERRIDE;
 
-        default: return false;
+        default: return ROP::PrefixByteX86::NONE;
     }
 }
 
@@ -81,15 +81,102 @@ static inline bool BytesAreRelativeCallInstruction64bit(const ROP::byteSequence&
 }
 
 /**
+ * Check if this is a relative "jmp" instruction ("relative" meaning "RIP = RIP + offset").
+ * In other words, check if this is a "JMP rel8", "JMP rel16" or "JMP rel32" instruction.
+ * @note As an asm string, this is represented as "jmp finalAddress",
+ *       even though only the offset is encoded.
+ */
+static inline bool BytesAreDirectRelativeJmpInstruction32bit(const ROP::byteSequence& bSeq,
+                                                             int first, int last,
+                                                             int prefixBytesMask) {
+    const int numBytes = (last - first + 1);
+
+    if (numBytes == (1 + 1) && bSeq[first] == 0xEB) {
+        // Is "JMP rel8" instruction.
+        return true;
+    }
+
+    int sizeOverrideVal = (int)ROP::PrefixByteX86::OPERAND_SIZE_OVERRIDE;
+    bool hasSizeOverridePrefix = ((prefixBytesMask & sizeOverrideVal) != 0);
+    if (!hasSizeOverridePrefix && numBytes == (1 + 4) && bSeq[first] == 0xE9) {
+        // Is "JMP rel32" instruction.
+        return true;
+    }
+
+    if (hasSizeOverridePrefix && numBytes == (1 + 2) && bSeq[first] == 0xE9) {
+        // Is "JMP rel16" instruction.
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Check if this is a relative "jmp" instruction ("relative" meaning "RIP = RIP + offset").
+ * In other words, check if this is a "JMP rel8" or "JMP rel32" instruction.
+ * The "JMP rel16" instruction doesn't seem to be possible on x64.
+ * @note As an asm string, this is represented as "jmp finalAddress",
+ *       even though only the offset is encoded.
+ */
+static inline bool BytesAreDirectRelativeJmpInstruction64bit(const ROP::byteSequence& bSeq,
+                                                             int first, int last,
+                                                             int prefixBytesMask) {
+    UNUSED(prefixBytesMask);
+    const int numBytes = (last - first + 1);
+
+    if (numBytes == (1 + 1) && bSeq[first] == 0xEB) {
+        // Is "JMP rel8" instruction.
+        return true;
+    }
+
+    // The operand-size override prefix byte doesn't affect this instruction on x64,
+    // so the "JMP rel16" instruction is not possible on 64bit.
+
+    if (numBytes == (1 + 4) && bSeq[first] == 0xE9) {
+        // Is "JMP rel32" instruction.
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Check if this is an absolute "jmp" instruction ("absolute" meaning "RIP = newAddress").
+ * In other words, check if this is a "JMP ptr16:16" or "JMP ptr16:32" instruction.
+ * This instruction type seems to be valid on x86_32, but not x86_64.
+ */
+static inline bool BytesAreDirectAbsoluteJmpInstruction32bit(const ROP::byteSequence& bSeq,
+                                                             int first, int last,
+                                                             int prefixBytesMask) {
+    const int numBytes = (last - first + 1);
+    int sizeOverrideVal = (int)ROP::PrefixByteX86::OPERAND_SIZE_OVERRIDE;
+    bool hasSizeOverridePrefix = ((prefixBytesMask & sizeOverrideVal) != 0);
+
+    if (!hasSizeOverridePrefix && numBytes == (1 + 2 + 4) && bSeq[first] == 0xEA) {
+        // Is "JMP ptr16:32" instruction.
+        return true;
+    }
+
+    if (hasSizeOverridePrefix && numBytes == (1 + 2 + 2) && bSeq[first] == 0xEA) {
+        // Is "JMP ptr16:16" instruction.
+        return true;
+    }
+
+    return false;
+}
+
+/**
  * Check if the given bytes represent an instruction
  * that is useful as the ending instruction of an instruction sequence.
  */
-static inline bool BytesAreUsefulInstructionAtSequenceEnd(const ROP::byteSequence& bSeq, int first, int last) {
+static inline bool BytesAreUsefulInstructionAtSequenceEnd(const ROP::byteSequence& bSeq,
+                                                          int first, int last) {
     assert(0 <= first && first < (int)bSeq.size());
     assert(0 <= last && last < (int)bSeq.size());
     assert(first <= last);
 
-    if (first < last && ByteIsInstructionPrefix(bSeq[first])
+    if (first < last
+        && ByteIsInstructionPrefix(bSeq[first]) != ROP::PrefixByteX86::NONE
         && BytesAreUsefulInstructionAtSequenceEnd(bSeq, first + 1, last)) {
         return true;
     }
@@ -108,14 +195,26 @@ static inline bool BytesAreUsefulInstructionAtSequenceEnd(const ROP::byteSequenc
  * that is unhelpful inside of an instruction sequence,
  * where "inside" means anywhere except the last instruction.
  */
-static bool BytesAreBadInstructionInsideSequence(const ROP::byteSequence& bSeq, int first, int last) {
+static inline bool BytesAreBadInstructionInsideSequence(const ROP::byteSequence& bSeq,
+                                                        int first, int last,
+                                                        int prefixBytesMask,
+                                                        ROP::BitSizeClass bsc) {
     assert(0 <= first && first < (int)bSeq.size());
     assert(0 <= last && last < (int)bSeq.size());
     assert(first <= last);
 
-    if (first < last && ByteIsInstructionPrefix(bSeq[first])
-        && BytesAreBadInstructionInsideSequence(bSeq, first + 1, last)) {
-        return true;
+    // Try to parse a prefix byte.
+    if (first < last) { // at least 2 bytes.
+        ROP::PrefixByteX86 currPrefixByte = ByteIsInstructionPrefix(bSeq[first]);
+        if (currPrefixByte != ROP::PrefixByteX86::NONE) {
+            int newPrefixBytesMask = prefixBytesMask | (int)currPrefixByte;
+            if (BytesAreBadInstructionInsideSequence(bSeq,
+                                                     first + 1, last,
+                                                     newPrefixBytesMask,
+                                                     bsc)) {
+                return true;
+            }
+        }
     }
 
     if (BytesAreRetInstruction(bSeq, first, last)) {
@@ -123,6 +222,19 @@ static bool BytesAreBadInstructionInsideSequence(const ROP::byteSequence& bSeq, 
     }
 
     if (BytesAreRelativeCallInstruction64bit(bSeq, first, last)) {
+        return true;
+    }
+
+    if (bsc == ROP::BitSizeClass::BIT32
+        && BytesAreDirectRelativeJmpInstruction32bit(bSeq, first, last, prefixBytesMask)) {
+        return true;
+    }
+    if (bsc == ROP::BitSizeClass::BIT64
+        && BytesAreDirectRelativeJmpInstruction64bit(bSeq, first, last, prefixBytesMask)) {
+        return true;
+    }
+    if (bsc == ROP::BitSizeClass::BIT32
+        && BytesAreDirectAbsoluteJmpInstruction32bit(bSeq, first, last, prefixBytesMask)) {
         return true;
     }
 
@@ -212,7 +324,10 @@ void ROP::VirtualMemoryInstructions::buildInstructionTrie(
             continue;
         }
 
-        if (currInstrSeqLength > 0 && BytesAreBadInstructionInsideSequence(segm.executableBytes, first, last)) {
+        if (currInstrSeqLength > 0 && BytesAreBadInstructionInsideSequence(segm.executableBytes,
+                                                                           first, last,
+                                                                           0,
+                                                                           this->archBitSize)) {
             // This index interval might represent a valid instruction but we don't consider it
             // to be a useful instruction inside of an instruction sequence.
             continue;
