@@ -3,8 +3,8 @@
 all: bin/ROPSearch.exe bin/ManualTests.exe bin/UnitTests.exe vulnerable
 
 wFlags := -Wall -Wextra -pedantic
-KEYSTONE_LDFLAGS = -lkeystone -lstdc++ -lm
-CAPSTONE_LDFLAGS = -l:libcapstone.a
+KEYSTONE_LDFLAGS := -lkeystone -lstdc++ -lm
+CAPSTONE_LDFLAGS := -l:libcapstone.a
 
 
 # "$@" is an automatic variable for the target name.
