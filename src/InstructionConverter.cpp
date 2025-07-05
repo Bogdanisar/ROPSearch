@@ -209,7 +209,7 @@ ROP::InstructionConverter::convertInstructionSequenceToString(
 ) {
     cs_err err;
 	cs_insn *decodedInstructions = NULL;
-	size_t decodedInstructionsCount;
+	size_t decodedInstructionsCount = 0;
     size_t idx;
     unsigned totalDecodedBytes = 0;
 
@@ -390,7 +390,7 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
 	// Pass the bytes to Capstone to get detailed information about the instructions.
 	cs_err err;
 	cs_insn *decodedInstructions = NULL;
-	size_t decodedInstructionsCount;
+	size_t decodedInstructionsCount = 0;
     size_t idx;
     unsigned totalDecodedBytes = 0;
 
@@ -685,6 +685,12 @@ ROP::InstructionConverter::printCapstoneInformationForInstructions(std::string i
             }
             else if (instr.detail->x86.encoding.disp_size == 8) {
                 displacement = (uint64_t)instr.detail->x86.disp;
+            }
+            else {
+                LogWarn("Didn't find valid displacement value (Unexpected .disp_size value: %u)!",
+                        (unsigned)instr.detail->x86.encoding.disp_size);
+                printWidth = 2;
+                displacement = 0;
             }
 
             LogInfo("Displacement: 0x%0*llX (Byte size: %u; Instruction byte offset: %u)",
