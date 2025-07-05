@@ -58,6 +58,14 @@ static inline ROP::PrefixByteX86 ByteIsInstructionPrefix(ROP::byte b) {
     }
 }
 
+/** Check if this byte value is valid as a REX byte. */
+static inline bool ByteIsValidRexByte(ROP::byte b) {
+    ROP::byte mostSignificant4Bits = (b >> 4);
+    return (mostSignificant4Bits == 0b0100);
+    // Alternatively:
+    // return (0x40 <= b && b <= 0x4F);
+}
+
 static inline bool BytesAreRetInstruction(const ROP::byteSequence& bSeq, int first, int last) {
     const int numBytes = (last - first + 1);
 
@@ -134,6 +142,12 @@ static inline bool BytesAreDirectRelativeJmpInstruction64bit(const ROP::byteSequ
 
     if (numBytes == (1 + 4) && bSeq[first] == 0xE9) {
         // Is "JMP rel32" instruction.
+        return true;
+    }
+
+    if (first < last && ByteIsValidRexByte(bSeq[first])
+        && BytesAreDirectRelativeJmpInstruction64bit(bSeq, first + 1, last, prefixBytesMask)) {
+        // Check if the instruction opcode is preceded by "REX" bytes.
         return true;
     }
 
