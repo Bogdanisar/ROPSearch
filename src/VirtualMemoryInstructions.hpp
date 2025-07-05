@@ -20,6 +20,7 @@ namespace ROP {
     class VirtualMemoryInstructions {
         VirtualMemoryExecutableBytes vmExecBytes;
         InstructionConverter ic;
+        BitSizeClass archBitSize; // 32bit or 64bit;
         InsSeqTrie instructionTrie;
         std::vector<RegisterInfo> auxRegInfoVector;
 
