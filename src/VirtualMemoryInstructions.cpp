@@ -189,7 +189,7 @@ static inline bool BytesAreUsefulInstructionAtSequenceEnd(const ROP::byteSequenc
     assert(0 <= last && last < (int)bSeq.size());
     assert(first <= last);
 
-    if (first < last
+    if (first < last // at least 2 bytes
         && ByteIsInstructionPrefix(bSeq[first]) != ROP::PrefixByteX86::NONE
         && BytesAreUsefulInstructionAtSequenceEnd(bSeq, first + 1, last)) {
         return true;
