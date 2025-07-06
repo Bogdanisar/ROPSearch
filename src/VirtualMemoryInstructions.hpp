@@ -59,10 +59,25 @@ namespace ROP {
         // Note: Since x86 is a prefix-free architecture, this "last" index is unique (if it exists).
         void disassembleSegmentBytes(const VirtualMemoryExecutableSegment& segm, const int first);
 
-        void buildInstructionTrie(
+        void extendInstructionSequenceThroughDirectlyPrecedingInstructions(
             const VirtualMemoryExecutableSegment& segm,
-            const int currRightSegmentIdx,
             InsSeqTrie::Node *prevNode,
+            const int prevFirstIndex,
+            const addressType prevVMAddress,
+            const int prevInstrSeqLength
+        );
+        void extendInstructionSequenceThroughRelativeJmpInstructions(
+            const VirtualMemoryExecutableSegment& segm,
+            InsSeqTrie::Node *prevNode,
+            const int prevFirstIndex,
+            const addressType prevVMAddress,
+            const int prevInstrSeqLength
+        );
+        void extendInstructionSequenceAndAddToTrie(
+            const VirtualMemoryExecutableSegment& segm,
+            InsSeqTrie::Node *prevNode,
+            const int prevFirstIndex,
+            const addressType prevVMAddress,
             const int prevInstrSeqLength
         );
 

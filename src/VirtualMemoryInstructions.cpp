@@ -440,22 +440,33 @@ void ROP::VirtualMemoryInstructions::disassembleSegmentBytes(const VirtualMemory
     }
 }
 
-void ROP::VirtualMemoryInstructions::buildInstructionTrie(
+
+void ROP::VirtualMemoryInstructions::extendInstructionSequenceThroughDirectlyPrecedingInstructions(
     const VirtualMemoryExecutableSegment& segm,
-    const int currRightSegmentIdx,
     InsSeqTrie::Node *prevNode,
+    const int prevFirstIndex,
+    const addressType prevVMAddress,
     const int prevInstrSeqLength
 ) {
+    UNUSED(prevVMAddress);
+    // Try to extend the current instruction sequence by looking for a directly preceding instruction.
+
+    // The current instruction should have the last byte right before the previous instruction.
+    const int currRightSegmentIdx = prevFirstIndex - 1;
+
     if (currRightSegmentIdx < 0) {
+        // We went too far back.
         return;
     }
+
     if (prevInstrSeqLength >= VirtualMemoryInstructions::MaxInstructionsInInstructionSequence) {
+        // The sequence is too long.
         return;
     }
 
     const int maxInstructionSize = ROPConsts::MaxInstructionBytesCount;
     int first = currRightSegmentIdx;
-    int last = currRightSegmentIdx;
+    const int last = currRightSegmentIdx;
 
     for (; first >= 0 && (last - first + 1) <= maxInstructionSize; --first) {
         if (prevInstrSeqLength == 0 && !BytesAreUsefulInstructionAtSequenceEnd(segm.executableBytes, first, last)) {
@@ -496,10 +507,96 @@ void ROP::VirtualMemoryInstructions::buildInstructionTrie(
         addressType currVMAddress = segm.startVirtualAddress + first;
         auto currNode = this->instructionTrie.addInstruction(prevNode, currInstruction, currVMAddress, currRegInfoPtr);
 
-        // And then recurse.
+        // Recurse and try to extend the instruction sequence further.
         const int currInstrSeqLength = prevInstrSeqLength + 1;
-        this->buildInstructionTrie(segm, first - 1, currNode, currInstrSeqLength);
+        this->extendInstructionSequenceAndAddToTrie(segm, currNode, first, currVMAddress, currInstrSeqLength);
     }
+}
+
+void ROP::VirtualMemoryInstructions::extendInstructionSequenceThroughRelativeJmpInstructions(
+    const VirtualMemoryExecutableSegment& segm,
+    InsSeqTrie::Node *prevNode,
+    const int prevFirstIndex,
+    const addressType prevVMAddress,
+    const int prevInstrSeqLength
+) {
+    UNUSED(prevFirstIndex);
+    // Try to extend this instruction sequence by looking for a relative jump to the current instruction.
+
+    if (prevInstrSeqLength == 0) {
+        // We can't have a relative jump instruction be the ending instruction in the sequence.
+        // Not only would that not be useful, there's also no previous place to jump to.
+        return;
+    }
+
+    if (prevInstrSeqLength >= VirtualMemoryInstructions::MaxInstructionsInInstructionSequence) {
+        // The sequence is too long.
+        return;
+    }
+
+    const std::set<int>& jmpIndexSet = this->jmpIndexesForAddress[prevVMAddress];
+    if (jmpIndexSet.size() == 0) {
+        // There aren't any relative jmp instructions that jump to the current address.
+        return;
+    }
+
+    for (int jmpFirstIndex : jmpIndexSet) {
+        // Disassemble the bytes for the jmp instruction.
+        this->disassembleSegmentBytes(segm, jmpFirstIndex);
+
+        // Retrieve the disassembled information.
+        const auto& p = this->disassembledSegment[jmpFirstIndex];
+        int jmpLastIndex = p.first;
+        std::string jmpInstruction = p.second + " --> ";
+        if (jmpLastIndex == -1) {
+            // Theoretically, this shouldn't happen if our methods validate
+            // the same bytes for "jmp 0xAddr" instructions as Capstone is able to disassemble.
+            // However, that doesn't seem to always be the case.
+            // Example:
+            //     "0xF0 0xEB one_byte" and "0xF0 0xE9 four_bytes"
+            //     are both valid "lock jmp 0xAddr" instructions,
+            //     but Capstone fails at disassembling them for some reason.
+            continue;
+        }
+
+        RegisterInfo *jmpRegInfoPtr = NULL;
+        if (VirtualMemoryInstructions::computeRegisterInfo) {
+            jmpRegInfoPtr = &this->regInfoForSegment[jmpFirstIndex];
+        }
+
+        // Compute the address of the jmp instruction.
+        addressType jmpVMAddress = segm.startVirtualAddress + jmpFirstIndex;
+
+        // Add the jmp instruction into the trie.
+        auto currNode = this->instructionTrie.addInstruction(prevNode, jmpInstruction, jmpVMAddress, jmpRegInfoPtr);
+
+        // Recurse and try to extend the instruction sequence further.
+        const int currInstrSeqLength = prevInstrSeqLength + 1;
+        this->extendInstructionSequenceAndAddToTrie(segm,
+                                                    currNode,
+                                                    jmpFirstIndex,
+                                                    jmpVMAddress,
+                                                    currInstrSeqLength);
+    }
+}
+
+void ROP::VirtualMemoryInstructions::extendInstructionSequenceAndAddToTrie(
+    const VirtualMemoryExecutableSegment& segm,
+    InsSeqTrie::Node *prevNode,
+    const int prevFirstIndex,
+    const addressType prevVMAddress,
+    const int prevInstrSeqLength
+) {
+    this->extendInstructionSequenceThroughDirectlyPrecedingInstructions(segm,
+                                                                        prevNode,
+                                                                        prevFirstIndex,
+                                                                        prevVMAddress,
+                                                                        prevInstrSeqLength);
+    this->extendInstructionSequenceThroughRelativeJmpInstructions(segm,
+                                                                  prevNode,
+                                                                  prevFirstIndex,
+                                                                  prevVMAddress,
+                                                                  prevInstrSeqLength);
 }
 
 void ROP::VirtualMemoryInstructions::buildInstructionTrie() {
@@ -507,7 +604,16 @@ void ROP::VirtualMemoryInstructions::buildInstructionTrie() {
         this->buildRelativeJmpMap(segm);
 
         for (int rightIdx = (int)segm.executableBytes.size()-1; rightIdx >= 0; --rightIdx) {
-            this->buildInstructionTrie(segm, rightIdx, this->instructionTrie.root, 0);
+            // This is just for making the first preceding instruction
+            // think it needs to end at (prevFirstIndex - 1), i.e. at rightIdx.
+            const int prevFirstIndex = rightIdx + 1;
+
+            this->extendInstructionSequenceAndAddToTrie(segm,
+                                                        this->instructionTrie.root,
+                                                        prevFirstIndex,
+                                                        0xDeadBeef, // doesn't matter for first call
+                                                        0 // no previous instructions
+                                                        );
         }
 
         this->disassembledSegment.clear();
