@@ -494,7 +494,7 @@ void ROP::VirtualMemoryInstructions::buildInstructionTrie(
 
         // Insert the instruction at this segment into the trie;
         addressType currVMAddress = segm.startVirtualAddress + first;
-        auto currNode = this->instructionTrie.addInstruction(currInstruction, currVMAddress, prevNode, currRegInfoPtr);
+        auto currNode = this->instructionTrie.addInstruction(prevNode, currInstruction, currVMAddress, currRegInfoPtr);
 
         // And then recurse.
         const int currInstrSeqLength = prevInstrSeqLength + 1;

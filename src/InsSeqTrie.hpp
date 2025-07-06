@@ -45,9 +45,9 @@ namespace ROP {
                              addressType vAddress,
                              const RegisterInfo *regInfo = NULL);
 
-        Node* addInstruction(const std::string& instruction,
+        Node* addInstruction(Node *referenceNode,
+                             const std::string& instruction,
                              addressType vAddress,
-                             Node *node,
                              const RegisterInfo *regInfo = NULL);
 
         std::vector<addressType> hasInstructionSequence(const std::vector<std::string>& instructionSequence) const;
