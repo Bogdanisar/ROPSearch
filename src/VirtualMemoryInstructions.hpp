@@ -42,6 +42,19 @@ namespace ROP {
         */
         std::unordered_map<int, RegisterInfo> regInfoForSegment;
 
+        /**
+         * `jmpIndexesForAddress[ThisAddress]` = List of indexes `first` such that
+         * the `[first, last]` bytes segment disassembles to a "jmp 0xThisAddress" instruction,
+         * for the corresponding value `last` for the index `first`.
+         * This is used for finding instruction sequences that have a direct relative jump in the middle.
+         * Example: "pop rax; jmp 0x01020304 --> pop rbx; ret".
+         */
+        std::unordered_map<ROP::addressType, std::set<int>> jmpIndexesForAddress;
+
+
+        // Look for direct relative jmp instructions and build `jmpIndexesForAddress`.
+        void buildRelativeJmpMap(const VirtualMemoryExecutableSegment& segm);
+
         // Check if there is an index "last" such that [first, last] can be disassembled into a valid instruction.
         // Note: Since x86 is a prefix-free architecture, this "last" index is unique (if it exists).
         void disassembleSegmentBytes(const VirtualMemoryExecutableSegment& segm, const int first);

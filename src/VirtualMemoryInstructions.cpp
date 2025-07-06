@@ -348,6 +348,49 @@ static inline bool BytesAreBadInstructionInsideSequence(const ROP::byteSequence&
 int ________Methods________;
 #endif
 
+void ROP::VirtualMemoryInstructions::buildRelativeJmpMap(const VirtualMemoryExecutableSegment& segm) {
+    // Function pointer for the relevant function for the bit size of the current architecture.
+    auto BytesAreDirectRelativeJmpInstructionWithPrefixParse = BytesAreDirectRelativeJmpInstruction32bitWithPrefixParse;
+    if (this->archBitSize == BitSizeClass::BIT64) {
+        BytesAreDirectRelativeJmpInstructionWithPrefixParse = BytesAreDirectRelativeJmpInstruction64bitWithPrefixParse;
+    }
+
+    int lastValidIndex = (int)segm.executableBytes.size() - 1;
+    for (int opcodeIdx = 0; opcodeIdx <= lastValidIndex; ++opcodeIdx) {
+        ROP::byte currentByte = segm.executableBytes[opcodeIdx];
+        // See if this byte has the right opcode value for one of the relative jmp instructions.
+        if (currentByte == 0xEB || currentByte == 0xE9) {
+            // We want to look around this byte for a sequence that encodes a jmp instruction.
+
+            // Account for any possible prefix bytes.
+            int smallestFirstIndex = std::max(0, opcodeIdx - 10);
+
+            // Account for any possible offset bytes.
+            int biggestLastIndex = std::min(opcodeIdx + 4, lastValidIndex);
+
+            for (int first = smallestFirstIndex; first <= opcodeIdx; ++first) {
+                for (int last = opcodeIdx + 1; last <= biggestLastIndex; ++last) {
+                    int32_t offset;
+                    if (BytesAreDirectRelativeJmpInstructionWithPrefixParse(segm.executableBytes,
+                                                                            first, last,
+                                                                            0,
+                                                                            &offset)) {
+                        addressType currVMAddress = segm.startVirtualAddress + first;
+                        int currInstructionSize = (last - first + 1);
+                        addressType newVMAddress = currVMAddress + currInstructionSize + offset;
+
+                        this->jmpIndexesForAddress[newVMAddress].insert(first);
+
+                        // Found match for [first, last]; `last` index is unique for a given `first` =>
+                        // There's no need to keep increasing `last` and check other [first, ...] intervals.
+                        break;
+                    }
+                }
+            }
+        }
+    }
+}
+
 void ROP::VirtualMemoryInstructions::disassembleSegmentBytes(const VirtualMemoryExecutableSegment& segm, const int first) {
     assert(first < (int)segm.executableBytes.size());
 
@@ -460,12 +503,15 @@ void ROP::VirtualMemoryInstructions::buildInstructionTrie(
 
 void ROP::VirtualMemoryInstructions::buildInstructionTrie() {
     for (const VirtualMemoryExecutableSegment& segm : this->vmExecBytes.getExecutableSegments()) {
+        this->buildRelativeJmpMap(segm);
+
         for (int rightIdx = (int)segm.executableBytes.size()-1; rightIdx >= 0; --rightIdx) {
             this->buildInstructionTrie(segm, rightIdx, this->instructionTrie.root, 0);
         }
 
         this->disassembledSegment.clear();
         this->regInfoForSegment.clear();
+        this->jmpIndexesForAddress.clear();
     }
 }
 
