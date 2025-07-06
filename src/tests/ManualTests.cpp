@@ -995,6 +995,19 @@ void testShowCapstoneInstructionInfo() {
     ic.printCapstoneInformationForInstructions(instrSeqStr, AssemblySyntax::Intel);
 }
 
+// Note: These macros might not be available for all architectures.
+void testEndianness() {
+    #if defined(__BYTE_ORDER) && __BYTE_ORDER == __LITTLE_ENDIAN || \
+        defined(__LITTLE_ENDIAN)
+        printf("Little endian program!\n");
+    #elif defined(__BYTE_ORDER) && __BYTE_ORDER == __BIG_ENDIAN || \
+          defined(__BIG_ENDIAN__)
+        printf("Big endian program!\n");
+    #else
+        #error "I do not know what endianness this program is."
+    #endif
+}
+
 
 int main(int argc, char* argv[]) {
     UNUSED(argc); UNUSED(argv);
@@ -1011,7 +1024,7 @@ int main(int argc, char* argv[]) {
     // testGetExecutableBytesInteractive("vulnerable64bit.exe"); pn;
     // testKeystoneFrameworkIntegration(); pn;
     // testCapstoneFrameworkIntegration(); pn;
-    testCapstoneConvertBytesOfDirectJMPInstructions(); pn;
+    // testCapstoneConvertBytesOfDirectJMPInstructions(); pn;
     // testCapstoneGetRegisterInfo(); pn;
     // testKeystoneCapstoneFrameworkIntegration(); pn;
     // testInstructionNormalization(); pn;
@@ -1026,6 +1039,7 @@ int main(int argc, char* argv[]) {
     // testBinaryRepresentationOfInteger(); pn;
     // testMinimumNumberOfBytesToStoreInteger(); pn;
     // testShowCapstoneInstructionInfo(); pn;
+    testEndianness(); pn;
 
     return 0;
 }
