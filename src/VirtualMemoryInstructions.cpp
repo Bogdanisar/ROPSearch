@@ -103,7 +103,7 @@ static inline bool BytesAreDirectRelativeJmpInstruction32bit(const ROP::byteSequ
     if (numBytes == (1 + 1) && bSeq[first] == 0xEB) {
         // Is "JMP rel8" instruction.
         if (offset) {
-            *offset = ConvertLittleEndianBytesTo4ByteInteger<1>(bSeq.data() + first + 1);
+            *offset = ConvertLittleEndianBytesToInteger<int8_t>(bSeq.data() + first + 1);
         }
         return true;
     }
@@ -113,7 +113,7 @@ static inline bool BytesAreDirectRelativeJmpInstruction32bit(const ROP::byteSequ
     if (!hasSizeOverridePrefix && numBytes == (1 + 4) && bSeq[first] == 0xE9) {
         // Is "JMP rel32" instruction.
         if (offset) {
-            *offset = ConvertLittleEndianBytesTo4ByteInteger<4>(bSeq.data() + first + 1);
+            *offset = ConvertLittleEndianBytesToInteger<int32_t>(bSeq.data() + first + 1);
         }
         return true;
     }
@@ -121,7 +121,7 @@ static inline bool BytesAreDirectRelativeJmpInstruction32bit(const ROP::byteSequ
     if (hasSizeOverridePrefix && numBytes == (1 + 2) && bSeq[first] == 0xE9) {
         // Is "JMP rel16" instruction.
         if (offset) {
-            *offset = ConvertLittleEndianBytesTo4ByteInteger<2>(bSeq.data() + first + 1);
+            *offset = ConvertLittleEndianBytesToInteger<int16_t>(bSeq.data() + first + 1);
         }
         return true;
     }
@@ -179,7 +179,7 @@ static inline bool BytesAreDirectRelativeJmpInstruction64bit(const ROP::byteSequ
     if (numBytes == (1 + 1) && bSeq[first] == 0xEB) {
         // Is "JMP rel8" instruction.
         if (offset) {
-            *offset = ConvertLittleEndianBytesTo4ByteInteger<1>(bSeq.data() + first + 1);
+            *offset = ConvertLittleEndianBytesToInteger<int8_t>(bSeq.data() + first + 1);
         }
         return true;
     }
@@ -190,7 +190,7 @@ static inline bool BytesAreDirectRelativeJmpInstruction64bit(const ROP::byteSequ
     if (numBytes == (1 + 4) && bSeq[first] == 0xE9) {
         // Is "JMP rel32" instruction.
         if (offset) {
-            *offset = ConvertLittleEndianBytesTo4ByteInteger<4>(bSeq.data() + first + 1);
+            *offset = ConvertLittleEndianBytesToInteger<int32_t>(bSeq.data() + first + 1);
         }
         return true;
     }

@@ -1008,6 +1008,24 @@ void testEndianness() {
     #endif
 }
 
+void testConvertBytesToIntFunction() {
+    {
+        vector<ROP::byte> bytes = {0xFF, 0xFF, 0xFF, 0xFF};
+        printf("int8_t: %hhi\n", ConvertLittleEndianBytesToInteger<int8_t>(bytes.data()));
+        printf("int16_t: %hi\n", ConvertLittleEndianBytesToInteger<int16_t>(bytes.data()));
+        printf("int32_t: %i\n", ConvertLittleEndianBytesToInteger<int32_t>(bytes.data()));
+    }
+
+    {
+        vector<ROP::byte> bytes = {0x01, 0x01, 0x01, 0x01};
+        printf("int8_t: %hhi\n", ConvertLittleEndianBytesToInteger<int8_t>(bytes.data()));
+        printf("int16_t: %hi\n", ConvertLittleEndianBytesToInteger<int16_t>(bytes.data()));
+        printf("int32_t: %i\n", ConvertLittleEndianBytesToInteger<int32_t>(bytes.data()));
+    }
+
+    printf("int: %i\n", (1 << 31));
+}
+
 
 int main(int argc, char* argv[]) {
     UNUSED(argc); UNUSED(argv);
@@ -1039,7 +1057,8 @@ int main(int argc, char* argv[]) {
     // testBinaryRepresentationOfInteger(); pn;
     // testMinimumNumberOfBytesToStoreInteger(); pn;
     // testShowCapstoneInstructionInfo(); pn;
-    testEndianness(); pn;
+    // testEndianness(); pn;
+    testConvertBytesToIntFunction(); pn;
 
     return 0;
 }

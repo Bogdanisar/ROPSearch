@@ -141,12 +141,16 @@ static void RightTrimString(std::string& str, const char *badChars = " \t\n\r\f\
     str.erase(pos + 1);
 }
 
-template<int numBytes>
-static int32_t ConvertLittleEndianBytesTo4ByteInteger(const ROP::byte *ptr) {
-    int32_t result = 0;
+template<typename ResultIntType>
+static ResultIntType ConvertLittleEndianBytesToInteger(const ROP::byte *ptr) {
+    ResultIntType result = 0;
 
-    for (int i = 0; i < numBytes; ++i) {
-        result += (ptr[i] << (i*8));
+    for (int i = 0; i < (int)sizeof(ResultIntType); ++i) {
+        // Note:
+        // I think this computation relies on "implementation-defined" behaviour
+        // because of the possible cast from the promoted int to ResultIntType.
+        // Can it be done without "implementation-defined" behaviour?
+        result += ((ResultIntType)ptr[i] << (i*8));
     }
 
     return result;
