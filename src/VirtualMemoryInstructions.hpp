@@ -62,7 +62,7 @@ namespace ROP {
         void buildInstructionTrie(
             const VirtualMemoryExecutableSegment& segm,
             const int currRightSegmentIdx,
-            ROP::InsSeqTrie::Node *prevNode,
+            InsSeqTrie::Node *prevNode,
             const int prevInstrSeqLength
         );
 

@@ -443,7 +443,7 @@ void ROP::VirtualMemoryInstructions::disassembleSegmentBytes(const VirtualMemory
 void ROP::VirtualMemoryInstructions::buildInstructionTrie(
     const VirtualMemoryExecutableSegment& segm,
     const int currRightSegmentIdx,
-    ROP::InsSeqTrie::Node *prevNode,
+    InsSeqTrie::Node *prevNode,
     const int prevInstrSeqLength
 ) {
     if (currRightSegmentIdx < 0) {
