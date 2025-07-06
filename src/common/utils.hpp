@@ -141,6 +141,17 @@ static void RightTrimString(std::string& str, const char *badChars = " \t\n\r\f\
     str.erase(pos + 1);
 }
 
+template<int numBytes>
+static int32_t ConvertLittleEndianBytesTo4ByteInteger(const ROP::byte *ptr) {
+    int32_t result = 0;
+
+    for (int i = 0; i < numBytes; ++i) {
+        result += (ptr[i] << (i*8));
+    }
+
+    return result;
+}
+
 
 #pragma GCC diagnostic pop
 

@@ -96,11 +96,15 @@ static inline bool BytesAreRelativeCallInstruction64bit(const ROP::byteSequence&
  */
 static inline bool BytesAreDirectRelativeJmpInstruction32bit(const ROP::byteSequence& bSeq,
                                                              int first, int last,
-                                                             int prefixBytesMask) {
+                                                             int prefixBytesMask,
+                                                             int32_t *offset = NULL) {
     const int numBytes = (last - first + 1);
 
     if (numBytes == (1 + 1) && bSeq[first] == 0xEB) {
         // Is "JMP rel8" instruction.
+        if (offset) {
+            *offset = ConvertLittleEndianBytesTo4ByteInteger<1>(bSeq.data() + first + 1);
+        }
         return true;
     }
 
@@ -108,11 +112,17 @@ static inline bool BytesAreDirectRelativeJmpInstruction32bit(const ROP::byteSequ
     bool hasSizeOverridePrefix = ((prefixBytesMask & sizeOverrideVal) != 0);
     if (!hasSizeOverridePrefix && numBytes == (1 + 4) && bSeq[first] == 0xE9) {
         // Is "JMP rel32" instruction.
+        if (offset) {
+            *offset = ConvertLittleEndianBytesTo4ByteInteger<4>(bSeq.data() + first + 1);
+        }
         return true;
     }
 
     if (hasSizeOverridePrefix && numBytes == (1 + 2) && bSeq[first] == 0xE9) {
         // Is "JMP rel16" instruction.
+        if (offset) {
+            *offset = ConvertLittleEndianBytesTo4ByteInteger<2>(bSeq.data() + first + 1);
+        }
         return true;
     }
 
@@ -128,12 +138,16 @@ static inline bool BytesAreDirectRelativeJmpInstruction32bit(const ROP::byteSequ
  */
 static inline bool BytesAreDirectRelativeJmpInstruction64bit(const ROP::byteSequence& bSeq,
                                                              int first, int last,
-                                                             int prefixBytesMask) {
+                                                             int prefixBytesMask,
+                                                             int32_t *offset = NULL) {
     UNUSED(prefixBytesMask);
     const int numBytes = (last - first + 1);
 
     if (numBytes == (1 + 1) && bSeq[first] == 0xEB) {
         // Is "JMP rel8" instruction.
+        if (offset) {
+            *offset = ConvertLittleEndianBytesTo4ByteInteger<1>(bSeq.data() + first + 1);
+        }
         return true;
     }
 
@@ -142,11 +156,14 @@ static inline bool BytesAreDirectRelativeJmpInstruction64bit(const ROP::byteSequ
 
     if (numBytes == (1 + 4) && bSeq[first] == 0xE9) {
         // Is "JMP rel32" instruction.
+        if (offset) {
+            *offset = ConvertLittleEndianBytesTo4ByteInteger<4>(bSeq.data() + first + 1);
+        }
         return true;
     }
 
     if (first < last && ByteIsValidRexByte(bSeq[first])
-        && BytesAreDirectRelativeJmpInstruction64bit(bSeq, first + 1, last, prefixBytesMask)) {
+        && BytesAreDirectRelativeJmpInstruction64bit(bSeq, first + 1, last, prefixBytesMask, offset)) {
         // Check if the instruction opcode is preceded by "REX" bytes.
         return true;
     }
