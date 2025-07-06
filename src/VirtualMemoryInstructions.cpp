@@ -130,6 +130,39 @@ static inline bool BytesAreDirectRelativeJmpInstruction32bit(const ROP::byteSequ
 }
 
 /**
+ * The same as `BytesAreDirectRelativeJmpInstruction32bit()`,
+ * but try parsing the prefix bytes as well.
+ */
+static inline bool BytesAreDirectRelativeJmpInstruction32bitWithPrefixParse(const ROP::byteSequence& bSeq,
+                                                                            int first, int last,
+                                                                            int prefixBytesMask,
+                                                                            int32_t *offset = NULL) {
+    assert(0 <= first && first < (int)bSeq.size());
+    assert(0 <= last && last < (int)bSeq.size());
+    assert(first <= last);
+
+    // Try to parse a prefix byte.
+    if (first < last) { // at least 2 bytes.
+        ROP::PrefixByteX86 currPrefixByte = ByteIsInstructionPrefix(bSeq[first]);
+        if (currPrefixByte != ROP::PrefixByteX86::NONE) {
+            int newPrefixBytesMask = prefixBytesMask | (int)currPrefixByte;
+            if (BytesAreDirectRelativeJmpInstruction32bitWithPrefixParse(bSeq,
+                                                                         first + 1, last,
+                                                                         newPrefixBytesMask,
+                                                                         offset)) {
+                return true;
+            }
+        }
+    }
+
+    if (BytesAreDirectRelativeJmpInstruction32bit(bSeq, first, last, prefixBytesMask, offset)) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
  * Check if this is a relative "jmp" instruction ("relative" meaning "RIP = RIP + offset").
  * In other words, check if this is a "JMP rel8" or "JMP rel32" instruction.
  * The "JMP rel16" instruction doesn't seem to be possible on x64.
@@ -165,6 +198,39 @@ static inline bool BytesAreDirectRelativeJmpInstruction64bit(const ROP::byteSequ
     if (first < last && ByteIsValidRexByte(bSeq[first])
         && BytesAreDirectRelativeJmpInstruction64bit(bSeq, first + 1, last, prefixBytesMask, offset)) {
         // Check if the instruction opcode is preceded by "REX" bytes.
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * The same as `BytesAreDirectRelativeJmpInstruction64bit()`,
+ * but try parsing the prefix bytes as well.
+ */
+static inline bool BytesAreDirectRelativeJmpInstruction64bitWithPrefixParse(const ROP::byteSequence& bSeq,
+                                                                            int first, int last,
+                                                                            int prefixBytesMask,
+                                                                            int32_t *offset = NULL) {
+    assert(0 <= first && first < (int)bSeq.size());
+    assert(0 <= last && last < (int)bSeq.size());
+    assert(first <= last);
+
+    // Try to parse a prefix byte.
+    if (first < last) { // at least 2 bytes.
+        ROP::PrefixByteX86 currPrefixByte = ByteIsInstructionPrefix(bSeq[first]);
+        if (currPrefixByte != ROP::PrefixByteX86::NONE) {
+            int newPrefixBytesMask = prefixBytesMask | (int)currPrefixByte;
+            if (BytesAreDirectRelativeJmpInstruction64bitWithPrefixParse(bSeq,
+                                                                         first + 1, last,
+                                                                         newPrefixBytesMask,
+                                                                         offset)) {
+                return true;
+            }
+        }
+    }
+
+    if (BytesAreDirectRelativeJmpInstruction64bit(bSeq, first, last, prefixBytesMask, offset)) {
         return true;
     }
 
