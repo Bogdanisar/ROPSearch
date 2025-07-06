@@ -336,6 +336,7 @@ ROP::InstructionConverter::normalizeInstructionAsm(std::string origInsSequenceAs
     std::vector<std::string> instructions;
     auto convertedBytes = this->convertInstructionSequenceToString(insSeqBytes, outputAsmSyntax, 0, 0, &instructions);
     assert(convertedBytes == insSeqBytes.size());
+    UNUSED(convertedBytes); // So that assert-less compilations don't show a warning.
 
     return instructions;
 }

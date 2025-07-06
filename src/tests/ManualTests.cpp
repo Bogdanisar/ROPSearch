@@ -590,6 +590,7 @@ void testKeystoneCapstoneFrameworkIntegration() {
         unsigned disassembledBytes;
         disassembledBytes = ic.convertInstructionSequenceToString(originalByteSeq, syntax, 0, 0, &newInstructions);
         assert(disassembledBytes != 0);
+        UNUSED(disassembledBytes); // So that assert-less compilations don't show a warning.
 
         printf("Re-encoded instructions:\n");
         for (size_t i = 0; i < newInstructions.size(); ++i) {
