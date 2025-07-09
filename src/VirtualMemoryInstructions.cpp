@@ -7,6 +7,9 @@
 int ROP::VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = 10;
 
 // Declaration for static member, with default value.
+bool ROP::VirtualMemoryInstructions::SearchForSequencesWithDirectRelativeJumpsInTheMiddle = true;
+
+// Declaration for static member, with default value.
 ROP::AssemblySyntax ROP::VirtualMemoryInstructions::innerAssemblySyntax = ROP::AssemblySyntax::Intel;
 
 // Declaration for static member, with default value.
@@ -592,16 +595,21 @@ void ROP::VirtualMemoryInstructions::extendInstructionSequenceAndAddToTrie(
                                                                         prevFirstIndex,
                                                                         prevVMAddress,
                                                                         prevInstrSeqLength);
-    this->extendInstructionSequenceThroughRelativeJmpInstructions(segm,
-                                                                  prevNode,
-                                                                  prevFirstIndex,
-                                                                  prevVMAddress,
-                                                                  prevInstrSeqLength);
+
+    if (VirtualMemoryInstructions::SearchForSequencesWithDirectRelativeJumpsInTheMiddle) {
+        this->extendInstructionSequenceThroughRelativeJmpInstructions(segm,
+                                                                      prevNode,
+                                                                      prevFirstIndex,
+                                                                      prevVMAddress,
+                                                                      prevInstrSeqLength);
+    }
 }
 
 void ROP::VirtualMemoryInstructions::buildInstructionTrie() {
     for (const VirtualMemoryExecutableSegment& segm : this->vmExecBytes.getExecutableSegments()) {
-        this->buildRelativeJmpMap(segm);
+        if (VirtualMemoryInstructions::SearchForSequencesWithDirectRelativeJumpsInTheMiddle) {
+            this->buildRelativeJmpMap(segm);
+        }
 
         for (int rightIdx = (int)segm.executableBytes.size()-1; rightIdx >= 0; --rightIdx) {
             // This is just for making the first preceding instruction

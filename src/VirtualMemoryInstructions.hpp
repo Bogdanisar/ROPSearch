@@ -87,6 +87,8 @@ namespace ROP {
         public:
         // Default value: 10.
         static int MaxInstructionsInInstructionSequence;
+        // Default value: true.
+        static bool SearchForSequencesWithDirectRelativeJumpsInTheMiddle;
         // Default value: AssemblySyntax::Intel.
         static AssemblySyntax innerAssemblySyntax;
         // Default value: false.

@@ -113,6 +113,10 @@ void ConfigureListCommandSubparser() {
               "This will ignore any result whose address contains any of these bytes: 0x12 (hex), 213 (decimal) or 0o11 (octal).")
         .metavar("BYTE")
         .nargs(argparse::nargs_pattern::at_least_one);
+    gListCmdSubparser.add_argument("--no-reljumps")
+        .help("Ignore instruction sequences that have direct relative 'jmp' instructions in the middle. "
+              "Example: 'mov esi, edx; jmp 0x71b605a98588 --> mov eax, esi; ret'")
+        .flag();
     gListCmdSubparser.add_argument("--query")
         .help("a register query for filtering the instruction sequences. E.g. \"read(rax) & write(bx)\".")
         .metavar("STR")
@@ -434,6 +438,7 @@ void DoListCommand() {
     const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
     const int maxInstructions = gListCmdSubparser.get<int>("--max-instructions");
     const bool hasBadBytesArg = gListCmdSubparser.is_used("--bad-bytes");
+    const bool ignoreRelativeJumps = gListCmdSubparser.is_used("--no-reljumps");
     const bool hasRegisterQueryArg = gListCmdSubparser.is_used("--query");
     const bool packPartialRegistersInQuery = gListCmdSubparser.get<bool>("--pack");
     const bool showAddressBase = gListCmdSubparser.get<bool>("--show-address-base");
@@ -447,6 +452,9 @@ void DoListCommand() {
 
     // Apply "--max-instructions" filter. Specifically, instructions will be filtered in the object constructor.
     VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = maxInstructions;
+
+    // Apply "--no-reljumps" filter. Specifically, instructions will be filtered in the object constructor.
+    VirtualMemoryInstructions::SearchForSequencesWithDirectRelativeJumpsInTheMiddle = !ignoreRelativeJumps;
 
     // Apply "--assembly-syntax" output option.
     ROP::AssemblySyntax desiredSyntax = (asmSyntaxString == "intel") ? ROP::AssemblySyntax::Intel : ROP::AssemblySyntax::ATT;
