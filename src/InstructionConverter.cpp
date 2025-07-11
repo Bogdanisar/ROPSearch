@@ -348,10 +348,15 @@ std::string ROP::InstructionConverter::concatenateInstructionsAsm(std::vector<st
     for (size_t i = 0; i < instructionsAsm.size(); ++i) {
         ret += instructionsAsm[i];
 
-        bool currInstrIsJmp = (instructionsAsm[i].find("-->") != std::string::npos);
-        if (i != instructionsAsm.size() - 1 && !currInstrIsJmp) {
+        if (i != instructionsAsm.size() - 1) {
             // Need to add a separator between instructions.
-            ret += "; ";
+            bool currInstrIsJmp = (instructionsAsm[i].find("-->") != std::string::npos);
+            if (currInstrIsJmp) {
+                ret += " ";
+            }
+            else {
+                ret += "; ";
+            }
         }
     }
 

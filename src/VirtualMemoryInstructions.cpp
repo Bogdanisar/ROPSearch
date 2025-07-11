@@ -550,7 +550,7 @@ void ROP::VirtualMemoryInstructions::extendInstructionSequenceThroughRelativeJmp
         // Retrieve the disassembled information.
         const auto& p = this->disassembledSegment[jmpFirstIndex];
         int jmpLastIndex = p.first;
-        std::string jmpInstruction = p.second + " --> ";
+        std::string jmpInstruction = p.second + " -->";
         if (jmpLastIndex == -1) {
             // Theoretically, this shouldn't happen if our methods validate
             // the same bytes for "jmp 0xAddr" instructions as Capstone is able to disassemble.
