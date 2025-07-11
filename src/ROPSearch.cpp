@@ -116,12 +116,12 @@ void ConfigureListCommandSubparser() {
     gListCmdSubparser.add_argument("--no-reljumps")
         .help("Ignore instruction sequences with direct relative 'jmp' instructions in the middle. "
               "They are usually included. "
-              "Example: 'mov esi, edx; jmp 0x71b605a98588 --> mov eax, esi; ret'")
+              "Example: 'mov ebx, 0xffffffff; jmp 0xee73845b --> mov eax, ebx; pop ebx; ret'")
         .flag();
     gListCmdSubparser.add_argument("--include-reljump-starts")
         .help("Keep instruction sequences with direct relative 'jmp' instructions at the start. "
               "They are usually ignored. "
-              "Example: 'jmp 0x71b605a98588 --> mov eax, esi; ret'")
+              "Example: 'jmp 0xee73845b --> mov eax, ebx; pop ebx; ret'")
         .flag();
     gListCmdSubparser.add_argument("--query")
         .help("a register query for filtering the instruction sequences. E.g. \"read(rax) & write(bx)\".")
