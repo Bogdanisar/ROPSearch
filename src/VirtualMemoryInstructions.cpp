@@ -548,13 +548,16 @@ void ROP::VirtualMemoryInstructions::extendInstructionSequenceThroughRelativeJmp
         int jmpLastIndex = p.first;
         std::string jmpInstruction = p.second + " -->";
         if (jmpLastIndex == -1) {
-            // Theoretically, this shouldn't happen if our methods validate
-            // the same bytes for "jmp 0xAddr" instructions as Capstone is able to disassemble.
-            // However, that doesn't seem to always be the case.
+            // Theoretically, this shouldn't happen if our byte-parsing methods:
+            // - BytesAreDirectRelativeJmpInstruction32bit();
+            // - BytesAreDirectRelativeJmpInstruction64bit();
+            // would validate the same bytes for relative "jmp 0xAddress" instructions as Capstone does.
+            // However, that's not always the case since our methods are a bit permissive with the prefix bytes.
             // Example:
-            //     "0xF0 0xEB one_byte" and "0xF0 0xE9 four_bytes"
-            //     are both valid "lock jmp 0xAddr" instructions,
-            //     but Capstone fails at disassembling them for some reason.
+            // "0xF0 0xEB one_byte" and "0xF0 0xE9 four_bytes"
+            // would correspond to "lock jmp 0xAddress" instructions, which are illegal
+            // since the "lock" prefix is not allowed for relative "jmp" instructions.
+            // But our methods identify those bytes as valid instructions, while Capstone doesn't.
             continue;
         }
 
