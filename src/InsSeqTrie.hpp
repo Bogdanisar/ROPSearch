@@ -38,6 +38,7 @@ namespace ROP {
         public:
         // The root node, corresponding to the empty instruction sequence.
         Node *root;
+        bool ignoreOutputSequencesThatStartWithDirectRelativeJumps;
 
         InsSeqTrie();
 

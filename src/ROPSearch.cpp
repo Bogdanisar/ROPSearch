@@ -114,8 +114,14 @@ void ConfigureListCommandSubparser() {
         .metavar("BYTE")
         .nargs(argparse::nargs_pattern::at_least_one);
     gListCmdSubparser.add_argument("--no-reljumps")
-        .help("Ignore instruction sequences that have direct relative 'jmp' instructions in the middle. "
+        .help("Ignore instruction sequences with direct relative 'jmp' instructions in the middle. "
+              "They are usually included. "
               "Example: 'mov esi, edx; jmp 0x71b605a98588 --> mov eax, esi; ret'")
+        .flag();
+    gListCmdSubparser.add_argument("--include-reljump-starts")
+        .help("Keep instruction sequences with direct relative 'jmp' instructions at the start. "
+              "They are usually ignored. "
+              "Example: 'jmp 0x71b605a98588 --> mov eax, esi; ret'")
         .flag();
     gListCmdSubparser.add_argument("--query")
         .help("a register query for filtering the instruction sequences. E.g. \"read(rax) & write(bx)\".")
@@ -439,6 +445,7 @@ void DoListCommand() {
     const int maxInstructions = gListCmdSubparser.get<int>("--max-instructions");
     const bool hasBadBytesArg = gListCmdSubparser.is_used("--bad-bytes");
     const bool ignoreRelativeJumps = gListCmdSubparser.is_used("--no-reljumps");
+    const bool includeRelativeJumpStarts = gListCmdSubparser.is_used("--include-reljump-starts");
     const bool hasRegisterQueryArg = gListCmdSubparser.is_used("--query");
     const bool packPartialRegistersInQuery = gListCmdSubparser.get<bool>("--pack");
     const bool showAddressBase = gListCmdSubparser.get<bool>("--show-address-base");
@@ -453,8 +460,12 @@ void DoListCommand() {
     // Apply "--max-instructions" filter. Specifically, instructions will be filtered in the object constructor.
     VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = maxInstructions;
 
-    // Apply "--no-reljumps" filter. Specifically, instructions will be filtered in the object constructor.
+    // Apply "--no-reljumps" filter and "--include-reljump-starts" filters.
+    // Specifically, instructions will be filtered in the object constructor.
+    assertMessage(!(ignoreRelativeJumps && includeRelativeJumpStarts),
+                  "The '--include-reljump-starts' option doesn't make sense with '--no-reljumps'.");
     VirtualMemoryInstructions::SearchForSequencesWithDirectRelativeJumpsInTheMiddle = !ignoreRelativeJumps;
+    VirtualMemoryInstructions::IgnoreOutputSequencesThatStartWithDirectRelativeJumps = !includeRelativeJumpStarts;
 
     // Apply "--assembly-syntax" output option.
     ROP::AssemblySyntax desiredSyntax = (asmSyntaxString == "intel") ? ROP::AssemblySyntax::Intel : ROP::AssemblySyntax::ATT;

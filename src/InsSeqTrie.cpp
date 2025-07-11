@@ -59,6 +59,16 @@ void ROP::InsSeqTrie::getTrieContent(Node *currentNode,
     assert(currentNode == this->root || currentNode->matchingVirtualAddresses.size() != 0);
     if (currentNode->matchingVirtualAddresses.size() != 0) {
         for (addressType addr : currentNode->matchingVirtualAddresses) {
+
+            if (this->ignoreOutputSequencesThatStartWithDirectRelativeJumps) {
+                const std::string& startInstruction = currInstrSeq.back();
+                bool startInstructionIsRelativeJump = (startInstruction.find("-->") != std::string::npos);
+                if (startInstructionIsRelativeJump) {
+                    // Don't add this sequence to the output list.
+                    continue;
+                }
+            }
+
             content.push_back({addr, currInstrSeq});
             if (outRegInfo) {
                 (*outRegInfo).push_back(currRegInfoSeq);

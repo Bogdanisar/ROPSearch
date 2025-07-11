@@ -3,16 +3,12 @@
 #include <algorithm>
 
 
-// Declaration for static member, with default value.
+// Declarations for static members, with default values.
+
 int ROP::VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = 10;
-
-// Declaration for static member, with default value.
 bool ROP::VirtualMemoryInstructions::SearchForSequencesWithDirectRelativeJumpsInTheMiddle = true;
-
-// Declaration for static member, with default value.
+bool ROP::VirtualMemoryInstructions::IgnoreOutputSequencesThatStartWithDirectRelativeJumps = true;
 ROP::AssemblySyntax ROP::VirtualMemoryInstructions::innerAssemblySyntax = ROP::AssemblySyntax::Intel;
-
-// Declaration for static member, with default value.
 bool ROP::VirtualMemoryInstructions::computeRegisterInfo = false;
 
 
@@ -628,6 +624,10 @@ void ROP::VirtualMemoryInstructions::buildInstructionTrie() {
         this->regInfoForSegment.clear();
         this->jmpIndexesForAddress.clear();
     }
+
+    // Pass this output filter to the trie.
+    bool ign = VirtualMemoryInstructions::IgnoreOutputSequencesThatStartWithDirectRelativeJumps;
+    this->instructionTrie.ignoreOutputSequencesThatStartWithDirectRelativeJumps = ign;
 }
 
 ROP::VirtualMemoryInstructions::VirtualMemoryInstructions(int processPid)

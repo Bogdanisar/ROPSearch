@@ -87,8 +87,18 @@ namespace ROP {
         public:
         // Default value: 10.
         static int MaxInstructionsInInstructionSequence;
-        // Default value: true.
+        /**
+         * Include instruction sequences like "xor eax, eax; jmp 0xee877518 --> pop edi; pop esi; ret"
+         * when listing them in the output.
+         * Default value: true.
+         */
         static bool SearchForSequencesWithDirectRelativeJumpsInTheMiddle;
+        /**
+         * Ignore instruction sequences like "jmp 0xee877518 --> pop edi; pop esi; ret"
+         * when listing them in the output (since the starting `jmp` instruction doesn't add value by itself).
+         * Default value: true.
+         */
+        static bool IgnoreOutputSequencesThatStartWithDirectRelativeJumps;
         // Default value: AssemblySyntax::Intel.
         static AssemblySyntax innerAssemblySyntax;
         // Default value: false.
