@@ -76,15 +76,16 @@ void ConfigureListCommandSubparser() {
     mutExGroup.add_argument("-exec", "--executable-path")
         .help("a path to an executable (ELF) file. "
               "The tool will load all executable segments found in the file (usually just one). "
-              "Can be passed multiple times. "
+              "Can pass multiple paths. "
               "Can be used with the \"--base-address\" argument")
         .metavar("PATH")
         .nargs(argparse::nargs_pattern::at_least_one);
     gListCmdSubparser.add_argument("-addr", "--base-address")
         .help("this argument is only relevant when used with \"--executable-path\". "
-              "It's a hexadecimal address which will be used as a base address for a loaded executable segment. "
-              "Can be passed multiple times and each new address will be used for the next found segment. "
-              "If not enough addresses, then the `Elf64_Phdr.p_vaddr` value is used instead")
+              "It's a hexadecimal address which will be used as a base address "
+              "at which the segments of an ELF file are loaded. "
+              "Can pass multiple values and each new base address will be used for the next ELF file. "
+              "If not enough addresses, then 0 will be used as a default.")
         .metavar("HEX")
         .scan<'x', addressType>()
         .nargs(argparse::nargs_pattern::any)

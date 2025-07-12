@@ -53,6 +53,7 @@ namespace ROP {
 
         const std::vector<Elf64_Phdr>& getSegmentHeaders() const;
         const std::vector<byteSequence>& getSegmentBytes() const;
+        Elf64_Addr getLowestVirtualAddressOfLoadableSegment() const;
 
         const std::vector<Elf64_Phdr>& getReadSegmentHeaders() const;
         const std::vector<byteSequence>& getReadSegmentBytes() const;

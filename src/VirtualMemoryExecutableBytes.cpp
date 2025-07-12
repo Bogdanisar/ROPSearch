@@ -82,8 +82,8 @@ void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(const std::vecto
     // We'll use this to ensure that all executables are 32bit or 64bit.
     std::set<BitSizeClass> foundArchSizes;
 
-    unsigned addrIndex = 0;
-    for (const std::string& path : execPaths) {
+    for (unsigned idx = 0; idx < execPaths.size(); ++idx) {
+        const std::string& path = execPaths[idx];
         assertMessage(ELFParser::elfPathIsAcceptable(path), "Bad path: \"%s\"", path.c_str());
 
         if (elfPathToELFParser.count(path) == 0) {
@@ -96,6 +96,14 @@ void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(const std::vecto
         auto archSize = elfParser.getFileBitType();
         foundArchSizes.insert(archSize);
 
+        // Get the base memory address for this ELF file,
+        // at which the loadable segments are loaded.
+        addressType baseMemoryAddress = 0;
+        if (idx < baseAddresses.size()) {
+            baseMemoryAddress = baseAddresses[idx];
+        }
+        const addressType lowestVAddr = elfParser.getLowestVirtualAddressOfLoadableSegment();
+
         // Iterate through all the segments to store the executable ones.
         const std::vector<Elf64_Phdr>& elfCodeSegmentHdrs = elfParser.getCodeSegmentHeaders();
         const std::vector<byteSequence>& elfCodeSegmentBytes = elfParser.getCodeSegmentBytes();
@@ -105,12 +113,9 @@ void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(const std::vecto
 
             VirtualMemoryExecutableSegment execSegm;
 
-            if (addrIndex < baseAddresses.size()) {
-                execSegm.startVirtualAddress = baseAddresses[addrIndex++];
-            }
-            else {
-                execSegm.startVirtualAddress = codeSegmHdr.p_vaddr;
-            }
+            assertMessage(codeSegmHdr.p_vaddr > lowestVAddr,
+                          "Invalid ELF format. The first loadable segment should have the smallest .p_vaddr value");
+            execSegm.startVirtualAddress = baseMemoryAddress + (codeSegmHdr.p_vaddr - lowestVAddr);
 
             // Maybe use `execSegm.startVirtualAddress + codeSegmHdr.p_memsz` ?
             execSegm.endVirtualAddress = execSegm.startVirtualAddress + codeSegmBytes.size();

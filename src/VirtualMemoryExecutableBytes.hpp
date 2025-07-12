@@ -41,10 +41,9 @@ namespace ROP {
         /**
          * Load all executable segments from each given executable path.
          * @param execPaths Paths to executable files.
-         * @param baseAddresses Values that will be used, in order, as a base address
-         *                      for each executable segment that we find in the given executable files.
-         *                      If this array is empty or has fewer addresses than the total number of segments,
-         *                      the Elf64_Phdr.p_vaddr value found in the ELF file will be used instead.
+         * @param baseAddresses Values that will be used, in order, as a base address for each executable file.
+         *                      If this array is empty or has fewer addresses than the total number of files,
+         *                      then the value 0 will be used as a default.
          */
         VirtualMemoryExecutableBytes(const std::vector<std::string> execPaths,
                                      const std::vector<addressType> baseAddresses);

@@ -264,6 +264,10 @@ const std::vector<ROP::byteSequence>& ROP::ELFParser::getSegmentBytes() const {
     return this->segmentBytes;
 }
 
+Elf64_Addr ROP::ELFParser::getLowestVirtualAddressOfLoadableSegment() const {
+    return this->lowestVirtualAddressOfLoadableSegment;
+}
+
 const std::vector<Elf64_Phdr>& ROP::ELFParser::getReadSegmentHeaders() const {
     return this->readSegmentHeaders;
 }
