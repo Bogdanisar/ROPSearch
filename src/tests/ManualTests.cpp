@@ -178,6 +178,38 @@ void testVirtualMemoryExecutableBytes(int targetPid) {
     }
 }
 
+void testVirtualMemoryExecutableBytesFindMatchingBytes(string targetExecutable) {
+    pv(targetExecutable); pn;
+
+    int targetPid = getPidOfExecutable(targetExecutable);
+    pv(targetPid); pn;
+
+    // Print the Virtual Memory ranges of executable bytes in the target process.
+    testVirtualMemoryMapping(targetPid); pn;
+
+    // Get the virtual memory bytes of the target process.
+    VirtualMemoryExecutableBytes vmBytes(targetPid);
+
+    // Convert the target string to a byte sequence.
+    const char * const targetString = "H=";
+    // const char * const targetString = "/bin/sh"; // Not found in executable bytes.
+    byteSequence bSeq;
+    for (const char *ptr = targetString; *ptr != '\0'; ++ptr) {
+        bSeq.push_back((ROP::byte)*ptr);
+    }
+    bSeq.push_back('\0');
+
+    // Get the output size of each address;
+    BitSizeClass bsc = vmBytes.getProcessArchSize();
+    unsigned addrOutputSize = (bsc == BitSizeClass::BIT64) ? 16 : 8;
+
+    printf("Found matching bytes in memory:\n");
+    vector<addressType> vmAddresses = vmBytes.matchBytesInVirtualMemory(bSeq);
+    for (const addressType& addr : vmAddresses) {
+        printf("0x%0*llx: \"%s\"\n", addrOutputSize, addr, targetString);
+    }
+}
+
 void testGetExecutableBytesInteractive(string targetExecutable) {
     pv(targetExecutable); pn;
 
@@ -1041,6 +1073,7 @@ int main(int argc, char* argv[]) {
     // testVirtualMemoryMapping(getpid()); pn;
     // testPrintCodeSegmentsOfLoadedELFs(getpid()); pn;
     // testVirtualMemoryExecutableBytes(getpid()); pn;
+    testVirtualMemoryExecutableBytesFindMatchingBytes("vulnerable64bit.exe"); pn;
     // testGetExecutableBytesInteractive("vulnerable64bit.exe"); pn;
     // testKeystoneFrameworkIntegration(); pn;
     // testCapstoneFrameworkIntegration(); pn;
@@ -1048,7 +1081,7 @@ int main(int argc, char* argv[]) {
     // testCapstoneGetRegisterInfo(); pn;
     // testKeystoneCapstoneFrameworkIntegration(); pn;
     // testInstructionNormalization(); pn;
-    testFindingInstructionSequenceInMemory("vulnerable64bit.exe"); pn;
+    // testFindingInstructionSequenceInMemory("vulnerable64bit.exe"); pn;
     // printVMInstructionSequences("vulnerable64bit.exe"); pn;
     // testFilterVMInstructionSequencesByRegisterInfo("vulnerable64bit.exe"); pn;
     // testXMLReading();pn;
