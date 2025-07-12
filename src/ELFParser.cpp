@@ -199,10 +199,6 @@ void ROP::ELFParser::readSegments(std::ifstream& fin) {
             exitError("Can't read the bytes of the current code segment in the ELF file...");
         }
 
-        if ((unsigned long long)segmBytes.size() != (unsigned long long)codeProgHeader.p_filesz) {
-            LogWarn("loadedBytes.size() != codePH.p_filesz!");
-        }
-
         this->codeSegmentBytes.push_back(segmBytes);
     }
 
