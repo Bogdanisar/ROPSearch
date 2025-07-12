@@ -47,6 +47,26 @@ void normalizeCWD() {
     pv(currentWorkingDirectory); pn;
 }
 
+int getPidOfExecutable(string executableName) {
+    string tempFile = "pidProcess.txt";
+    string command = ("pidof " + executableName + " > " + tempFile);
+    int ret = system(command.c_str());
+    if (ret != 0) {
+        printf("System(\"%s\") failed with ret %i\n", command.c_str(), ret);
+        exit(-1);
+    }
+
+    int pid;
+    ifstream fin(tempFile);
+    fin >> pid;
+    if (!fin) {
+        exitError("Failed reading the temp file with the pid...");
+    }
+
+    return pid;
+}
+
+
 void testVirtualMemoryMapping(int targetPid) {
     pv(targetPid); pn; pn;
 
@@ -156,25 +176,6 @@ void testVirtualMemoryExecutableBytes(int targetPid) {
             printf("virtual_memory[0x%llx] = %02hhx\n", addr, b);
         }
     }
-}
-
-int getPidOfExecutable(string executableName) {
-    string tempFile = "pidVulnerable.txt";
-    string command = ("pidof " + executableName + " > " + tempFile);
-    int ret = system(command.c_str());
-    if (ret != 0) {
-        printf("System(\"%s\") failed with ret %i\n", command.c_str(), ret);
-        exit(-1);
-    }
-
-    int pid;
-    ifstream fin(tempFile);
-    fin >> pid;
-    if (!fin) {
-        exitError("Failed reading the temp file with the pid...");
-    }
-
-    return pid;
 }
 
 void testGetExecutableBytesInteractive(string targetExecutable) {
@@ -1047,7 +1048,7 @@ int main(int argc, char* argv[]) {
     // testCapstoneGetRegisterInfo(); pn;
     // testKeystoneCapstoneFrameworkIntegration(); pn;
     // testInstructionNormalization(); pn;
-    // testFindingInstructionSequenceInMemory("vulnerable64bit.exe"); pn;
+    testFindingInstructionSequenceInMemory("vulnerable64bit.exe"); pn;
     // printVMInstructionSequences("vulnerable64bit.exe"); pn;
     // testFilterVMInstructionSequencesByRegisterInfo("vulnerable64bit.exe"); pn;
     // testXMLReading();pn;
@@ -1059,7 +1060,7 @@ int main(int argc, char* argv[]) {
     // testMinimumNumberOfBytesToStoreInteger(); pn;
     // testShowCapstoneInstructionInfo(); pn;
     // testEndianness(); pn;
-    testConvertBytesToIntFunction(); pn;
+    // testConvertBytesToIntFunction(); pn;
 
     return 0;
 }
