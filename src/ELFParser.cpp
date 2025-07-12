@@ -175,35 +175,51 @@ void ROP::ELFParser::readSegments(std::ifstream& fin) {
             currentProgHeader = Convert32bitSegmentHeaderTo64Bit(currProgramHeaderBytes.progHeader32);
         }
 
-        this->segmentHeaders.push_back(currentProgHeader);
+        // Check if the segment is loadable into memory.
+        bool isLoadType = (currentProgHeader.p_type == PT_LOAD);
+        if (isLoadType) {
+            this->segmentHeaders.push_back(currentProgHeader);
+        }
+    }
+
+    if (this->segmentHeaders.size() > 0) {
+        // The docs (https://man7.org/linux/man-pages/man5/elf.5.html)
+        // say that the loadable segments appear in ascending order judging by `.p_vaddr`.
+        this->lowestVirtualAddressOfLoadableSegment = this->segmentHeaders[0].p_vaddr;
     }
 
     // Now also load the bytes of the segments.
     for (const Elf64_Phdr& segmHeader : this->segmentHeaders) {
-        auto segmentSizeInFile = segmHeader.p_filesz;
-
         byteSequence segmBytes;
+        auto segmentSizeInFile = segmHeader.p_filesz;
         segmBytes.resize(segmentSizeInFile);
 
-        fin.seekg(segmHeader.p_offset, std::ios_base::beg);
-        fin.read((char*)segmBytes.data(), segmentSizeInFile);
-        if (!fin) {
-            pv(this->elfPath); pn;
-            exitError("Can't read the bytes of the current code segment in the ELF file...");
+        if (segmentSizeInFile != 0) {
+            fin.seekg(segmHeader.p_offset, std::ios_base::beg);
+            fin.read((char*)segmBytes.data(), segmentSizeInFile);
+            if (!fin) {
+                pv(this->elfPath); pn;
+                exitError("Can't read the bytes of the current code segment in the ELF file...");
+            }
         }
 
         this->segmentBytes.push_back(segmBytes);
     }
 
-    // Load the code segment headers and bytes.
+    // Load the readable segments and the code segments.
     for (unsigned i = 0; i < this->segmentHeaders.size(); ++i) {
         const Elf64_Phdr& currentHeader = this->segmentHeaders[i];
         const byteSequence& currentBytes = this->segmentBytes[i];
 
-        bool isLoadType = (currentHeader.p_type == PT_LOAD);
+        bool isReadable = ((currentHeader.p_flags & PF_R) != 0);
+        bool isWriteable = ((currentHeader.p_flags & PF_W) != 0);
+        if (isReadable && !isWriteable) {
+            this->readSegmentHeaders.push_back(currentHeader);
+            this->readSegmentBytes.push_back(currentBytes);
+        }
+
         bool isExecutable = ((currentHeader.p_flags & PF_X) != 0);
-        bool hasLoadableFileContent = (currentHeader.p_filesz != 0);
-        if (isLoadType && isExecutable && hasLoadableFileContent) {
+        if (isExecutable) {
             this->codeSegmentHeaders.push_back(currentHeader);
             this->codeSegmentBytes.push_back(currentBytes);
         }
@@ -244,12 +260,20 @@ const std::vector<Elf64_Phdr>& ROP::ELFParser::getSegmentHeaders() const {
     return this->segmentHeaders;
 }
 
-const std::vector<Elf64_Phdr>& ROP::ELFParser::getCodeSegmentHeaders() const {
-    return this->codeSegmentHeaders;
-}
-
 const std::vector<ROP::byteSequence>& ROP::ELFParser::getSegmentBytes() const {
     return this->segmentBytes;
+}
+
+const std::vector<Elf64_Phdr>& ROP::ELFParser::getReadSegmentHeaders() const {
+    return this->readSegmentHeaders;
+}
+
+const std::vector<ROP::byteSequence>& ROP::ELFParser::getReadSegmentBytes() const {
+    return this->readSegmentBytes;
+}
+
+const std::vector<Elf64_Phdr>& ROP::ELFParser::getCodeSegmentHeaders() const {
+    return this->codeSegmentHeaders;
 }
 
 const std::vector<ROP::byteSequence>& ROP::ELFParser::getCodeSegmentBytes() const {
