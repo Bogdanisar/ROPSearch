@@ -21,6 +21,7 @@ namespace ROP {
         Elf64_Ehdr fileHeader;
         std::vector<Elf64_Phdr> segmentHeaders;
         std::vector<Elf64_Phdr> codeSegmentHeaders;
+        std::vector<byteSequence> segmentBytes;
         std::vector<byteSequence> codeSegmentBytes;
 
         void readEntireBinaryIntoMemory(std::ifstream& fin);
@@ -43,6 +44,7 @@ namespace ROP {
         const Elf64_Ehdr& getFileHeader() const;
         const std::vector<Elf64_Phdr>& getSegmentHeaders() const;
         const std::vector<Elf64_Phdr>& getCodeSegmentHeaders() const;
+        const std::vector<byteSequence>& getSegmentBytes() const;
         const std::vector<byteSequence>& getCodeSegmentBytes() const;
     };
 
