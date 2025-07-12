@@ -219,7 +219,10 @@ ROP::ELFParser::ELFParser(const std::string& elfPath): elfPath(elfPath) {
     }
 
     std::ifstream fin(elfPath, std::ifstream::binary);
-    this->readEntireBinaryIntoMemory(fin);
+
+    // Not needed;
+    // this->readEntireBinaryIntoMemory(fin);
+
     this->readAndValidateFileHeader(fin);
     this->readSegments(fin);
 }
@@ -231,10 +234,6 @@ const std::string& ROP::ELFParser::getElfPath() const {
 
 const ROP::BitSizeClass& ROP::ELFParser::getFileBitType() const {
     return this->fileBitType;
-}
-
-const ROP::byteSequence& ROP::ELFParser::getElfBytes() const {
-    return this->elfBytes;
 }
 
 const Elf64_Ehdr& ROP::ELFParser::getFileHeader() const {
