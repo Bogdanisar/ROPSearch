@@ -140,35 +140,38 @@ void testPrintCodeSegmentsOfLoadedELFs(int targetPid) {
     }
 }
 
-void testVirtualMemoryBytes(int targetPid) {
+void testVirtualMemoryBytes(string targetExecutable) {
+    pv(targetExecutable); pn;
+
+    int targetPid = getPidOfExecutable(targetExecutable);
     pv(targetPid); pn; pn;
 
     VirtualMemoryBytes vmBytes(targetPid);
-    const vector<VirtualMemorySegmentBytes>& executableSegments = vmBytes.getExecutableSegments();
+    const vector<VirtualMemorySegmentBytes>& segments = vmBytes.getReadSegments();
 
     printf("Executable Virtual Memory ranges (plus a few bytes from the start of the segment):\n");
-    for (const auto& execSegm : executableSegments) {
+    for (const auto& segm : segments) {
 
         // As far as I can tell, the difference between "end" and "actualEnd"
         // is that "end" must be a multiple of the page size.
-        addressType start = execSegm.startVirtualAddress;
-        addressType end = execSegm.endVirtualAddress;
-        addressType actualEnd = start + (unsigned long long)execSegm.bytes.size();
-        printf("0x%llx-0x%llx (real: 0x%llx-0x%llx; sz: %7llu): ",
-               start, end, start, actualEnd, (unsigned long long)execSegm.bytes.size());
+        addressType start = segm.startVirtualAddress;
+        addressType end = segm.endVirtualAddress;
+        addressType actualEnd = start + (unsigned long long)segm.bytes.size();
+        printf("0x%llx-0x%llx (real: 0x%llx-0x%llx; sz: 0x%08llx): ",
+               start, end, start, actualEnd, (unsigned long long)segm.bytes.size());
 
-        size_t bytesToPrint = min((size_t)20, execSegm.bytes.size());
+        size_t bytesToPrint = min((size_t)20, segm.bytes.size());
         for (size_t i = 0; i < bytesToPrint; ++i) {
-            printf("%02hhx ", execSegm.bytes[i]);
+            printf("%02hhx ", segm.bytes[i]);
         }
         printf("...\n");
     }
     printf("\n");
 
-    if (executableSegments.size() != 0) {
-        const auto& firstExecSegm = executableSegments[0];
-        addressType firstSegmStart = firstExecSegm.startVirtualAddress;
-        size_t bytesToPrint = min((size_t)20, firstExecSegm.bytes.size());
+    if (segments.size() != 0) {
+        const auto& firstSegm = segments[0];
+        addressType firstSegmStart = firstSegm.startVirtualAddress;
+        size_t bytesToPrint = min((size_t)20, firstSegm.bytes.size());
 
         printf("Testing VirtualMemoryBytes::getByteAtVirtualAddress():\n");
         for (addressType addr = firstSegmStart; addr < firstSegmStart + bytesToPrint; ++addr) {
@@ -211,7 +214,7 @@ void testGetExecutableBytesInteractive(string targetExecutable) {
 
     // You need to start the target executable (under GDB) before running this.
     // And, while both are running, compare the output of this with the output of GDB:
-    // $> gdb ./vulnerable64bit.exe
+    // $> gdb ./target.exe
     // (gdb) break main
     // (gdb) start
     // (gdb) x/20bx main
@@ -225,7 +228,7 @@ void testGetExecutableBytesInteractive(string targetExecutable) {
 
     // Print the Virtual Memory ranges of executable bytes in the target process.
     testVirtualMemoryMapping(targetPid); pn;
-    testVirtualMemoryBytes(targetPid); pn;
+    testVirtualMemoryBytes(targetExecutable); pn;
 
     VirtualMemoryBytes vmBytes(targetPid);
 
@@ -1068,8 +1071,8 @@ int main(int argc, char* argv[]) {
 
     // testVirtualMemoryMapping(getpid()); pn;
     // testPrintCodeSegmentsOfLoadedELFs(getpid()); pn;
-    // testVirtualMemoryBytes(getpid()); pn;
-    testVirtualMemoryBytesFindMatchingBytes("vulnerable64bit.exe"); pn;
+    testVirtualMemoryBytes("vulnerable64bit.exe"); pn;
+    // testVirtualMemoryBytesFindMatchingBytes("vulnerable64bit.exe"); pn;
     // testGetExecutableBytesInteractive("vulnerable64bit.exe"); pn;
     // testKeystoneFrameworkIntegration(); pn;
     // testCapstoneFrameworkIntegration(); pn;
