@@ -347,16 +347,16 @@ static inline bool BytesAreBadInstructionInsideSequence(const ROP::byteSequence&
 int ________Methods________;
 #endif
 
-void ROP::VirtualMemoryInstructions::buildRelativeJmpMap(const VirtualMemoryExecutableSegment& segm) {
+void ROP::VirtualMemoryInstructions::buildRelativeJmpMap(const VirtualMemorySegmentBytes& segm) {
     // Function pointer for the relevant function for the bit size of the current architecture.
     auto BytesAreDirectRelativeJmpInstructionWithPrefixParse = BytesAreDirectRelativeJmpInstruction32bitWithPrefixParse;
     if (this->archBitSize == BitSizeClass::BIT64) {
         BytesAreDirectRelativeJmpInstructionWithPrefixParse = BytesAreDirectRelativeJmpInstruction64bitWithPrefixParse;
     }
 
-    int lastValidIndex = (int)segm.executableBytes.size() - 1;
+    int lastValidIndex = (int)segm.bytes.size() - 1;
     for (int opcodeIdx = 0; opcodeIdx <= lastValidIndex; ++opcodeIdx) {
-        ROP::byte currentByte = segm.executableBytes[opcodeIdx];
+        ROP::byte currentByte = segm.bytes[opcodeIdx];
         // See if this byte has the right opcode value for one of the relative jmp instructions.
         if (currentByte == 0xEB || currentByte == 0xE9) {
             // We want to look around this byte for a sequence that encodes a jmp instruction.
@@ -370,7 +370,7 @@ void ROP::VirtualMemoryInstructions::buildRelativeJmpMap(const VirtualMemoryExec
             for (int first = smallestFirstIndex; first <= opcodeIdx; ++first) {
                 for (int last = opcodeIdx + 1; last <= biggestLastIndex; ++last) {
                     int32_t offset;
-                    if (BytesAreDirectRelativeJmpInstructionWithPrefixParse(segm.executableBytes,
+                    if (BytesAreDirectRelativeJmpInstructionWithPrefixParse(segm.bytes,
                                                                             first, last,
                                                                             0,
                                                                             &offset)) {
@@ -390,8 +390,8 @@ void ROP::VirtualMemoryInstructions::buildRelativeJmpMap(const VirtualMemoryExec
     }
 }
 
-void ROP::VirtualMemoryInstructions::disassembleSegmentBytes(const VirtualMemoryExecutableSegment& segm, const int first) {
-    assert(first < (int)segm.executableBytes.size());
+void ROP::VirtualMemoryInstructions::disassembleSegmentBytes(const VirtualMemorySegmentBytes& segm, const int first) {
+    assert(first < (int)segm.bytes.size());
 
     if (this->disassembledSegment.count(first) == 1) {
         // We have already analyzed the segment(s) starting at "first".
@@ -401,9 +401,9 @@ void ROP::VirtualMemoryInstructions::disassembleSegmentBytes(const VirtualMemory
     AssemblySyntax syntax = VirtualMemoryInstructions::innerAssemblySyntax;
     const int maxInstructionSize = ROPConsts::MaxInstructionBytesCount;
 
-    const byte *firstPtr = segm.executableBytes.data() + first;
+    const byte *firstPtr = segm.bytes.data() + first;
     const addressType firstAddr = segm.startVirtualAddress + first;
-    int segmentSize = std::min(maxInstructionSize, (int)segm.executableBytes.size() - first);
+    int segmentSize = std::min(maxInstructionSize, (int)segm.bytes.size() - first);
 
     std::vector<std::string> instructions;
     unsigned totalDisassembledBytes;
@@ -441,7 +441,7 @@ void ROP::VirtualMemoryInstructions::disassembleSegmentBytes(const VirtualMemory
 
 
 void ROP::VirtualMemoryInstructions::extendInstructionSequenceThroughDirectlyPrecedingInstructions(
-    const VirtualMemoryExecutableSegment& segm,
+    const VirtualMemorySegmentBytes& segm,
     InsSeqTrie::Node *prevNode,
     const int prevFirstIndex,
     const addressType prevVMAddress,
@@ -468,13 +468,13 @@ void ROP::VirtualMemoryInstructions::extendInstructionSequenceThroughDirectlyPre
     const int last = currRightSegmentIdx;
 
     for (; first >= 0 && (last - first + 1) <= maxInstructionSize; --first) {
-        if (prevInstrSeqLength == 0 && !BytesAreUsefulInstructionAtSequenceEnd(segm.executableBytes, first, last)) {
+        if (prevInstrSeqLength == 0 && !BytesAreUsefulInstructionAtSequenceEnd(segm.bytes, first, last)) {
             // This index interval might represent a valid instruction but we don't consider it
             // to be useful as the ending instruction of an instruction sequence.
             continue;
         }
 
-        if (prevInstrSeqLength > 0 && BytesAreBadInstructionInsideSequence(segm.executableBytes,
+        if (prevInstrSeqLength > 0 && BytesAreBadInstructionInsideSequence(segm.bytes,
                                                                            first, last,
                                                                            0,
                                                                            this->archBitSize)) {
@@ -513,7 +513,7 @@ void ROP::VirtualMemoryInstructions::extendInstructionSequenceThroughDirectlyPre
 }
 
 void ROP::VirtualMemoryInstructions::extendInstructionSequenceThroughRelativeJmpInstructions(
-    const VirtualMemoryExecutableSegment& segm,
+    const VirtualMemorySegmentBytes& segm,
     InsSeqTrie::Node *prevNode,
     const int prevFirstIndex,
     const addressType prevVMAddress,
@@ -583,7 +583,7 @@ void ROP::VirtualMemoryInstructions::extendInstructionSequenceThroughRelativeJmp
 }
 
 void ROP::VirtualMemoryInstructions::extendInstructionSequenceAndAddToTrie(
-    const VirtualMemoryExecutableSegment& segm,
+    const VirtualMemorySegmentBytes& segm,
     InsSeqTrie::Node *prevNode,
     const int prevFirstIndex,
     const addressType prevVMAddress,
@@ -605,12 +605,12 @@ void ROP::VirtualMemoryInstructions::extendInstructionSequenceAndAddToTrie(
 }
 
 void ROP::VirtualMemoryInstructions::buildInstructionTrie() {
-    for (const VirtualMemoryExecutableSegment& segm : this->vmExecBytes.getExecutableSegments()) {
+    for (const VirtualMemorySegmentBytes& segm : this->vmExecBytes.getExecutableSegments()) {
         if (VirtualMemoryInstructions::SearchForSequencesWithDirectRelativeJumpsInTheMiddle) {
             this->buildRelativeJmpMap(segm);
         }
 
-        for (int rightIdx = (int)segm.executableBytes.size()-1; rightIdx >= 0; --rightIdx) {
+        for (int rightIdx = (int)segm.bytes.size()-1; rightIdx >= 0; --rightIdx) {
             // This is just for making the first preceding instruction
             // think it needs to end at (prevFirstIndex - 1), i.e. at rightIdx.
             const int prevFirstIndex = rightIdx + 1;

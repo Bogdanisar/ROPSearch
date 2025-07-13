@@ -519,12 +519,12 @@ void DoListCommand() {
     SortListOutput(instrSeqs, validIndexes);
 
     const VirtualMemoryExecutableBytes vmBytes = vmInstructions.getExecutableBytes();
-    const vector<VirtualMemoryExecutableSegment> vmSegments = vmBytes.getExecutableSegments();
+    const vector<VirtualMemorySegmentBytes> vmCodeSegments = vmBytes.getExecutableSegments();
 
     // Compute a helper value for each virtual memory segment, so that
     // we can print the output nicely if the "--show-address-base" option was passed.
     vector<unsigned> neededNumberOfBytesForSegment;
-    for (const auto& segm : vmSegments) {
+    for (const auto& segm : vmCodeSegments) {
         addressType maxOffset = segm.endVirtualAddress - segm.startVirtualAddress - 1;
         unsigned numBytesOffset = GetMinimumNumberOfBytesToStoreInteger(maxOffset);
         neededNumberOfBytesForSegment.push_back(numBytesOffset);
@@ -540,11 +540,11 @@ void DoListCommand() {
 
         if (showAddressBase) {
             // Get the extra address information.
-            unsigned segmentIndex = vmSegments.size(); // default value.
+            unsigned segmentIndex = vmCodeSegments.size(); // default value.
             addressType addressBase = 0x0;
             addressType addressOffset = addr;
-            for (unsigned s = 0; s < vmSegments.size(); ++s) {
-                const auto& segm = vmSegments[s];
+            for (unsigned s = 0; s < vmCodeSegments.size(); ++s) {
+                const auto& segm = vmCodeSegments[s];
                 if (segm.startVirtualAddress <= addr && addr < segm.endVirtualAddress) {
                     segmentIndex = s;
                     addressBase = segm.startVirtualAddress;
@@ -580,7 +580,7 @@ void DoListCommand() {
         LogInfo(""); // new line
         LogInfo("Virtual memory segments:");
 
-        for (const auto& segm : vmSegments) {
+        for (const auto& segm : vmCodeSegments) {
             LogInfo("0x%016llx - 0x%016llx (%s)",
                     (unsigned long long)segm.startVirtualAddress,
                     (unsigned long long)segm.endVirtualAddress,

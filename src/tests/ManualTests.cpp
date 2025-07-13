@@ -144,7 +144,7 @@ void testVirtualMemoryExecutableBytes(int targetPid) {
     pv(targetPid); pn; pn;
 
     VirtualMemoryExecutableBytes vmBytes(targetPid);
-    const vector<VirtualMemoryExecutableSegment>& executableSegments = vmBytes.getExecutableSegments();
+    const vector<VirtualMemorySegmentBytes>& executableSegments = vmBytes.getExecutableSegments();
 
     printf("Executable Virtual Memory ranges (plus a few bytes from the start of the segment):\n");
     for (const auto& execSegm : executableSegments) {
@@ -153,13 +153,13 @@ void testVirtualMemoryExecutableBytes(int targetPid) {
         // is that "end" must be a multiple of the page size.
         addressType start = execSegm.startVirtualAddress;
         addressType end = execSegm.endVirtualAddress;
-        addressType actualEnd = start + (unsigned long long)execSegm.executableBytes.size();
+        addressType actualEnd = start + (unsigned long long)execSegm.bytes.size();
         printf("0x%llx-0x%llx (real: 0x%llx-0x%llx; sz: %7llu): ",
-               start, end, start, actualEnd, (unsigned long long)execSegm.executableBytes.size());
+               start, end, start, actualEnd, (unsigned long long)execSegm.bytes.size());
 
-        size_t bytesToPrint = min((size_t)20, execSegm.executableBytes.size());
+        size_t bytesToPrint = min((size_t)20, execSegm.bytes.size());
         for (size_t i = 0; i < bytesToPrint; ++i) {
-            printf("%02hhx ", execSegm.executableBytes[i]);
+            printf("%02hhx ", execSegm.bytes[i]);
         }
         printf("...\n");
     }
@@ -168,7 +168,7 @@ void testVirtualMemoryExecutableBytes(int targetPid) {
     if (executableSegments.size() != 0) {
         const auto& firstExecSegm = executableSegments[0];
         addressType firstSegmStart = firstExecSegm.startVirtualAddress;
-        size_t bytesToPrint = min((size_t)20, firstExecSegm.executableBytes.size());
+        size_t bytesToPrint = min((size_t)20, firstExecSegm.bytes.size());
 
         printf("Testing VirtualMemoryExecutableBytes::getByteAtVirtualAddress():\n");
         for (addressType addr = firstSegmStart; addr < firstSegmStart + bytesToPrint; ++addr) {

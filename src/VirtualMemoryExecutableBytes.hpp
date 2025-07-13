@@ -14,18 +14,18 @@
 
 namespace ROP {
 
-    struct VirtualMemoryExecutableSegment {
+    struct VirtualMemorySegmentBytes {
         // The end address might be larger than start + bytes.size(),
         // because of needing to be a multiple of the page size.
         addressType startVirtualAddress;
         addressType endVirtualAddress;
-        byteSequence executableBytes;
+        byteSequence bytes;
         std::string sourceName;
     };
 
     class VirtualMemoryExecutableBytes {
         BitSizeClass processArchSize;
-        std::vector<VirtualMemoryExecutableSegment> executableSegments;
+        std::vector<VirtualMemorySegmentBytes> executableSegments;
 
         void buildExecutableSegments(int processPid);
         void buildExecutableSegments(const std::vector<std::string> execPaths,
@@ -49,7 +49,7 @@ namespace ROP {
                                      const std::vector<addressType> baseAddresses);
 
         const BitSizeClass& getProcessArchSize() const;
-        const std::vector<VirtualMemoryExecutableSegment>& getExecutableSegments() const;
+        const std::vector<VirtualMemorySegmentBytes>& getExecutableSegments() const;
 
         bool isValidVirtualAddressInExecutableSegment(addressType vAddress) const;
         byte getByteAtVirtualAddress(addressType vAddress) const;

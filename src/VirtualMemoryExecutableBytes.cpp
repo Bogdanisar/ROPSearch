@@ -49,10 +49,10 @@ void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(int processPid) 
                 continue;
             }
 
-            VirtualMemoryExecutableSegment execSegm;
+            VirtualMemorySegmentBytes execSegm;
             execSegm.startVirtualAddress = segmentMap.startAddress;
             execSegm.endVirtualAddress = segmentMap.endAddress;
-            execSegm.executableBytes = codeSegmBytes;
+            execSegm.bytes = codeSegmBytes;
             execSegm.sourceName = std::filesystem::path(segmentMap.path).filename();
             this->executableSegments.push_back(execSegm);
         }
@@ -67,7 +67,7 @@ void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(int processPid) 
 
     // Sort the found executable segments.
     // They seem to come sorted by default (from /proc/PID/maps), but just in case.
-    auto comparator = [](const VirtualMemoryExecutableSegment& a, const VirtualMemoryExecutableSegment& b){
+    auto comparator = [](const VirtualMemorySegmentBytes& a, const VirtualMemorySegmentBytes& b){
         return a.startVirtualAddress < b.startVirtualAddress;
     };
     std::sort(this->executableSegments.begin(), this->executableSegments.end(), comparator);
@@ -111,7 +111,7 @@ void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(const std::vecto
             const Elf64_Phdr& codeSegmHdr = elfCodeSegmentHdrs[i];
             const byteSequence& codeSegmBytes = elfCodeSegmentBytes[i];
 
-            VirtualMemoryExecutableSegment execSegm;
+            VirtualMemorySegmentBytes execSegm;
 
             assertMessage(codeSegmHdr.p_vaddr > lowestVAddr,
                           "Invalid ELF format. The first loadable segment should have the smallest .p_vaddr value");
@@ -119,7 +119,7 @@ void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(const std::vecto
 
             // Maybe use `execSegm.startVirtualAddress + codeSegmHdr.p_memsz` ?
             execSegm.endVirtualAddress = execSegm.startVirtualAddress + codeSegmBytes.size();
-            execSegm.executableBytes = codeSegmBytes;
+            execSegm.bytes = codeSegmBytes;
 
             this->executableSegments.push_back(execSegm);
         }
@@ -133,7 +133,7 @@ void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(const std::vecto
     this->processArchSize = *foundArchSizes.begin();
 
     // Sort the found executable segments.
-    auto comparator = [](const VirtualMemoryExecutableSegment& a, const VirtualMemoryExecutableSegment& b){
+    auto comparator = [](const VirtualMemorySegmentBytes& a, const VirtualMemorySegmentBytes& b){
         return a.startVirtualAddress < b.startVirtualAddress;
     };
     std::sort(this->executableSegments.begin(), this->executableSegments.end(), comparator);
@@ -153,7 +153,7 @@ const ROP::BitSizeClass& ROP::VirtualMemoryExecutableBytes::getProcessArchSize()
     return this->processArchSize;
 }
 
-const std::vector<ROP::VirtualMemoryExecutableSegment>& ROP::VirtualMemoryExecutableBytes::getExecutableSegments() const {
+const std::vector<ROP::VirtualMemorySegmentBytes>& ROP::VirtualMemoryExecutableBytes::getExecutableSegments() const {
     return this->executableSegments;
 }
 
@@ -174,10 +174,10 @@ ROP::byte ROP::VirtualMemoryExecutableBytes::getByteAtVirtualAddress(addressType
         // is that "end" must be a multiple of the page size.
         addressType start = execSegm.startVirtualAddress;
         addressType end = execSegm.endVirtualAddress;
-        addressType actualEnd = start + (unsigned long long)execSegm.executableBytes.size();
+        addressType actualEnd = start + (unsigned long long)execSegm.bytes.size();
 
         if (start <= vAddress && vAddress < actualEnd) {
-            return execSegm.executableBytes[vAddress - start];
+            return execSegm.bytes[vAddress - start];
         }
         else if (start <= vAddress && vAddress < end) {
             return (byte)0;
@@ -194,8 +194,8 @@ ROP::VirtualMemoryExecutableBytes::matchBytesInVirtualMemory(ROP::byteSequence b
 
     std::vector<addressType> matchedVirtualAddresses;
 
-    for (const VirtualMemoryExecutableSegment& execSegm : this->executableSegments) {
-        const byteSequence& segmentBytes = execSegm.executableBytes;
+    for (const VirtualMemorySegmentBytes& execSegm : this->executableSegments) {
+        const byteSequence& segmentBytes = execSegm.bytes;
         int sizeCodeBytes = (int)segmentBytes.size();
         int sizeTargetBytes = (int)bytes.size();
 
