@@ -115,8 +115,10 @@ void ROP::VirtualMemoryBytes::buildVirtualMemorySegments(const std::vector<std::
             const Elf64_Phdr& segmHeader = elfSegmentHdrs[i];
             const byteSequence& segmBytes = elfSegmentBytes[i];
 
-            assertMessage(segmHeader.p_vaddr > lowestVAddr,
-                          "Invalid ELF format. The first loadable segment should have the smallest .p_vaddr value");
+            assertMessage(segmHeader.p_vaddr >= lowestVAddr,
+                          "Invalid ELF format. The first loadable segment should have the smallest .p_vaddr value, but "
+                          "the current segment's .p_vaddr (%llu) is smaller than the first segment's .p_vaddr (%llu)",
+                          (unsigned long long)segmHeader.p_vaddr, (unsigned long long)lowestVAddr);
 
             // Maybe use `segm.endVirtualAddress = segm.startVirtualAddress + segmHeader.p_memsz` ?
             VirtualMemorySegmentBytes segm;
