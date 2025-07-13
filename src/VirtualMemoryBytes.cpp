@@ -214,7 +214,7 @@ ROP::byte ROP::VirtualMemoryBytes::getByteAtVirtualAddress(addressType vAddress)
 }
 
 std::vector<ROP::addressType>
-ROP::VirtualMemoryBytes::matchBytesInVirtualMemory(const ROP::byteSequence& targetBytes) {
+ROP::VirtualMemoryBytes::matchBytesInVirtualMemory(const ROP::byteSequence& targetBytes) const {
     assertMessage(targetBytes.size() != 0, "Got empty bytes sequence...");
 
     std::vector<addressType> matchedVirtualAddresses;
@@ -243,7 +243,7 @@ ROP::VirtualMemoryBytes::matchBytesInVirtualMemory(const ROP::byteSequence& targ
 }
 
 std::vector<ROP::addressType>
-ROP::VirtualMemoryBytes::matchStringInVirtualMemory(const char * const targetString) {
+ROP::VirtualMemoryBytes::matchStringInVirtualMemory(const char * const targetString) const {
     assertMessage(targetString != NULL && *targetString != '\0', "Got empty string...");
 
     // Convert the string to a byte sequence.

@@ -58,9 +58,9 @@ namespace ROP {
         byte getByteAtVirtualAddress(addressType vAddress) const;
 
         // Return a vector of addresses where the bytes are found in virtual memory.
-        std::vector<addressType> matchBytesInVirtualMemory(const byteSequence& targetBytes);
+        std::vector<addressType> matchBytesInVirtualMemory(const byteSequence& targetBytes) const;
         // Return a vector of addresses where the string is found in virtual memory.
-        std::vector<addressType> matchStringInVirtualMemory(const char * const targetString);
+        std::vector<addressType> matchStringInVirtualMemory(const char * const targetString) const;
     };
 
 }

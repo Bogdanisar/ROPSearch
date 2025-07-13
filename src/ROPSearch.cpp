@@ -37,6 +37,7 @@ int ________Configure_argument_parser________;
 ArgumentParser gProgramParser("ROPSearch", "1.0", default_arguments::help);
 ArgumentParser gListCmdSubparser("list", "1.0", default_arguments::help);
 ArgumentParser gAssemblyInfoCmdSubparser("asmInfo", "1.0", default_arguments::help);
+ArgumentParser gFindDataCmdSubparser("findData", "1.0", default_arguments::help);
 
 #define SORT_CRIT_ADDRESS_ASC "address-asc"
 #define SORT_CRIT_ADDRESS_DESC "address-desc"
@@ -70,7 +71,7 @@ void ConfigureListCommandSubparser() {
     mutExGroup.add_argument("-pid", "--process-id")
         .help("the pid for the target running process. "
               "The tool needs permission to access the \"/proc/PID/maps\" file. "
-              "For example, run it under the same user as the target process or under the super-user)")
+              "For example, run it under the same user as the target process or under the super-user")
         .metavar("PID")
         .scan<'i', int>();
     mutExGroup.add_argument("-exec", "--executable-path")
@@ -196,6 +197,55 @@ void ConfigureAssemblyInfoCommandSubparser() {
     gProgramParser.add_subparser(gAssemblyInfoCmdSubparser);
 }
 
+void ConfigureFindDataSubparser() {
+    gFindDataCmdSubparser.add_description("Find either strings or bytes in the given source.");
+    gFindDataCmdSubparser.set_usage_max_line_width(160);
+
+    AddVerboseArgumentToParser(gFindDataCmdSubparser);
+
+    // "Source" arguments
+    gFindDataCmdSubparser.add_usage_newline();
+    auto &mutExGroup = gFindDataCmdSubparser.add_mutually_exclusive_group(true);
+    mutExGroup.add_argument("-pid", "--process-id")
+        .help("the pid for the target running process. "
+              "The tool needs permission to access the \"/proc/PID/maps\" file. "
+              "For example, run it under the same user as the target process or under the super-user")
+        .metavar("PID")
+        .scan<'i', int>();
+    mutExGroup.add_argument("-exec", "--executable-path")
+        .help("a path to an executable (ELF) file. "
+              "The tool will load all loadable segments found in the file. "
+              "Can pass multiple paths. "
+              "Can be used with the \"--base-address\" argument")
+        .metavar("PATH")
+        .nargs(argparse::nargs_pattern::at_least_one);
+    gFindDataCmdSubparser.add_argument("-addr", "--base-address")
+        .help("this argument is only relevant when used with \"--executable-path\". "
+              "It's a hexadecimal address which will be used as a base address "
+              "at which the segments of an ELF file are loaded. "
+              "Can pass multiple values and each new base address will be used for the next ELF file. "
+              "If not enough addresses, then 0 will be used as a default.")
+        .metavar("HEX")
+        .scan<'x', addressType>()
+        .nargs(argparse::nargs_pattern::any)
+        .default_value(vector<addressType>{});
+
+    // "Target Data" arguments
+    gFindDataCmdSubparser.add_usage_newline();
+    gFindDataCmdSubparser.add_argument("-b", "--bytes")
+        .help("the byte sequence to find. Can pass multiple sequences. "
+              "Example: -b 0x2F62696E2F7368 0x657869742030.")
+        .metavar("BYTES")
+        .nargs(argparse::nargs_pattern::at_least_one);
+    gFindDataCmdSubparser.add_argument("-s", "--string")
+        .help("the string to find. Can pass multiple strings. "
+              "Example: -s '/bin/sh' 'exit 0'.")
+        .metavar("STR")
+        .nargs(argparse::nargs_pattern::at_least_one);
+
+    gProgramParser.add_subparser(gFindDataCmdSubparser);
+}
+
 void ConfigureArgumentParser() {
     gProgramParser.add_argument("--version")
     .help("prints version information and exits")
@@ -209,6 +259,7 @@ void ConfigureArgumentParser() {
 
     ConfigureListCommandSubparser();
     ConfigureAssemblyInfoCommandSubparser();
+    ConfigureFindDataSubparser();
 }
 
 #pragma endregion Configure argument parser
@@ -615,6 +666,170 @@ void DoAssemblyInfoCommand() {
 #pragma endregion Assembly Info command
 
 
+#pragma region Find Data command
+#if false
+int ________Find_Data_command________;
+#endif
+
+vector<pair<addressType, byteSequence>> FindByteSequenceDataTargets(const VirtualMemoryBytes& vmBytes) {
+    // Get the target byte sequences from the arguments.
+    vector<string> targetByteStringsVector = gFindDataCmdSubparser.get<vector<string>>("--bytes");
+
+    // Keep only unique targets.
+    set<string> targetByteStringsSet(targetByteStringsVector.begin(), targetByteStringsVector.end());
+
+    // Parse the target byte sequences.
+    vector<byteSequence> targetByteSequences;
+    for (const string& bString : targetByteStringsSet) {
+        assertMessage(bString.compare(0, 2, "0x") == 0,
+                      "This is not a valid byte sequence (it must start with '0x'): '%s'", bString.c_str());
+        if (bString.size() <= 2 || bString.size() % 2 != 0) {
+           exitError("This is not a valid byte sequence (each byte must have exactly two hex letters): '%s'", bString.c_str());
+        }
+
+        byteSequence bSeq;
+        for (unsigned i = 2; i < bString.size(); i += 2) {
+            string currentByteLetters = bString.substr(i, 2);
+
+            ROP::byte currentByte = 0;
+            int readChars = 0;
+            sscanf(currentByteLetters.c_str(), "%hhx%n", &currentByte, &readChars);
+            if (readChars != 2) {
+                exitError("This is not a valid hex byte: '%s'", currentByteLetters.c_str());
+            }
+
+            bSeq.push_back(currentByte);
+        }
+
+        targetByteSequences.push_back(bSeq);
+    }
+
+    using resultType = pair<addressType, byteSequence>;
+
+    // Search for our byte sequence targets.
+    vector<resultType> byteSequenceTargetResults;
+    for (const byteSequence& currBytes : targetByteSequences) {
+        vector<addressType> matchingAddresses = vmBytes.matchBytesInVirtualMemory(currBytes);
+        for (addressType addr : matchingAddresses) {
+            byteSequenceTargetResults.push_back({addr, currBytes});
+        }
+    }
+
+    // Sort the results.
+    auto comparator = [&](const resultType& r1, const resultType& r2) {
+        if (r1.first == r2.first) {
+            return r1.second.size() < r2.second.size();
+        }
+        return r1.first < r2.first;
+    };
+    sort(byteSequenceTargetResults.begin(), byteSequenceTargetResults.end(), comparator);
+
+    return byteSequenceTargetResults;
+}
+
+vector<pair<addressType, string>> FindStringDataTargets(const VirtualMemoryBytes& vmBytes) {
+    // Get the target data from the arguments.
+    vector<string> targetStringsVector = gFindDataCmdSubparser.get<vector<string>>("--string");
+
+    // Keep only unique targets.
+    set<string> targetStringsSet(targetStringsVector.begin(), targetStringsVector.end());
+
+    using resultType = pair<addressType, string>;
+
+    // Search for our string targets.
+    vector<resultType> stringTargetResults;
+    for (const string& targetString : targetStringsSet) {
+        vector<addressType> matchingAddresses = vmBytes.matchStringInVirtualMemory(targetString.c_str());
+        for (addressType addr : matchingAddresses) {
+            stringTargetResults.push_back({addr, targetString});
+        }
+    }
+
+    // Sort the results.
+    auto comparator = [&](const resultType& r1, const resultType& r2) {
+        return r1.first < r2.first;
+    };
+    sort(stringTargetResults.begin(), stringTargetResults.end(), comparator);
+
+    return stringTargetResults;
+}
+
+void DoFindDataCommand() {
+    assertMessage(gFindDataCmdSubparser, "Inner logic error...");
+
+    // Load the virtual memory byte information from the given source.
+    VirtualMemoryBytes vmBytes = [&]() {
+        if (auto pid = gFindDataCmdSubparser.present<int>("--process-id")) {
+            return VirtualMemoryBytes(*pid);
+        }
+        else {
+            vector<string> execs = gFindDataCmdSubparser.get<vector<string>>("--executable-path");
+            vector<addressType> addrs = gFindDataCmdSubparser.get<vector<addressType>>("--base-address");
+            return VirtualMemoryBytes(execs, addrs);
+        }
+    }();
+
+    // Find the data.
+    vector<pair<addressType, byteSequence>> byteSequenceResults = FindByteSequenceDataTargets(vmBytes);
+    vector<pair<addressType, string>> stringResults = FindStringDataTargets(vmBytes);
+
+    BitSizeClass archSize = vmBytes.getProcessArchSize();
+    unsigned addressOutputSize = (archSize == BitSizeClass::BIT64) ? 16 : 8;
+
+    // Configure the lambdas used for printing the results.
+    auto printByteSequenceResult = [&](unsigned currResultIndex) {
+        const auto& result = byteSequenceResults[currResultIndex];
+
+        ostringstream ss;
+        ss << std::hex << std::setfill('0');
+
+        ss << "0x" << std::setw(addressOutputSize) << result.first << ": ";
+        for (const ROP::byte& byte : result.second) {
+            ss << "0x" << std::setw(2) << std::uppercase << (unsigned)byte << ' ';
+        }
+
+        const string& outputLine = ss.str();
+        LogInfo("%s", outputLine.c_str());
+    };
+    auto printStringResult = [&](unsigned currResultIndex) {
+        const auto& result = stringResults[currResultIndex];
+        LogInfo("0x%0*llx: \"%s\"", addressOutputSize, result.first, result.second.c_str());
+    };
+
+    // Print the results.
+    LogInfo(""); // new line
+
+    unsigned bytesResultIndex = 0, strResultIndex = 0;
+    while (bytesResultIndex < byteSequenceResults.size() && strResultIndex < stringResults.size()) {
+        if (byteSequenceResults[bytesResultIndex].first < stringResults[strResultIndex].first) {
+            printByteSequenceResult(bytesResultIndex++);
+        }
+        else {
+            printStringResult(strResultIndex++);
+        }
+    }
+    while (bytesResultIndex < byteSequenceResults.size()) {
+        printByteSequenceResult(bytesResultIndex++);
+    }
+    while (strResultIndex < stringResults.size()) {
+        printStringResult(strResultIndex++);
+    }
+
+    // Print results summary.
+    LogInfo(""); // new line
+    if (Log::Level::Verbose <= Log::ProgramLogLevel) {
+        LogVerbose("Found %u bytes results and %u string results.",
+                   (unsigned)byteSequenceResults.size(),
+                   (unsigned)stringResults.size());
+    }
+    else {
+        LogInfo("Found %u total data results.", (unsigned)(byteSequenceResults.size() + stringResults.size()));
+    }
+}
+
+#pragma endregion Find Data command
+
+
 #pragma region Main
 #if false
 int ________Main________;
@@ -642,6 +857,11 @@ int main(int argc, char* argv[]) {
 
     if (gAssemblyInfoCmdSubparser) {
         DoAssemblyInfoCommand();
+        return 0;
+    }
+
+    if (gFindDataCmdSubparser) {
+        DoFindDataCommand();
         return 0;
     }
 
