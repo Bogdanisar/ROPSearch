@@ -25,21 +25,23 @@ namespace ROP {
 
     class VirtualMemoryExecutableBytes {
         BitSizeClass processArchSize;
+        std::vector<VirtualMemorySegmentBytes> readSegments;
         std::vector<VirtualMemorySegmentBytes> executableSegments;
 
-        void buildExecutableSegments(int processPid);
-        void buildExecutableSegments(const std::vector<std::string> execPaths,
-                                     const std::vector<addressType> baseAddresses);
+        void buildVirtualMemorySegments(int processPid);
+        void buildVirtualMemorySegments(const std::vector<std::string> execPaths,
+                                        const std::vector<addressType> baseAddresses);
+        void sortSegments();
 
         public:
         /**
-         * Get executable bytes by reading the "/proc/PID/maps" file
-         * and then loading executable segments from each ELF file according to the mapping.
+         * Get loadable segment bytes by reading the "/proc/PID/maps" file
+         * and then loading segments from each ELF file according to the mapping.
          */
         VirtualMemoryExecutableBytes(int processPid);
 
         /**
-         * Load all executable segments from each given executable path.
+         * Get loadable segments from each given executable path.
          * @param execPaths Paths to executable files.
          * @param baseAddresses Values that will be used, in order, as a base address for each executable file.
          *                      If this array is empty or has fewer addresses than the total number of files,
@@ -49,9 +51,10 @@ namespace ROP {
                                      const std::vector<addressType> baseAddresses);
 
         const BitSizeClass& getProcessArchSize() const;
+        const std::vector<VirtualMemorySegmentBytes>& getReadSegments() const;
         const std::vector<VirtualMemorySegmentBytes>& getExecutableSegments() const;
 
-        bool isValidVirtualAddressInExecutableSegment(addressType vAddress) const;
+        bool isValidVirtualAddress(addressType vAddress) const;
         byte getByteAtVirtualAddress(addressType vAddress) const;
 
         // Return a vector of addresses where the bytes are found in virtual memory.

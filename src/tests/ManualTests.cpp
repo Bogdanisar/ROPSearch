@@ -191,8 +191,9 @@ void testVirtualMemoryExecutableBytesFindMatchingBytes(string targetExecutable) 
     VirtualMemoryExecutableBytes vmBytes(targetPid);
 
     // Convert the target string to a byte sequence.
-    const char * const targetString = "H=";
-    // const char * const targetString = "/bin/sh"; // Not found in executable bytes.
+    // const char * const targetString = "H=";
+    const char * const targetString = "/bin/sh";
+    // const char * const targetString = "exit 0";
     byteSequence bSeq;
     for (const char *ptr = targetString; *ptr != '\0'; ++ptr) {
         bSeq.push_back((ROP::byte)*ptr);
@@ -222,7 +223,7 @@ void testGetExecutableBytesInteractive(string targetExecutable) {
     // (gdb) x/20bx printf
     // ...
     // (gdb) kill
-    // They should show the same bytes in memory for virtual addresses of executable(!) segments.
+    // They should show the same bytes in memory for valid virtual addresses.
 
     int targetPid = getPidOfExecutable(targetExecutable);
     pv(targetPid); pn;
@@ -255,7 +256,7 @@ void testGetExecutableBytesInteractive(string targetExecutable) {
         }
 
         for (addressType cAddr = addr; cAddr < (addressType)addr + 20; ++cAddr) {
-            if (!vmBytes.isValidVirtualAddressInExecutableSegment(cAddr)) {
+            if (!vmBytes.isValidVirtualAddress(cAddr)) {
                 printf("Address not in virtual memory...\n");
                 break;
             }

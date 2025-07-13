@@ -7,10 +7,10 @@
 #include "VirtualMemoryMapping.hpp"
 
 
-void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(int processPid) {
+void ROP::VirtualMemoryExecutableBytes::buildVirtualMemorySegments(int processPid) {
     const VirtualMemoryMapping& vmSegmMapping(processPid);
 
-    // This is used as an optimization in case there are multiple executable segments for the same ELF path.
+    // This is used as an optimization in case there are multiple segments for the same ELF path.
     // (Otherwise, we would need to create an ELFParser multiple times for the same path).
     std::map<std::string, ELFParser> elfPathToELFParser;
 
@@ -23,8 +23,11 @@ void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(int processPid) 
             continue;
         }
 
-        bool isExecutable = (segmentMap.rightsMask & (unsigned int)ROP::VirtualMemorySegmentMapping::SegmentRights::EXECUTE);
-        if (!isExecutable) {
+        bool segmIsReadable = (segmentMap.rightsMask & (unsigned int)ROP::VirtualMemorySegmentMapping::SegmentRights::READ);
+        bool segmIsWriteable = (segmentMap.rightsMask & (unsigned int)ROP::VirtualMemorySegmentMapping::SegmentRights::WRITE);
+        bool segmIsExecutable = (segmentMap.rightsMask & (unsigned int)ROP::VirtualMemorySegmentMapping::SegmentRights::EXECUTE);
+        if (!segmIsReadable) {
+            // A non-readable segment can't be useful for us here.
             continue;
         }
 
@@ -38,23 +41,30 @@ void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(int processPid) 
         auto archSize = elfParser.getFileBitType();
         foundArchSizes.insert(archSize);
 
-        // Iterate through the segments to find the ones relevant for this process.
-        const std::vector<Elf64_Phdr>& elfCodeSegmentHdrs = elfParser.getCodeSegmentHeaders();
-        const std::vector<byteSequence>& elfCodeSegmentBytes = elfParser.getCodeSegmentBytes();
-        for (size_t i = 0; i < elfCodeSegmentHdrs.size(); ++i) {
-            const Elf64_Phdr& codeSegmHdr = elfCodeSegmentHdrs[i];
-            const byteSequence& codeSegmBytes = elfCodeSegmentBytes[i];
+        // Iterate through the loadable segments to store the ones relevant for this process.
+        const std::vector<Elf64_Phdr>& elfSegmentHdrs = elfParser.getSegmentHeaders();
+        const std::vector<byteSequence>& elfSegmentBytes = elfParser.getSegmentBytes();
+        assert(elfSegmentHdrs.size() == elfSegmentBytes.size());
+        for (size_t i = 0; i < elfSegmentHdrs.size(); ++i) {
+            const Elf64_Phdr& segmHeader = elfSegmentHdrs[i];
+            const byteSequence& segmBytes = elfSegmentBytes[i];
 
-            if ((Elf64_Off)segmentMap.offset != codeSegmHdr.p_offset) {
+            if ((Elf64_Off)segmentMap.offset != segmHeader.p_offset) {
                 continue;
             }
 
-            VirtualMemorySegmentBytes execSegm;
-            execSegm.startVirtualAddress = segmentMap.startAddress;
-            execSegm.endVirtualAddress = segmentMap.endAddress;
-            execSegm.bytes = codeSegmBytes;
-            execSegm.sourceName = std::filesystem::path(segmentMap.path).filename();
-            this->executableSegments.push_back(execSegm);
+            VirtualMemorySegmentBytes segm;
+            segm.startVirtualAddress = segmentMap.startAddress;
+            segm.endVirtualAddress = segmentMap.endAddress;
+            segm.bytes = segmBytes;
+            segm.sourceName = std::filesystem::path(segmentMap.path).filename();
+
+            if (segmIsReadable && !segmIsWriteable) {
+                this->readSegments.push_back(segm);
+            }
+            if (segmIsReadable && segmIsExecutable) {
+                this->executableSegments.push_back(segm);
+            }
         }
     }
 
@@ -64,17 +74,10 @@ void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(int processPid) 
                   (unsigned)foundArchSizes.size(), (unsigned)processPid);
     }
     this->processArchSize = *foundArchSizes.begin();
-
-    // Sort the found executable segments.
-    // They seem to come sorted by default (from /proc/PID/maps), but just in case.
-    auto comparator = [](const VirtualMemorySegmentBytes& a, const VirtualMemorySegmentBytes& b){
-        return a.startVirtualAddress < b.startVirtualAddress;
-    };
-    std::sort(this->executableSegments.begin(), this->executableSegments.end(), comparator);
 }
 
-void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(const std::vector<std::string> execPaths,
-                                                                const std::vector<addressType> baseAddresses) {
+void ROP::VirtualMemoryExecutableBytes::buildVirtualMemorySegments(const std::vector<std::string> execPaths,
+                                                                   const std::vector<addressType> baseAddresses) {
     // This is used as an optimization in case we have the same ELF path multiple times.
     // (Otherwise, we would need to create more than one ELFParser for the same path).
     std::map<std::string, ELFParser> elfPathToELFParser;
@@ -104,24 +107,32 @@ void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(const std::vecto
         }
         const addressType lowestVAddr = elfParser.getLowestVirtualAddressOfLoadableSegment();
 
-        // Iterate through all the segments to store the executable ones.
-        const std::vector<Elf64_Phdr>& elfCodeSegmentHdrs = elfParser.getCodeSegmentHeaders();
-        const std::vector<byteSequence>& elfCodeSegmentBytes = elfParser.getCodeSegmentBytes();
-        for (size_t i = 0; i < elfCodeSegmentHdrs.size(); ++i) {
-            const Elf64_Phdr& codeSegmHdr = elfCodeSegmentHdrs[i];
-            const byteSequence& codeSegmBytes = elfCodeSegmentBytes[i];
+        // Iterate through the loadable segments to store the relevant ones.
+        const std::vector<Elf64_Phdr>& elfSegmentHdrs = elfParser.getSegmentHeaders();
+        const std::vector<byteSequence>& elfSegmentBytes = elfParser.getSegmentBytes();
+        assert(elfSegmentHdrs.size() == elfSegmentBytes.size());
+        for (size_t i = 0; i < elfSegmentHdrs.size(); ++i) {
+            const Elf64_Phdr& segmHeader = elfSegmentHdrs[i];
+            const byteSequence& segmBytes = elfSegmentBytes[i];
 
-            VirtualMemorySegmentBytes execSegm;
-
-            assertMessage(codeSegmHdr.p_vaddr > lowestVAddr,
+            assertMessage(segmHeader.p_vaddr > lowestVAddr,
                           "Invalid ELF format. The first loadable segment should have the smallest .p_vaddr value");
-            execSegm.startVirtualAddress = baseMemoryAddress + (codeSegmHdr.p_vaddr - lowestVAddr);
 
-            // Maybe use `execSegm.startVirtualAddress + codeSegmHdr.p_memsz` ?
-            execSegm.endVirtualAddress = execSegm.startVirtualAddress + codeSegmBytes.size();
-            execSegm.bytes = codeSegmBytes;
+            // Maybe use `segm.endVirtualAddress = segm.startVirtualAddress + segmHeader.p_memsz` ?
+            VirtualMemorySegmentBytes segm;
+            segm.startVirtualAddress = baseMemoryAddress + (segmHeader.p_vaddr - lowestVAddr);
+            segm.endVirtualAddress = segm.startVirtualAddress + segmBytes.size();
+            segm.bytes = segmBytes;
 
-            this->executableSegments.push_back(execSegm);
+            bool segmIsReadable = ((segmHeader.p_flags & PF_R) != 0);
+            bool segmIsWritable = ((segmHeader.p_flags & PF_W) != 0);
+            bool segmIsExecutable = ((segmHeader.p_flags & PF_X) != 0);
+            if (segmIsReadable && !segmIsWritable) {
+                this->readSegments.push_back(segm);
+            }
+            if (segmIsReadable && segmIsExecutable) {
+                this->executableSegments.push_back(segm);
+            }
         }
     }
 
@@ -131,21 +142,28 @@ void ROP::VirtualMemoryExecutableBytes::buildExecutableSegments(const std::vecto
                   (unsigned)foundArchSizes.size());
     }
     this->processArchSize = *foundArchSizes.begin();
+}
 
-    // Sort the found executable segments.
+void ROP::VirtualMemoryExecutableBytes::sortSegments() {
+    // Sort the found segments.
     auto comparator = [](const VirtualMemorySegmentBytes& a, const VirtualMemorySegmentBytes& b){
         return a.startVirtualAddress < b.startVirtualAddress;
     };
+    std::sort(this->readSegments.begin(), this->readSegments.end(), comparator);
     std::sort(this->executableSegments.begin(), this->executableSegments.end(), comparator);
 }
 
 ROP::VirtualMemoryExecutableBytes::VirtualMemoryExecutableBytes(int processPid) {
-    this->buildExecutableSegments(processPid);
+    this->buildVirtualMemorySegments(processPid);
+
+    // They seem to come sorted by default (from /proc/PID/maps), but just in case.
+    this->sortSegments();
 }
 
 ROP::VirtualMemoryExecutableBytes::VirtualMemoryExecutableBytes(const std::vector<std::string> execPaths,
                                                                 const std::vector<addressType> baseAddresses) {
-    this->buildExecutableSegments(execPaths, baseAddresses);
+    this->buildVirtualMemorySegments(execPaths, baseAddresses);
+    this->sortSegments();
 }
 
 
@@ -153,13 +171,18 @@ const ROP::BitSizeClass& ROP::VirtualMemoryExecutableBytes::getProcessArchSize()
     return this->processArchSize;
 }
 
+const std::vector<ROP::VirtualMemorySegmentBytes>& ROP::VirtualMemoryExecutableBytes::getReadSegments() const {
+    return this->readSegments;
+}
+
 const std::vector<ROP::VirtualMemorySegmentBytes>& ROP::VirtualMemoryExecutableBytes::getExecutableSegments() const {
     return this->executableSegments;
 }
 
-bool ROP::VirtualMemoryExecutableBytes::isValidVirtualAddressInExecutableSegment(addressType vAddress) const {
-    for (const auto& execSegm : this->executableSegments) {
-        if (execSegm.startVirtualAddress <= vAddress && vAddress < execSegm.endVirtualAddress) {
+
+bool ROP::VirtualMemoryExecutableBytes::isValidVirtualAddress(addressType vAddress) const {
+    for (const auto& segm : this->readSegments) {
+        if (segm.startVirtualAddress <= vAddress && vAddress < segm.endVirtualAddress) {
             return true;
         }
     }
@@ -168,16 +191,16 @@ bool ROP::VirtualMemoryExecutableBytes::isValidVirtualAddressInExecutableSegment
 }
 
 ROP::byte ROP::VirtualMemoryExecutableBytes::getByteAtVirtualAddress(addressType vAddress) const {
-    for (const auto& execSegm : this->executableSegments) {
+    for (const auto& segm : this->readSegments) {
 
         // As far as I can tell, the difference between "end" and "actualEnd"
         // is that "end" must be a multiple of the page size.
-        addressType start = execSegm.startVirtualAddress;
-        addressType end = execSegm.endVirtualAddress;
-        addressType actualEnd = start + (unsigned long long)execSegm.bytes.size();
+        addressType start = segm.startVirtualAddress;
+        addressType end = segm.endVirtualAddress;
+        addressType actualEnd = start + (unsigned long long)segm.bytes.size();
 
         if (start <= vAddress && vAddress < actualEnd) {
-            return execSegm.bytes[vAddress - start];
+            return segm.bytes[vAddress - start];
         }
         else if (start <= vAddress && vAddress < end) {
             return (byte)0;
@@ -194,12 +217,12 @@ ROP::VirtualMemoryExecutableBytes::matchBytesInVirtualMemory(ROP::byteSequence b
 
     std::vector<addressType> matchedVirtualAddresses;
 
-    for (const VirtualMemorySegmentBytes& execSegm : this->executableSegments) {
-        const byteSequence& segmentBytes = execSegm.bytes;
-        int sizeCodeBytes = (int)segmentBytes.size();
+    for (const VirtualMemorySegmentBytes& segm : this->readSegments) {
+        const byteSequence& segmentBytes = segm.bytes;
+        int sizeSegmentBytes = (int)segmentBytes.size();
         int sizeTargetBytes = (int)bytes.size();
 
-        for (int low = 0, high = sizeTargetBytes - 1; high < sizeCodeBytes; ++low, ++high) {
+        for (int low = 0, high = sizeTargetBytes - 1; high < sizeSegmentBytes; ++low, ++high) {
             bool match = true;
             for (int idx = 0; idx < sizeTargetBytes; ++idx) {
                 if (bytes[idx] != segmentBytes[low + idx]) {
@@ -209,7 +232,7 @@ ROP::VirtualMemoryExecutableBytes::matchBytesInVirtualMemory(ROP::byteSequence b
             }
 
             if (match) {
-                matchedVirtualAddresses.push_back(execSegm.startVirtualAddress + low);
+                matchedVirtualAddresses.push_back(segm.startVirtualAddress + low);
             }
         }
     }
