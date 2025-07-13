@@ -194,18 +194,13 @@ void testVirtualMemoryBytesFindMatchingBytes(string targetExecutable) {
     // const char * const targetString = "H=";
     const char * const targetString = "/bin/sh";
     // const char * const targetString = "exit 0";
-    byteSequence bSeq;
-    for (const char *ptr = targetString; *ptr != '\0'; ++ptr) {
-        bSeq.push_back((ROP::byte)*ptr);
-    }
-    bSeq.push_back('\0');
 
     // Get the output size of each address;
     BitSizeClass bsc = vmBytes.getProcessArchSize();
     unsigned addrOutputSize = (bsc == BitSizeClass::BIT64) ? 16 : 8;
 
     printf("Found matching bytes in memory:\n");
-    vector<addressType> vmAddresses = vmBytes.matchBytesInVirtualMemory(bSeq);
+    vector<addressType> vmAddresses = vmBytes.matchStringInVirtualMemory(targetString);
     for (const addressType& addr : vmAddresses) {
         printf("0x%0*llx: \"%s\"\n", addrOutputSize, addr, targetString);
     }

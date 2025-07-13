@@ -212,20 +212,20 @@ ROP::byte ROP::VirtualMemoryBytes::getByteAtVirtualAddress(addressType vAddress)
 }
 
 std::vector<ROP::addressType>
-ROP::VirtualMemoryBytes::matchBytesInVirtualMemory(ROP::byteSequence bytes) {
-    assertMessage(bytes.size() != 0, "Got empty bytes sequence...");
+ROP::VirtualMemoryBytes::matchBytesInVirtualMemory(const ROP::byteSequence& targetBytes) {
+    assertMessage(targetBytes.size() != 0, "Got empty bytes sequence...");
 
     std::vector<addressType> matchedVirtualAddresses;
 
     for (const VirtualMemorySegmentBytes& segm : this->readSegments) {
         const byteSequence& segmentBytes = segm.bytes;
         int sizeSegmentBytes = (int)segmentBytes.size();
-        int sizeTargetBytes = (int)bytes.size();
+        int sizeTargetBytes = (int)targetBytes.size();
 
         for (int low = 0, high = sizeTargetBytes - 1; high < sizeSegmentBytes; ++low, ++high) {
             bool match = true;
             for (int idx = 0; idx < sizeTargetBytes; ++idx) {
-                if (bytes[idx] != segmentBytes[low + idx]) {
+                if (targetBytes[idx] != segmentBytes[low + idx]) {
                     match = false;
                     break;
                 }
@@ -238,4 +238,18 @@ ROP::VirtualMemoryBytes::matchBytesInVirtualMemory(ROP::byteSequence bytes) {
     }
 
     return matchedVirtualAddresses;
+}
+
+std::vector<ROP::addressType>
+ROP::VirtualMemoryBytes::matchStringInVirtualMemory(const char * const targetString) {
+    assertMessage(targetString != NULL && *targetString != '\0', "Got empty string...");
+
+    // Convert the string to a byte sequence.
+    byteSequence bytes;
+    for (const char *ptr = targetString; *ptr != '\0'; ++ptr) {
+        bytes.push_back((ROP::byte)*ptr);
+    }
+    bytes.push_back('\0');
+
+    return this->matchBytesInVirtualMemory(bytes);
 }
