@@ -12,7 +12,7 @@
 #include "../ELFParser.hpp"
 #include "../InstructionConverter.hpp"
 #include "../RegisterQueryX86.hpp"
-#include "../VirtualMemoryExecutableBytes.hpp"
+#include "../VirtualMemoryBytes.hpp"
 #include "../VirtualMemoryInstructions.hpp"
 #include "../VirtualMemoryMapping.hpp"
 
@@ -140,10 +140,10 @@ void testPrintCodeSegmentsOfLoadedELFs(int targetPid) {
     }
 }
 
-void testVirtualMemoryExecutableBytes(int targetPid) {
+void testVirtualMemoryBytes(int targetPid) {
     pv(targetPid); pn; pn;
 
-    VirtualMemoryExecutableBytes vmBytes(targetPid);
+    VirtualMemoryBytes vmBytes(targetPid);
     const vector<VirtualMemorySegmentBytes>& executableSegments = vmBytes.getExecutableSegments();
 
     printf("Executable Virtual Memory ranges (plus a few bytes from the start of the segment):\n");
@@ -170,7 +170,7 @@ void testVirtualMemoryExecutableBytes(int targetPid) {
         addressType firstSegmStart = firstExecSegm.startVirtualAddress;
         size_t bytesToPrint = min((size_t)20, firstExecSegm.bytes.size());
 
-        printf("Testing VirtualMemoryExecutableBytes::getByteAtVirtualAddress():\n");
+        printf("Testing VirtualMemoryBytes::getByteAtVirtualAddress():\n");
         for (addressType addr = firstSegmStart; addr < firstSegmStart + bytesToPrint; ++addr) {
             ROP::byte b = vmBytes.getByteAtVirtualAddress(addr);
             printf("virtual_memory[0x%llx] = %02hhx\n", addr, b);
@@ -178,7 +178,7 @@ void testVirtualMemoryExecutableBytes(int targetPid) {
     }
 }
 
-void testVirtualMemoryExecutableBytesFindMatchingBytes(string targetExecutable) {
+void testVirtualMemoryBytesFindMatchingBytes(string targetExecutable) {
     pv(targetExecutable); pn;
 
     int targetPid = getPidOfExecutable(targetExecutable);
@@ -188,7 +188,7 @@ void testVirtualMemoryExecutableBytesFindMatchingBytes(string targetExecutable) 
     testVirtualMemoryMapping(targetPid); pn;
 
     // Get the virtual memory bytes of the target process.
-    VirtualMemoryExecutableBytes vmBytes(targetPid);
+    VirtualMemoryBytes vmBytes(targetPid);
 
     // Convert the target string to a byte sequence.
     // const char * const targetString = "H=";
@@ -230,9 +230,9 @@ void testGetExecutableBytesInteractive(string targetExecutable) {
 
     // Print the Virtual Memory ranges of executable bytes in the target process.
     testVirtualMemoryMapping(targetPid); pn;
-    testVirtualMemoryExecutableBytes(targetPid); pn;
+    testVirtualMemoryBytes(targetPid); pn;
 
-    VirtualMemoryExecutableBytes vmBytes(targetPid);
+    VirtualMemoryBytes vmBytes(targetPid);
 
     printf("Interactive virtual memory inspector...\n");
     while (true) {
@@ -1073,8 +1073,8 @@ int main(int argc, char* argv[]) {
 
     // testVirtualMemoryMapping(getpid()); pn;
     // testPrintCodeSegmentsOfLoadedELFs(getpid()); pn;
-    // testVirtualMemoryExecutableBytes(getpid()); pn;
-    testVirtualMemoryExecutableBytesFindMatchingBytes("vulnerable64bit.exe"); pn;
+    // testVirtualMemoryBytes(getpid()); pn;
+    testVirtualMemoryBytesFindMatchingBytes("vulnerable64bit.exe"); pn;
     // testGetExecutableBytesInteractive("vulnerable64bit.exe"); pn;
     // testKeystoneFrameworkIntegration(); pn;
     // testCapstoneFrameworkIntegration(); pn;

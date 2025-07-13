@@ -24,8 +24,8 @@ bin/VirtualMemoryMapping.o: src/VirtualMemoryMapping.cpp $(shell find ./src -nam
 bin/ELFParser.o: src/ELFParser.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) $(OPT_MAIN) -c src/ELFParser.cpp -o $@
 
-bin/VirtualMemoryExecutableBytes.o: src/VirtualMemoryExecutableBytes.cpp $(shell find ./src -name "*.hpp")
-	g++ $(wFlags) $(OPT_MAIN) -c src/VirtualMemoryExecutableBytes.cpp -o $@
+bin/VirtualMemoryBytes.o: src/VirtualMemoryBytes.cpp $(shell find ./src -name "*.hpp")
+	g++ $(wFlags) $(OPT_MAIN) -c src/VirtualMemoryBytes.cpp -o $@
 
 bin/InstructionConverter.o: src/InstructionConverter.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) $(OPT_MAIN) -c src/InstructionConverter.cpp -o $@
@@ -42,7 +42,7 @@ bin/Log.o: src/Log.cpp $(shell find ./src -name "*.hpp")
 bin/RegisterQueryX86.o: src/RegisterQueryX86.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) $(OPT_MAIN) -c src/RegisterQueryX86.cpp -o $@
 
-classObjectFiles := bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryExecutableBytes.o \
+classObjectFiles := bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryBytes.o \
 				    bin/InstructionConverter.o bin/InsSeqTrie.o bin/VirtualMemoryInstructions.o \
 					bin/Log.o bin/RegisterQueryX86.o
 

@@ -1,4 +1,4 @@
-#include "VirtualMemoryExecutableBytes.hpp"
+#include "VirtualMemoryBytes.hpp"
 
 #include <algorithm>
 #include <filesystem>
@@ -7,7 +7,7 @@
 #include "VirtualMemoryMapping.hpp"
 
 
-void ROP::VirtualMemoryExecutableBytes::buildVirtualMemorySegments(int processPid) {
+void ROP::VirtualMemoryBytes::buildVirtualMemorySegments(int processPid) {
     const VirtualMemoryMapping& vmSegmMapping(processPid);
 
     // This is used as an optimization in case there are multiple segments for the same ELF path.
@@ -76,8 +76,8 @@ void ROP::VirtualMemoryExecutableBytes::buildVirtualMemorySegments(int processPi
     this->processArchSize = *foundArchSizes.begin();
 }
 
-void ROP::VirtualMemoryExecutableBytes::buildVirtualMemorySegments(const std::vector<std::string> execPaths,
-                                                                   const std::vector<addressType> baseAddresses) {
+void ROP::VirtualMemoryBytes::buildVirtualMemorySegments(const std::vector<std::string> execPaths,
+                                                         const std::vector<addressType> baseAddresses) {
     // This is used as an optimization in case we have the same ELF path multiple times.
     // (Otherwise, we would need to create more than one ELFParser for the same path).
     std::map<std::string, ELFParser> elfPathToELFParser;
@@ -144,7 +144,7 @@ void ROP::VirtualMemoryExecutableBytes::buildVirtualMemorySegments(const std::ve
     this->processArchSize = *foundArchSizes.begin();
 }
 
-void ROP::VirtualMemoryExecutableBytes::sortSegments() {
+void ROP::VirtualMemoryBytes::sortSegments() {
     // Sort the found segments.
     auto comparator = [](const VirtualMemorySegmentBytes& a, const VirtualMemorySegmentBytes& b){
         return a.startVirtualAddress < b.startVirtualAddress;
@@ -153,34 +153,34 @@ void ROP::VirtualMemoryExecutableBytes::sortSegments() {
     std::sort(this->executableSegments.begin(), this->executableSegments.end(), comparator);
 }
 
-ROP::VirtualMemoryExecutableBytes::VirtualMemoryExecutableBytes(int processPid) {
+ROP::VirtualMemoryBytes::VirtualMemoryBytes(int processPid) {
     this->buildVirtualMemorySegments(processPid);
 
     // They seem to come sorted by default (from /proc/PID/maps), but just in case.
     this->sortSegments();
 }
 
-ROP::VirtualMemoryExecutableBytes::VirtualMemoryExecutableBytes(const std::vector<std::string> execPaths,
-                                                                const std::vector<addressType> baseAddresses) {
+ROP::VirtualMemoryBytes::VirtualMemoryBytes(const std::vector<std::string> execPaths,
+                                            const std::vector<addressType> baseAddresses) {
     this->buildVirtualMemorySegments(execPaths, baseAddresses);
     this->sortSegments();
 }
 
 
-const ROP::BitSizeClass& ROP::VirtualMemoryExecutableBytes::getProcessArchSize() const {
+const ROP::BitSizeClass& ROP::VirtualMemoryBytes::getProcessArchSize() const {
     return this->processArchSize;
 }
 
-const std::vector<ROP::VirtualMemorySegmentBytes>& ROP::VirtualMemoryExecutableBytes::getReadSegments() const {
+const std::vector<ROP::VirtualMemorySegmentBytes>& ROP::VirtualMemoryBytes::getReadSegments() const {
     return this->readSegments;
 }
 
-const std::vector<ROP::VirtualMemorySegmentBytes>& ROP::VirtualMemoryExecutableBytes::getExecutableSegments() const {
+const std::vector<ROP::VirtualMemorySegmentBytes>& ROP::VirtualMemoryBytes::getExecutableSegments() const {
     return this->executableSegments;
 }
 
 
-bool ROP::VirtualMemoryExecutableBytes::isValidVirtualAddress(addressType vAddress) const {
+bool ROP::VirtualMemoryBytes::isValidVirtualAddress(addressType vAddress) const {
     for (const auto& segm : this->readSegments) {
         if (segm.startVirtualAddress <= vAddress && vAddress < segm.endVirtualAddress) {
             return true;
@@ -190,7 +190,7 @@ bool ROP::VirtualMemoryExecutableBytes::isValidVirtualAddress(addressType vAddre
     return false;
 }
 
-ROP::byte ROP::VirtualMemoryExecutableBytes::getByteAtVirtualAddress(addressType vAddress) const {
+ROP::byte ROP::VirtualMemoryBytes::getByteAtVirtualAddress(addressType vAddress) const {
     for (const auto& segm : this->readSegments) {
 
         // As far as I can tell, the difference between "end" and "actualEnd"
@@ -212,7 +212,7 @@ ROP::byte ROP::VirtualMemoryExecutableBytes::getByteAtVirtualAddress(addressType
 }
 
 std::vector<ROP::addressType>
-ROP::VirtualMemoryExecutableBytes::matchBytesInVirtualMemory(ROP::byteSequence bytes) {
+ROP::VirtualMemoryBytes::matchBytesInVirtualMemory(ROP::byteSequence bytes) {
     assertMessage(bytes.size() != 0, "Got empty bytes sequence...");
 
     std::vector<addressType> matchedVirtualAddresses;

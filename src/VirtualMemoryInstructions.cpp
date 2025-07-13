@@ -605,7 +605,7 @@ void ROP::VirtualMemoryInstructions::extendInstructionSequenceAndAddToTrie(
 }
 
 void ROP::VirtualMemoryInstructions::buildInstructionTrie() {
-    for (const VirtualMemorySegmentBytes& segm : this->vmExecBytes.getExecutableSegments()) {
+    for (const VirtualMemorySegmentBytes& segm : this->vmBytes.getExecutableSegments()) {
         if (VirtualMemoryInstructions::SearchForSequencesWithDirectRelativeJumpsInTheMiddle) {
             this->buildRelativeJmpMap(segm);
         }
@@ -634,21 +634,21 @@ void ROP::VirtualMemoryInstructions::buildInstructionTrie() {
 }
 
 ROP::VirtualMemoryInstructions::VirtualMemoryInstructions(int processPid)
-: vmExecBytes(processPid), ic(this->vmExecBytes.getProcessArchSize()) {
-    this->archBitSize = this->vmExecBytes.getProcessArchSize();
+: vmBytes(processPid), ic(this->vmBytes.getProcessArchSize()) {
+    this->archBitSize = this->vmBytes.getProcessArchSize();
     this->buildInstructionTrie();
 }
 
 ROP::VirtualMemoryInstructions::VirtualMemoryInstructions(const std::vector<std::string> execPaths,
                                                           const std::vector<addressType> baseAddresses)
-: vmExecBytes(execPaths, baseAddresses), ic(this->vmExecBytes.getProcessArchSize()) {
-    this->archBitSize = this->vmExecBytes.getProcessArchSize();
+: vmBytes(execPaths, baseAddresses), ic(this->vmBytes.getProcessArchSize()) {
+    this->archBitSize = this->vmBytes.getProcessArchSize();
     this->buildInstructionTrie();
 }
 
-const ROP::VirtualMemoryExecutableBytes
-ROP::VirtualMemoryInstructions::getExecutableBytes() const {
-    return this->vmExecBytes;
+const ROP::VirtualMemoryBytes&
+ROP::VirtualMemoryInstructions::getVirtualMemoryBytes() const {
+    return this->vmBytes;
 }
 
 

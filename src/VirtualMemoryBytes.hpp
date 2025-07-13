@@ -1,5 +1,5 @@
-#ifndef VIRTUAL_MEMORY_EXECUTABLE_BYTES_H
-#define VIRTUAL_MEMORY_EXECUTABLE_BYTES_H
+#ifndef VIRTUAL_MEMORY_BYTES_H
+#define VIRTUAL_MEMORY_BYTES_H
 
 #include <map>
 #include <set>
@@ -23,7 +23,7 @@ namespace ROP {
         std::string sourceName;
     };
 
-    class VirtualMemoryExecutableBytes {
+    class VirtualMemoryBytes {
         BitSizeClass processArchSize;
         std::vector<VirtualMemorySegmentBytes> readSegments;
         std::vector<VirtualMemorySegmentBytes> executableSegments;
@@ -38,7 +38,7 @@ namespace ROP {
          * Get loadable segment bytes by reading the "/proc/PID/maps" file
          * and then loading segments from each ELF file according to the mapping.
          */
-        VirtualMemoryExecutableBytes(int processPid);
+        VirtualMemoryBytes(int processPid);
 
         /**
          * Get loadable segments from each given executable path.
@@ -47,8 +47,8 @@ namespace ROP {
          *                      If this array is empty or has fewer addresses than the total number of files,
          *                      then the value 0 will be used as a default.
          */
-        VirtualMemoryExecutableBytes(const std::vector<std::string> execPaths,
-                                     const std::vector<addressType> baseAddresses);
+        VirtualMemoryBytes(const std::vector<std::string> execPaths,
+                           const std::vector<addressType> baseAddresses);
 
         const BitSizeClass& getProcessArchSize() const;
         const std::vector<VirtualMemorySegmentBytes>& getReadSegments() const;
@@ -64,4 +64,4 @@ namespace ROP {
 }
 
 
-#endif // VIRTUAL_MEMORY_EXECUTABLE_BYTES_H
+#endif // VIRTUAL_MEMORY_BYTES_H

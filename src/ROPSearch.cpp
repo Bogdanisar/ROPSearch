@@ -375,7 +375,7 @@ FilterInstructionSequencesByListCmdArgs(const VirtualMemoryInstructions& vmInstr
     const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
     const bool hasRegisterQueryArg = gListCmdSubparser.is_used("--query");
     const bool packPartialRegistersInQuery = gListCmdSubparser.get<bool>("--pack");
-    BitSizeClass bsc = vmInstructions.getExecutableBytes().getProcessArchSize();
+    BitSizeClass bsc = vmInstructions.getVirtualMemoryBytes().getProcessArchSize();
 
     vector<unsigned> validIndexes;
     for (unsigned idx = 0; idx < instrSeqs.size(); ++idx) {
@@ -518,7 +518,7 @@ void DoListCommand() {
     // Sort the output according to the "--sort" argument.
     SortListOutput(instrSeqs, validIndexes);
 
-    const VirtualMemoryExecutableBytes vmBytes = vmInstructions.getExecutableBytes();
+    const VirtualMemoryBytes vmBytes = vmInstructions.getVirtualMemoryBytes();
     const vector<VirtualMemorySegmentBytes> vmCodeSegments = vmBytes.getExecutableSegments();
 
     // Compute a helper value for each virtual memory segment, so that

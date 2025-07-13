@@ -12,13 +12,13 @@
 #include "common/utils.hpp"
 #include "InsSeqTrie.hpp"
 #include "InstructionConverter.hpp"
-#include "VirtualMemoryExecutableBytes.hpp"
+#include "VirtualMemoryBytes.hpp"
 
 
 namespace ROP {
 
     class VirtualMemoryInstructions {
-        VirtualMemoryExecutableBytes vmExecBytes;
+        VirtualMemoryBytes vmBytes;
         InstructionConverter ic;
         BitSizeClass archBitSize; // 32bit or 64bit;
         InsSeqTrie instructionTrie;
@@ -121,7 +121,7 @@ namespace ROP {
         VirtualMemoryInstructions(const std::vector<std::string> execPaths,
                                   const std::vector<addressType> baseAddresses);
 
-        const VirtualMemoryExecutableBytes getExecutableBytes() const;
+        const VirtualMemoryBytes& getVirtualMemoryBytes() const;
 
         // Return a vector of addresses where the instruction sequence is found in virtual memory.
         std::vector<addressType>
