@@ -92,6 +92,27 @@ ROP::InstructionConverter::InstructionConverter(BitSizeClass archBitSize) {
     this->initCapstone();
 }
 
+
+// Move constructor and move assignment operator.
+
+ROP::InstructionConverter::InstructionConverter(InstructionConverter&& other)
+: InstructionConverter() {
+    // Reuse the move assignment operator code;
+    *this = std::move(other);
+}
+
+ROP::InstructionConverter& ROP::InstructionConverter::operator=(InstructionConverter&& other) {
+    std::swap(this->archBitSize, other.archBitSize);
+    std::swap(this->ksEngine, other.ksEngine);
+    std::swap(this->ksEngineSyntax, other.ksEngineSyntax);
+    std::swap(this->capstoneHandle, other.capstoneHandle);
+    std::swap(this->csHandleSyntax, other.csHandleSyntax);
+    std::swap(this->csHandleDetailModeEnabled, other.csHandleDetailModeEnabled);
+    return *this;
+}
+
+
+// Getter
 ROP::BitSizeClass ROP::InstructionConverter::getArchBitSize() const {
     return this->archBitSize;
 }

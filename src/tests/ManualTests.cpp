@@ -291,7 +291,9 @@ void testKeystoneFrameworkIntegration() {
         "mov %rax, (%r10)",
     };
 
-    InstructionConverter ic(BitSizeClass::BIT64);
+    InstructionConverter ic;
+    ic = InstructionConverter(BitSizeClass::BIT64); // Test the move assignment operator.
+
     for (const string& insSeq : instructionSequences) {
         auto result = ic.convertInstructionSequenceToBytes(insSeq, syntax);
         const byteSequence& byteSeq = result.first;
@@ -307,7 +309,8 @@ void testKeystoneFrameworkIntegration() {
 }
 
 void testCapstoneFrameworkIntegration() {
-    InstructionConverter ic(BitSizeClass::BIT64);
+    InstructionConverter ic;
+    ic = InstructionConverter(BitSizeClass::BIT64); // Test the move assignment operator.
 
     // byteSequence bytes = {
     //     // "endbr64" instruction:
@@ -320,7 +323,6 @@ void testCapstoneFrameworkIntegration() {
     //     (ROP::byte)'\xFF',
     //     (ROP::byte)'\xFF',
     // };
-
 
     byteSequence bytes = {
         // "gs" segment prefix:
@@ -1071,11 +1073,11 @@ int main(int argc, char* argv[]) {
 
     // testVirtualMemoryMapping(getpid()); pn;
     // testPrintCodeSegmentsOfLoadedELFs(getpid()); pn;
-    testVirtualMemoryBytes("vulnerable64bit.exe"); pn;
+    // testVirtualMemoryBytes("vulnerable64bit.exe"); pn;
     // testVirtualMemoryBytesFindMatchingBytes("vulnerable64bit.exe"); pn;
     // testGetExecutableBytesInteractive("vulnerable64bit.exe"); pn;
     // testKeystoneFrameworkIntegration(); pn;
-    // testCapstoneFrameworkIntegration(); pn;
+    testCapstoneFrameworkIntegration(); pn;
     // testCapstoneConvertBytesOfDirectJMPInstructions(); pn;
     // testCapstoneGetRegisterInfo(); pn;
     // testKeystoneCapstoneFrameworkIntegration(); pn;

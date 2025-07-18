@@ -74,6 +74,17 @@ namespace ROP {
         InstructionConverter(BitSizeClass archBitSize);
         InstructionConverter(): InstructionConverter(BitSizeClass::BIT64) {};
 
+        // Copy constructor and copy assignment operator don't make sense
+        // for this class because of the Capstone and Keystone handles.
+        InstructionConverter(InstructionConverter& other) = delete;
+        InstructionConverter& operator=(InstructionConverter& other) = delete;
+
+        // Move constructor and move assignment operator are implemented.
+        InstructionConverter(InstructionConverter&& other);
+        InstructionConverter& operator=(InstructionConverter&& other);
+
+
+        // Getter
         BitSizeClass getArchBitSize() const;
 
         /**

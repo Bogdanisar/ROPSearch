@@ -126,6 +126,18 @@ namespace ROP {
         VirtualMemoryInstructions(const std::vector<std::string> execPaths,
                                   const std::vector<addressType> baseAddresses);
 
+
+        // Copy constructor and copy assignment operator don't make sense
+        // for this class because of the InstructionConverter object.
+        VirtualMemoryInstructions(VirtualMemoryInstructions& other) = delete;
+        VirtualMemoryInstructions& operator=(VirtualMemoryInstructions& other) = delete;
+
+        // Move constructor and move assignment operator are implemented.
+        VirtualMemoryInstructions(VirtualMemoryInstructions&& other) = default;
+        VirtualMemoryInstructions& operator=(VirtualMemoryInstructions&& other) = default;
+
+
+        // Getter.
         const VirtualMemoryBytes& getVirtualMemoryBytes() const;
 
         // Return a vector of addresses where the instruction sequence is found in virtual memory.
