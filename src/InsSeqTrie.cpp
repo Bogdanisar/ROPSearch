@@ -4,9 +4,26 @@
 #include <cassert>
 
 
+// Default constructor.
 ROP::InsSeqTrie::InsSeqTrie() {
     this->root = new Node;
 }
+
+// Move constructor.
+ROP::InsSeqTrie::InsSeqTrie(InsSeqTrie&& other)
+: InsSeqTrie() {
+    // Reuse the move assignment operator code;
+    *this = std::move(other);
+}
+
+// Move assignment operator.
+ROP::InsSeqTrie& ROP::InsSeqTrie::operator=(InsSeqTrie&& other) {
+    std::swap(this->root, other.root);
+    std::swap(this->ignoreOutputSequencesThatStartWithDirectRelativeJumps,
+              other.ignoreOutputSequencesThatStartWithDirectRelativeJumps);
+    return *this;
+}
+
 
 ROP::InsSeqTrie::Node* ROP::InsSeqTrie::addInstruction(
     Node *referenceNode,

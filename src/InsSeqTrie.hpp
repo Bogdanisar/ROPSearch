@@ -42,6 +42,16 @@ namespace ROP {
 
         InsSeqTrie();
 
+        // The copy constructor and copy assignment operator
+        // would require extra work and we don't need them.
+        InsSeqTrie(InsSeqTrie& other) = delete;
+        InsSeqTrie& operator=(InsSeqTrie& other) = delete;
+
+        // Move constructor and move assignment operator are implemented.
+        InsSeqTrie(InsSeqTrie&& other);
+        InsSeqTrie& operator=(InsSeqTrie&& other);
+
+
         Node* addInstruction(const std::string& instruction,
                              addressType vAddress,
                              const RegisterInfo *regInfo = NULL);

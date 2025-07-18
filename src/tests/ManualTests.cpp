@@ -739,7 +739,8 @@ void testFindingInstructionSequenceInMemory(string targetExecutable) {
     // Print the Virtual Memory mapping of the target process.
     testVirtualMemoryMapping(targetPid); pn;
 
-    VirtualMemoryInstructions vmInfo(targetPid);
+    VirtualMemoryInstructions vmInfo;
+    vmInfo = VirtualMemoryInstructions(targetPid); // Test the move assignment operator.
     printf("Finished initializing vmInfo object!\n\n");
 
     // These are some sample instruction sequences found in libc.so.6
@@ -1077,12 +1078,12 @@ int main(int argc, char* argv[]) {
     // testVirtualMemoryBytesFindMatchingBytes("vulnerable64bit.exe"); pn;
     // testGetExecutableBytesInteractive("vulnerable64bit.exe"); pn;
     // testKeystoneFrameworkIntegration(); pn;
-    testCapstoneFrameworkIntegration(); pn;
+    // testCapstoneFrameworkIntegration(); pn;
     // testCapstoneConvertBytesOfDirectJMPInstructions(); pn;
     // testCapstoneGetRegisterInfo(); pn;
     // testKeystoneCapstoneFrameworkIntegration(); pn;
     // testInstructionNormalization(); pn;
-    // testFindingInstructionSequenceInMemory("vulnerable64bit.exe"); pn;
+    testFindingInstructionSequenceInMemory("vulnerable64bit.exe"); pn;
     // printVMInstructionSequences("vulnerable64bit.exe"); pn;
     // testFilterVMInstructionSequencesByRegisterInfo("vulnerable64bit.exe"); pn;
     // testXMLReading();pn;
