@@ -35,6 +35,12 @@ namespace ROP {
 
         public:
         /**
+         * Default constructor so that the object can be initialized empty.
+         * Don't use an object initialized in this way.
+        */
+        VirtualMemoryBytes() = default;
+
+        /**
          * Get loadable segment bytes by reading the "/proc/PID/maps" file
          * and then loading segments from each ELF file according to the mapping.
          */

@@ -105,6 +105,12 @@ namespace ROP {
         static bool computeRegisterInfo;
 
         /**
+         * Default constructor so that the object can be initialized empty.
+         * Don't use an object initialized in this way.
+        */
+        VirtualMemoryInstructions() = default;
+
+        /**
          * Get executable bytes by reading the "/proc/PID/maps" file
          * and then loading executable segments from each ELF file according to the mapping.
          */

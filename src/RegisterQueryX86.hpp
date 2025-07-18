@@ -4,9 +4,8 @@
 #include <string>
 
 #include <capstone/capstone.h>
-#include "common/types.hpp"
-#include "common/utils.hpp"
 
+#include "common/types.hpp"
 #include "InstructionConverter.hpp"
 
 
