@@ -1095,6 +1095,24 @@ const char * ROP::InstructionConverter::convertCapstoneRegIdToShortString(x86_re
     return regCString;
 }
 
+std::string ROP::InstructionConverter::convertCapstoneRegIdToShortStringLowercase(x86_reg regId) {
+    // Get a string like "RAX";
+    const char *regCString = InstructionConverter::convertCapstoneRegIdToShortString(regId);
+
+    if (strcmp(regCString, "N/A") == 0) {
+        return regCString;
+    }
+
+    std::string regString(regCString);
+
+    // Convert the string to lower case.
+    for (char& currChar : regString) {
+        currChar = tolower(currChar);
+    }
+
+    return regString;
+}
+
 x86_reg ROP::InstructionConverter::convertRegShortStringToCapstoneRegId(std::string regString) {
     // Convert regString to upper case.
     for (char& currChar : regString) {

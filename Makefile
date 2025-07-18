@@ -42,9 +42,12 @@ bin/Log.o: src/Log.cpp $(shell find ./src -name "*.hpp")
 bin/RegisterQueryX86.o: src/RegisterQueryX86.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) $(OPT_MAIN) -c src/RegisterQueryX86.cpp -o $@
 
+bin/PayloadGenX86.o: src/PayloadGenX86.cpp $(shell find ./src -name "*.hpp")
+	g++ $(wFlags) $(OPT_MAIN) -c src/PayloadGenX86.cpp -o $@
+
 classObjectFiles := bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryBytes.o \
 				    bin/InstructionConverter.o bin/InsSeqTrie.o bin/VirtualMemoryInstructions.o \
-					bin/Log.o bin/RegisterQueryX86.o
+					bin/Log.o bin/RegisterQueryX86.o bin/PayloadGenX86.o
 
 
 # Main program

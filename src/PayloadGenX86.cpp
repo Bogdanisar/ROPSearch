@@ -1,0 +1,310 @@
+#include "PayloadGenX86.hpp"
+
+#include <cassert>
+#include <fstream>
+#include <sstream>
+
+
+void ROP::PayloadGenX86::preconfigureVMInstructionsObject() {
+    VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = 6;
+    VirtualMemoryInstructions::SearchForSequencesWithDirectRelativeJumpsInTheMiddle = true;
+    VirtualMemoryInstructions::IgnoreOutputSequencesThatStartWithDirectRelativeJumps = true;
+    VirtualMemoryInstructions::innerAssemblySyntax = ROP::AssemblySyntax::Intel;
+    VirtualMemoryInstructions::computeRegisterInfo = true;
+}
+
+void ROP::PayloadGenX86::preloadTheRegisterMaps() {
+    BitSizeClass archSize = this->processArchSize;
+
+    // Compute values for `this->regToMainReg` member.
+    if (archSize == BitSizeClass::BIT64) {
+        std::vector<x86_reg> regIdentifiers = {
+            X86_REG_RAX,
+            X86_REG_RBX,
+            X86_REG_RCX,
+            X86_REG_RDX,
+            X86_REG_RSI,
+            X86_REG_RDI,
+            X86_REG_RBP,
+            X86_REG_RSP,
+            X86_REG_RIP,
+        };
+
+        for (x86_reg currReg : regIdentifiers) {
+            this->regToMainReg[currReg] = currReg;
+        }
+    }
+    else {
+        assert(archSize == BitSizeClass::BIT32);
+        this->regToMainReg[X86_REG_RAX] = X86_REG_EAX;
+        this->regToMainReg[X86_REG_RBX] = X86_REG_EBX;
+        this->regToMainReg[X86_REG_RCX] = X86_REG_ECX;
+        this->regToMainReg[X86_REG_RDX] = X86_REG_EDX;
+        this->regToMainReg[X86_REG_RSI] = X86_REG_ESI;
+        this->regToMainReg[X86_REG_RDI] = X86_REG_EDI;
+        this->regToMainReg[X86_REG_RBP] = X86_REG_EBP;
+        this->regToMainReg[X86_REG_RSP] = X86_REG_ESP;
+        this->regToMainReg[X86_REG_RIP] = X86_REG_EIP;
+    }
+
+    // Compute values for `this->regToPartialRegs` member.
+    std::vector<std::vector<x86_reg>> partialRegisterGroups = {
+        { X86_REG_RAX, X86_REG_EAX, X86_REG_AX, X86_REG_AH, X86_REG_AL },
+        { X86_REG_RBX, X86_REG_EBX, X86_REG_BX, X86_REG_BH, X86_REG_BL },
+        { X86_REG_RCX, X86_REG_ECX, X86_REG_CX, X86_REG_CH, X86_REG_CL },
+        { X86_REG_RDX, X86_REG_EDX, X86_REG_DX, X86_REG_DH, X86_REG_DL },
+        { X86_REG_RSI, X86_REG_ESI, X86_REG_SI, X86_REG_SIL },
+        { X86_REG_RDI, X86_REG_EDI, X86_REG_DI, X86_REG_DIL },
+        { X86_REG_RBP, X86_REG_EBP, X86_REG_BP, X86_REG_BPL },
+        { X86_REG_RSP, X86_REG_ESP, X86_REG_SP, X86_REG_SPL },
+        { X86_REG_RIP, X86_REG_EIP },
+    };
+    for (std::vector<x86_reg> regGroup : partialRegisterGroups) {
+        x86_reg leader = regGroup[0];
+
+        if (archSize == BitSizeClass::BIT64) {
+            this->regToPartialRegs[leader] = std::set<x86_reg>(regGroup.begin(), regGroup.end());
+        }
+        else {
+            assert(archSize == BitSizeClass::BIT32);
+            regGroup.erase(regGroup.begin());
+            this->regToPartialRegs[leader] = std::set<x86_reg>(regGroup.begin(), regGroup.end());
+        }
+    }
+
+    // Compute values for `this->regToEndingPartialRegs` member.
+    for (const auto& it : this->regToPartialRegs) {
+        x86_reg leader = it.first;
+        std::set<x86_reg> regGroup = it.second;
+
+        regGroup.erase(X86_REG_AH);
+        regGroup.erase(X86_REG_BH);
+        regGroup.erase(X86_REG_CH);
+        regGroup.erase(X86_REG_DH);
+
+        this->regToEndingPartialRegs[leader] = regGroup;
+    }
+}
+
+void ROP::PayloadGenX86::sortInstructionSequences() {
+    // TODO;
+}
+
+ROP::PayloadGenX86::PayloadGenX86(int processPid) {
+    this->preconfigureVMInstructionsObject();
+    this->vmInstructionsObject = VirtualMemoryInstructions(processPid);
+    this->instrSeqs = this->vmInstructionsObject.getInstructionSequences(&this->regInfoSeqs);
+    assertMessage(this->instrSeqs.size() == this->regInfoSeqs.size(), "Inner logic error.");
+
+    this->processArchSize = this->vmInstructionsObject.getVirtualMemoryBytes().getProcessArchSize();
+    this->numBytesOfAddress = (this->processArchSize == BitSizeClass::BIT64) ? 8 : 4;
+
+    this->sortInstructionSequences();
+    this->preloadTheRegisterMaps();
+}
+
+ROP::PayloadGenX86::PayloadGenX86(const std::vector<std::string> execPaths,
+                                  const std::vector<addressType> baseAddresses) {
+    this->preconfigureVMInstructionsObject();
+    this->vmInstructionsObject = VirtualMemoryInstructions(execPaths, baseAddresses);
+    this->instrSeqs = this->vmInstructionsObject.getInstructionSequences(&this->regInfoSeqs);
+    assertMessage(this->instrSeqs.size() == this->regInfoSeqs.size(), "Inner logic error.");
+
+    this->processArchSize = this->vmInstructionsObject.getVirtualMemoryBytes().getProcessArchSize();
+    this->numBytesOfAddress = (this->processArchSize == BitSizeClass::BIT64) ? 8 : 4;
+
+    this->sortInstructionSequences();
+    this->preloadTheRegisterMaps();
+}
+
+
+void ROP::PayloadGenX86::appendInstructionSequenceToPayload(unsigned sequenceIndex) {
+    InstructionConverter ic(this->processArchSize);
+    const auto& currentPair = this->instrSeqs[sequenceIndex];
+    addressType address = currentPair.first;
+    const std::vector<std::string>& instrSequence = currentPair.second;
+    std::string sequenceString = ic.concatenateInstructionsAsm(instrSequence);
+
+    byteSequence addressBytes;
+    if (this->processArchSize == BitSizeClass::BIT64) {
+        addressBytes = BytesOfInteger((uint64_t)address);
+    }
+    else {
+        assert(this->processArchSize == BitSizeClass::BIT32);
+        addressBytes = BytesOfInteger((uint32_t)address);
+    }
+
+    this->payloadBytes.insert(this->payloadBytes.end(), addressBytes.begin(), addressBytes.end());
+
+    std::ostringstream ss;
+
+    ss << "# Instruction sequence: '" << sequenceString << "'";
+    this->pythonScript.push_back(ss.str()); ss.str("");
+
+    ss << "# Address: 0x";
+    ss << std::hex << std::setfill('0');
+    ss << std::setw(2 * this->numBytesOfAddress) << address;
+    this->pythonScript.push_back(ss.str()); ss.str("");
+
+    ss << "payload += b'";
+    ss << std::hex << std::uppercase << std::setfill('0');
+    for (ROP::byte currByte : addressBytes) {
+        ss << "\\x" << std::setw(2) << (unsigned)currByte;
+    }
+    ss << "'";
+    this->pythonScript.push_back(ss.str()); ss.str("");
+
+    // New line;
+    this->pythonScript.push_back("");
+}
+
+void ROP::PayloadGenX86::appendBytesOfRegisterSizedConstantToPayload(const uint64_t cValue) {
+    byteSequence bytes;
+    if (this->processArchSize == BitSizeClass::BIT64) {
+        bytes = BytesOfInteger((uint64_t)cValue);
+    }
+    else {
+        assert(this->processArchSize == BitSizeClass::BIT32);
+        bytes = BytesOfInteger((uint32_t)cValue);
+    }
+
+    this->payloadBytes.insert(this->payloadBytes.end(), bytes.begin(), bytes.end());
+
+    std::ostringstream ss;
+    ss << "# Value: 0x";
+    ss << std::hex << std::setfill('0');
+    ss << std::setw(2 * this->numBytesOfAddress) << cValue;
+    this->pythonScript.push_back(ss.str()); ss.str("");
+
+    ss << "payload += b'";
+    ss << std::hex << std::uppercase << std::setfill('0');
+    for (ROP::byte currByte : bytes) {
+        ss << "\\x" << std::setw(2) << (unsigned)currByte;
+    }
+    ss << "'";
+    this->pythonScript.push_back(ss.str()); ss.str("");
+}
+
+
+unsigned ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& targetInstruction,
+                                                                      const std::set<x86_reg>& forbiddenRegisters) {
+    unsigned foundIndex = this->instrSeqs.size();
+    for (unsigned sequenceIndex = 0; sequenceIndex < this->instrSeqs.size(); ++sequenceIndex) {
+        auto addressAndSequencePair = this->instrSeqs[sequenceIndex];
+        addressType address = addressAndSequencePair.first;
+        const std::vector<std::string>& currInstrSequence = addressAndSequencePair.second;
+        const std::vector<RegisterInfo>& currRegInfoSequence = this->regInfoSeqs[sequenceIndex];
+        UNUSED(address);
+
+        // See if the first instruction in the sequence is the one that we want.
+        assert(currInstrSequence.size() > 0);
+        if (currInstrSequence[0] != targetInstruction) {
+            continue;
+        }
+
+        // See if the other instructions in the sequence don't break anything important.
+        bool sequenceIsGood = true;
+        for (unsigned instructionIndex = 1; instructionIndex < currInstrSequence.size(); ++instructionIndex) {
+            const std::string& currentInstruction = currInstrSequence[instructionIndex];
+            const RegisterInfo& currentRegInfo = currRegInfoSequence[instructionIndex];
+            UNUSED(currentInstruction);
+
+            if (currentRegInfo.writesMemoryOperand) {
+                sequenceIsGood = false;
+                break;
+            }
+
+            bool instructionIsGood = true;
+            for (x86_reg forbiddenRegId : forbiddenRegisters) {
+                bool writesToRegister = currentRegInfo.wRegs.test(forbiddenRegId);
+                if (writesToRegister) {
+                    instructionIsGood = false;
+                    break;
+                }
+            }
+
+            if (!instructionIsGood) {
+                sequenceIsGood = false;
+                break;
+            }
+        }
+
+        if (sequenceIsGood) {
+            foundIndex = sequenceIndex;
+            break;
+        }
+    }
+
+    return foundIndex;
+}
+
+
+bool ROP::PayloadGenX86::searchGadgetForAssignValueToRegister(x86_reg reg,
+                                                              const uint64_t cValue,
+                                                              std::set<x86_reg> forbiddenRegisters,
+                                                              bool shouldAppend) {
+    std::string regString = InstructionConverter::convertCapstoneRegIdToShortStringLowercase(reg);
+    std::string targetInstruction = "pop " + regString;
+
+    // Append the current target register to the list of forbidden registers;
+    const std::set<x86_reg>& localForbiddenRegs = this->regToPartialRegs[reg];
+    forbiddenRegisters.insert(localForbiddenRegs.begin(), localForbiddenRegs.end());
+
+    unsigned sequenceIndex = this->searchForSequenceStartingWithInstruction(targetInstruction, forbiddenRegisters);
+
+    if (sequenceIndex == this->instrSeqs.size()) {
+        LogWarn("Can't find a useful instruction sequence containing \"%s\".", targetInstruction.c_str());
+        return false;
+    }
+
+    if (shouldAppend) {
+        this->appendInstructionSequenceToPayload(sequenceIndex);
+        this->appendBytesOfRegisterSizedConstantToPayload(cValue);
+    }
+
+    return true;
+}
+
+
+static inline std::string GetPathToFileInSameParentDirectory(const std::string& filename) {
+    // Get the path to the running executable.
+    std::filesystem::path execPath = GetAbsPathToProcExecutable();
+
+    // Remove the file path component at the end of the path.
+    std::filesystem::path parentDirPath = execPath.remove_filename();
+
+    // Append the filename component to the path.
+    std::filesystem::path filePath = parentDirPath / filename;
+    const std::string& filePathString = filePath.string();
+
+    return filePathString;
+}
+
+void ROP::PayloadGenX86::writePayloadToFile(const std::string& filename) {
+    const std::string& filePathString = GetPathToFileInSameParentDirectory(filename);
+
+    // Open the file for writing bytes.
+    std::ofstream fout(filePathString, std::ios::binary);
+    if (fout.fail()) {
+        exitError("Can't open file (%s) for writing the payload bytes.", filePathString.c_str());
+    }
+
+    // Write the payload bytes to the file.
+    fout.write((const char *)this->payloadBytes.data(), this->payloadBytes.size());
+}
+
+void ROP::PayloadGenX86::writeScriptToFile(const std::string& filename) {
+    const std::string& filePathString = GetPathToFileInSameParentDirectory(filename);
+
+    // Open the file for writing.
+    std::ofstream fout(filePathString);
+    if (fout.fail()) {
+        exitError("Can't open file (%s) for writing the script.", filePathString.c_str());
+    }
+
+    for (const std::string& line : this->pythonScript) {
+        fout << line << '\n';
+    }
+}
+
+

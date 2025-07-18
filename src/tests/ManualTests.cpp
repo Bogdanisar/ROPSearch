@@ -11,6 +11,7 @@
 #include "../common/utils.hpp"
 #include "../ELFParser.hpp"
 #include "../InstructionConverter.hpp"
+#include "../PayloadGenX86.hpp"
 #include "../RegisterQueryX86.hpp"
 #include "../VirtualMemoryBytes.hpp"
 #include "../VirtualMemoryInstructions.hpp"
@@ -1062,6 +1063,18 @@ void testConvertBytesToIntFunction() {
     printf("int: %i\n", (1 << 31));
 }
 
+void testPayloadGeneration(string targetExecutable) {
+    pv(targetExecutable); pn;
+    int targetPid = getPidOfExecutable(targetExecutable);
+    pv(targetPid); pn;
+
+    PayloadGenX86 generator(targetPid);
+    generator.searchGadgetForAssignValueToRegister(X86_REG_RAX, 0x11223344, {X86_REG_RIP, X86_REG_RSP}, true);
+
+    generator.writePayloadToFile("_payload.dat");
+    generator.writeScriptToFile("_payloadScript.py");
+}
+
 
 int main(int argc, char* argv[]) {
     UNUSED(argc); UNUSED(argv);
@@ -1083,7 +1096,7 @@ int main(int argc, char* argv[]) {
     // testCapstoneGetRegisterInfo(); pn;
     // testKeystoneCapstoneFrameworkIntegration(); pn;
     // testInstructionNormalization(); pn;
-    testFindingInstructionSequenceInMemory("vulnerable64bit.exe"); pn;
+    // testFindingInstructionSequenceInMemory("vulnerable64bit.exe"); pn;
     // printVMInstructionSequences("vulnerable64bit.exe"); pn;
     // testFilterVMInstructionSequencesByRegisterInfo("vulnerable64bit.exe"); pn;
     // testXMLReading();pn;
@@ -1096,6 +1109,7 @@ int main(int argc, char* argv[]) {
     // testShowCapstoneInstructionInfo(); pn;
     // testEndianness(); pn;
     // testConvertBytesToIntFunction(); pn;
+    testPayloadGeneration("vulnerable64bit.exe"); pn;
 
     return 0;
 }

@@ -169,6 +169,8 @@ namespace ROP {
         static const char * convertCapstoneRegIdToString(x86_reg regId);
         // Turn X86_REG_RAX to "RAX";
         static const char * convertCapstoneRegIdToShortString(x86_reg regId);
+        // Turn X86_REG_RAX to "rax";
+        static std::string convertCapstoneRegIdToShortStringLowercase(x86_reg regId);
 
         // Turn "rax" to X86_REG_RAX;
         static x86_reg convertRegShortStringToCapstoneRegId(std::string regString);
