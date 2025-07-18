@@ -72,6 +72,7 @@ namespace ROP {
 
         public:
         InstructionConverter(BitSizeClass archBitSize);
+        InstructionConverter(): InstructionConverter(BitSizeClass::BIT64) {};
 
         BitSizeClass getArchBitSize() const;
 
