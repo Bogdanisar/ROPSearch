@@ -1072,6 +1072,7 @@ void testPayloadGeneration() {
     pv(targetPid); pn;
 
     PayloadGenX86 generator(targetPid);
+    generator.numVariantsToOutputForEachStep = 0;
     generator.searchGadgetForAssignValueToRegister(X86_REG_RAX, 0x11223344, {}, true);
 
     generator.writePayloadToFile("_payload.dat");

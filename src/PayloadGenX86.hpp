@@ -109,6 +109,7 @@ namespace ROP {
          */
         void appendPaddingBytesToPayload(const unsigned numPaddingBytes, bool isComment, int indentSize);
 
+
         /**
          * Some instructions are acceptable inside an instruction sequence,
          * but it's harder to check for them so we hardcode them in this method.
@@ -132,6 +133,9 @@ namespace ROP {
          */
         int checkInstructionIsRetAndGetImmediateValue(const std::string& instruction,
                                                       const RegisterInfo& regInfo);
+
+
+        unsigned getNumberOfVariantsToOutputForThisStep(unsigned numFoundVariants);
 
 
         struct SequenceLookupResult {
@@ -158,6 +162,7 @@ namespace ROP {
                                                   bool shouldAppend = false);
 
         public:
+        unsigned numVariantsToOutputForEachStep = 1; // Set to `0` for "All of them".
         void writePayloadToFile(const std::string& filename);
         void writeScriptToFile(const std::string& filename);
 

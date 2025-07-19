@@ -274,6 +274,14 @@ int ROP::PayloadGenX86::checkInstructionIsRetAndGetImmediateValue(const std::str
     return (bytesRead == (int)instruction.size()) ? (int)immediateValue : -1;
 }
 
+unsigned ROP::PayloadGenX86::getNumberOfVariantsToOutputForThisStep(unsigned numFoundVariants) {
+    if (this->numVariantsToOutputForEachStep == 0) {
+        return numFoundVariants;
+    }
+
+    return std::min(this->numVariantsToOutputForEachStep, numFoundVariants);
+}
+
 
 std::vector<ROP::PayloadGenX86::SequenceLookupResult>
 ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& targetInstruction,
@@ -389,7 +397,9 @@ bool ROP::PayloadGenX86::searchGadgetForAssignValueToRegister(x86_reg regKey,
 
     if (shouldAppend) {
         this->addLineToPythonScript("if True:");
-        for (unsigned idx = 0; idx < seqResults.size(); ++idx) {
+
+        unsigned numToOutput = this->getNumberOfVariantsToOutputForThisStep(seqResults.size());
+        for (unsigned idx = 0; idx < numToOutput; ++idx) {
             bool isComment = (idx != 0);
             this->appendInstructionSequenceToPayload(seqResults[idx].index, isComment, 4);
             this->appendBytesOfRegisterSizedConstantToPayload(cValue, isComment, 4);
