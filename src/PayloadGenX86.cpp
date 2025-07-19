@@ -87,7 +87,7 @@ void ROP::PayloadGenX86::preloadTheRegisterMaps() {
     }
 }
 
-void ROP::PayloadGenX86::preloadThePopInstructionMap() {
+void ROP::PayloadGenX86::preloadTheStackPointerInstructionToOffsetMap() {
     std::map<unsigned, std::vector<std::string>> offsetToRegs;
     offsetToRegs[8] = {
         "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", // "rsp",
@@ -114,7 +114,23 @@ void ROP::PayloadGenX86::preloadThePopInstructionMap() {
         const std::vector<std::string>& regStringList = it.second;
         for (const std::string& regString : regStringList) {
             std::string popInstruction = "pop " + regString;
-            this->popInstructionToStackPointerOffset[popInstruction] = offset;
+            this->stackPointerIncreaseInstructionToOffset[popInstruction] = offset;
+        }
+    }
+
+    this->stackPointerIncreaseInstructionToOffset["inc rsp"] = 1;
+    this->stackPointerIncreaseInstructionToOffset["inc esp"] = 1;
+    this->stackPointerIncreaseInstructionToOffset["inc sp"] = 1;
+    this->stackPointerIncreaseInstructionToOffset["inc spl"] = 1;
+
+    for (unsigned offset = 0; offset <= 0xFF; ++offset) {
+        for (std::string regString : {"rsp", "esp", "sp", "spl"}) {
+            char buff[10];
+            memset(buff, 0, sizeof(buff));
+            sprintf(buff, "%hhx", (unsigned char)offset);
+
+            std::string instruction = "add " + regString + ", 0x" + buff;
+            this->stackPointerIncreaseInstructionToOffset[instruction] = offset;
         }
     }
 }
@@ -144,7 +160,7 @@ ROP::PayloadGenX86::PayloadGenX86(int processPid) {
     this->numBytesOfAddress = (this->processArchSize == BitSizeClass::BIT64) ? 8 : 4;
 
     this->preloadTheRegisterMaps();
-    this->preloadThePopInstructionMap();
+    this->preloadTheStackPointerInstructionToOffsetMap();
 }
 
 ROP::PayloadGenX86::PayloadGenX86(const std::vector<std::string> execPaths,
@@ -158,7 +174,7 @@ ROP::PayloadGenX86::PayloadGenX86(const std::vector<std::string> execPaths,
     this->numBytesOfAddress = (this->processArchSize == BitSizeClass::BIT64) ? 8 : 4;
 
     this->preloadTheRegisterMaps();
-    this->preloadThePopInstructionMap();
+    this->preloadTheStackPointerInstructionToOffsetMap();
 }
 
 
@@ -295,8 +311,8 @@ bool ROP::PayloadGenX86::instructionIsBlacklistedInSequence(const std::string& i
 int ROP::PayloadGenX86::instructionIsSafeStackPointerIncrease(const std::string& instruction,
                                                               const RegisterInfo& regInfo,
                                                               std::set<x86_reg> forbiddenRegisters) {
-    const auto& mapEnd = this->popInstructionToStackPointerOffset.end();
-    if (this->popInstructionToStackPointerOffset.find(instruction) == mapEnd) {
+    const auto& mapEnd = this->stackPointerIncreaseInstructionToOffset.end();
+    if (this->stackPointerIncreaseInstructionToOffset.find(instruction) == mapEnd) {
         return -1;
     }
 
@@ -316,7 +332,7 @@ int ROP::PayloadGenX86::instructionIsSafeStackPointerIncrease(const std::string&
         }
     }
 
-    int offset = (int)this->popInstructionToStackPointerOffset[instruction];
+    int offset = (int)this->stackPointerIncreaseInstructionToOffset[instruction];
     return offset;
 }
 
@@ -394,7 +410,7 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
                                                                         forbiddenRegisters);
             bool isSafeStackPointerIncreaseInstruction = (rspOffset != -1);
             if (isSafeStackPointerIncreaseInstruction) {
-                // The current instruction is something like "pop rbx".
+                // The current instruction is something like "pop rbx" or "add esp, 0x20".
                 // We checked and it doesn't write to any forbidden registers, so it's fine;
                 totalNumPaddingNeeded += rspOffset;
                 continue;

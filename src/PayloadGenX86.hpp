@@ -63,13 +63,18 @@ namespace ROP {
 
         /**
          * Example:
-         * popInstructionToStackPointerOffset["pop rcx"] = 8;
-         * popInstructionToStackPointerOffset["pop ecx"] = 4;
+         * stackPointerIncreaseInstructionToOffset["pop rcx"] = 8;
+         * stackPointerIncreaseInstructionToOffset["pop ecx"] = 4;
+         * stackPointerIncreaseInstructionToOffset["pop cx"] = 2;
+         * stackPointerIncreaseInstructionToOffset["add rsp, 0x20"] = 32;
+         * stackPointerIncreaseInstructionToOffset["add esp, 0x6"] = 6;
+         * stackPointerIncreaseInstructionToOffset["add sp, 0xff"] = 255;
+         * stackPointerIncreaseInstructionToOffset["inc esp"] = 1;
          * @note
          * Instructions that pop the stack pointer (e.g. "pop rsp")
          * are intentionally excluded from this map.
          */
-        std::map<std::string, unsigned> popInstructionToStackPointerOffset;
+        std::map<std::string, unsigned> stackPointerIncreaseInstructionToOffset;
 
 
         byteSequence payloadBytes = {};
@@ -79,7 +84,7 @@ namespace ROP {
         void preconfigureVMInstructionsObject();
         void computeRelevantSequenceIndexes();
         void preloadTheRegisterMaps();
-        void preloadThePopInstructionMap();
+        void preloadTheStackPointerInstructionToOffsetMap();
 
         public:
         /**
