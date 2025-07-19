@@ -180,17 +180,14 @@ void ROP::PayloadGenX86::appendBytesOfRegisterSizedConstantToPayload(const uint6
     this->payloadBytes.insert(this->payloadBytes.end(), bytes.begin(), bytes.end());
 
     std::ostringstream ss;
-    ss << "# Value: 0x";
-    ss << std::hex << std::setfill('0');
-    ss << std::setw(2 * this->numBytesOfAddress) << cValue;
-    this->pythonScript.push_back(ss.str()); ss.str("");
-
     ss << "payload += b'";
     ss << std::hex << std::uppercase << std::setfill('0');
     for (ROP::byte currByte : bytes) {
         ss << "\\x" << std::setw(2) << (unsigned)currByte;
     }
-    ss << "'";
+    ss << "' # Value: 0x";
+    ss << std::hex << std::setfill('0');
+    ss << std::setw(2 * this->numBytesOfAddress) << cValue;
     this->pythonScript.push_back(ss.str()); ss.str("");
 }
 
