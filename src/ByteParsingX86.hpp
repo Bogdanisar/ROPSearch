@@ -8,6 +8,11 @@
 #include "common/utils.hpp"
 
 
+#pragma region Prefix, REX bytes
+#if false
+int ________Prefix_REX_Bytes________;
+#endif
+
 /** Check if this byte represents an instruction prefix byte in x86. */
 static inline ROP::PrefixByteX86 ByteIsInstructionPrefix(ROP::byte b) {
     switch (b) {
@@ -56,27 +61,17 @@ static inline bool ByteIsValidRexByte(ROP::byte b) {
     // return (0x40 <= b && b <= 0x4F);
 }
 
-static inline bool BytesAreRetInstruction(const ROP::byteSequence& bSeq, int first, int last) {
-    const int numBytes = (last - first + 1);
+#pragma endregion Prefix, REX bytes
 
-    // "ret" instruction.
-    if (numBytes == 1 && bSeq[first] == 0xC3) { return true; }
 
-    // "ret imm16" instruction.
-    if (numBytes == 3 && bSeq[first] == 0xC2) { return true; }
+#pragma region Unconditional direct JMPs
+#if false
+int ________Unconditional_direct_JMPs________;
+#endif
 
-    return false;
-}
+// Either unconditional direct relative jumps (RIP-relative offset is hardcoded in instruction bytes)
+// or unconditional direct absolute jumps (new RIP absolute address is hardcoded in instruction bytes).
 
-/**
- * Check if this is a relative "call" instruction ("relative" meaning "RIP = RIP + offset").
- * @note As an asm string, this is represented as "call finalAddress",
- *       even though only the offset is encoded.
- */
-static inline bool BytesAreRelativeCallInstruction64bit(const ROP::byteSequence& bSeq, int first, int last) {
-    const int numBytes = (last - first + 1);
-    return (numBytes == 5 && bSeq[first] == 0xE8);
-}
 
 /**
  * Check if this is a relative "jmp" instruction ("relative" meaning "RIP = RIP + offset").
@@ -252,6 +247,44 @@ static inline bool BytesAreDirectAbsoluteJmpInstruction32bit(const ROP::byteSequ
     return false;
 }
 
+#pragma endregion Unconditional direct JMPs
+
+
+#pragma region Misc
+#if false
+int ________Misc________;
+#endif
+
+/**
+ * Check if this is a relative "call" instruction ("relative" meaning "RIP = RIP + offset").
+ * @note As an asm string, this is represented as "call finalAddress",
+ *       even though only the offset is encoded.
+ */
+static inline bool BytesAreRelativeCallInstruction64bit(const ROP::byteSequence& bSeq, int first, int last) {
+    const int numBytes = (last - first + 1);
+    return (numBytes == 5 && bSeq[first] == 0xE8);
+}
+
+static inline bool BytesAreRetInstruction(const ROP::byteSequence& bSeq, int first, int last) {
+    const int numBytes = (last - first + 1);
+
+    // "ret" instruction.
+    if (numBytes == 1 && bSeq[first] == 0xC3) { return true; }
+
+    // "ret imm16" instruction.
+    if (numBytes == 3 && bSeq[first] == 0xC2) { return true; }
+
+    return false;
+}
+
+#pragma endregion Misc
+
+
+#pragma region High level
+#if false
+int ________High_level________;
+#endif
+
 /**
  * Check if the given bytes represent an instruction
  * that is useful as the ending instruction of an instruction sequence.
@@ -329,6 +362,8 @@ static inline bool BytesAreBadInstructionInsideSequence(const ROP::byteSequence&
 
     return false;
 }
+
+#pragma endregion High level
 
 
 #endif // BYTE_PARSING_X86_H
