@@ -195,6 +195,18 @@ void ROP::PayloadGenX86::appendBytesOfRegisterSizedConstantToPayload(const uint6
     this->pythonScript.push_back(ss.str()); ss.str("");
 }
 
+void ROP::PayloadGenX86::appendPaddingBytesToPayload(const unsigned numPaddingBytes) {
+    if (numPaddingBytes == 0) {
+        return;
+    }
+
+    this->payloadBytes.insert(this->payloadBytes.end(), numPaddingBytes, 0xFF);
+
+    std::ostringstream ss;
+    ss << "payload += b'0xFF' * " << numPaddingBytes;
+    this->pythonScript.push_back(ss.str()); ss.str("");
+}
+
 
 bool ROP::PayloadGenX86::instructionIsWhitelistedInSequence(const std::string& instruction,
                                                             const RegisterInfo& regInfo) {

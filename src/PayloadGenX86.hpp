@@ -101,6 +101,12 @@ namespace ROP {
         void appendBytesOfRegisterSizedConstantToPayload(const uint64_t cValue);
 
         /**
+         * Appends a total number of `numPaddingBytes` padding bytes with value `0xFF`
+         * to the payload bytes and to the payload script.
+         */
+        void appendPaddingBytesToPayload(const unsigned numPaddingBytes);
+
+        /**
          * Some instructions are acceptable inside an instruction sequence,
          * but it's harder to check for them so we hardcode them in this method.
          */
