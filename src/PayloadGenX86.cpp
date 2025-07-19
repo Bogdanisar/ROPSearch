@@ -221,7 +221,8 @@ void ROP::PayloadGenX86::appendInstructionSequenceToPayload(unsigned sequenceInd
 
     // Add "# 0xAddress: Instruction Sequence" comment.
     ss << "# 0x";
-    ss << std::hex << std::setfill('0') << std::setw(2 * this->numBytesOfAddress) << address;
+    ss << std::hex << std::nouppercase << std::setfill('0');
+    ss << std::setw(2 * this->numBytesOfAddress) << address;
     ss << ": " << sequenceString;
 
     this->addLineToPythonScript(ss.str(), isComment, indentSize); ss.str("");
