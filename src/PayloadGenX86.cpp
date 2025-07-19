@@ -219,7 +219,16 @@ unsigned ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std:
             const RegisterInfo& currentRegInfo = currRegInfoSequence[instructionIndex];
             UNUSED(currentInstruction);
 
+            // Writing to memory could overwrite something important.
+            // Or we might not have access to that address, which would cause a segmentation fault.
             if (currentRegInfo.writesMemoryOperand) {
+                sequenceIsGood = false;
+                break;
+            }
+
+            // Reading memory isn't by itself a bad side-effect in principle, but we might read from an address
+            // for which we don't have permissions, which would cause a segmentation fault.
+            if (currentRegInfo.readsMemoryOperand) {
                 sequenceIsGood = false;
                 break;
             }
