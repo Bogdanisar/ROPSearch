@@ -87,6 +87,38 @@ void ROP::PayloadGenX86::preloadTheRegisterMaps() {
     }
 }
 
+void ROP::PayloadGenX86::preloadThePopInstructionMap() {
+    std::map<unsigned, std::vector<std::string>> offsetToRegs;
+    offsetToRegs[8] = {
+        "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", // "rsp",
+        "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
+    };
+    offsetToRegs[4] = {
+        "eax", "ebx", "ecx", "edx", "esi", "edi", "ebp", // "esp",
+        "r8d", "r9d", "r10d", "r11d", "r12d", "r13d", "r14d", "r15d",
+    };
+    offsetToRegs[2] = {
+        "ax", "bx", "cx", "dx", "si", "di", "bp", // "sp",
+        "r8w", "r9w", "r10w", "r11w", "r12w", "r13w", "r14w", "r15w",
+    };
+
+    // I don't think "pop al" etc. is possible.
+    // offsetToRegs[1] = {
+    //     "ah", "bh", "ch", "dh",
+    //     "al", "bl", "cl", "dl", "sil", "dil", "bpl", // "spl",
+    //     "r8b", "r9b", "r10b", "r11b", "r12b", "r13b", "r14b", "r15b",
+    // };
+
+    for (const auto& it : offsetToRegs) {
+        unsigned offset = it.first;
+        const std::vector<std::string>& regStringList = it.second;
+        for (const std::string& regString : regStringList) {
+            std::string popInstruction = "pop " + regString;
+            this->popInstructionToStackPointerOffset[popInstruction] = offset;
+        }
+    }
+}
+
 void ROP::PayloadGenX86::computeRelevantSequenceIndexes() {
     assertMessage(this->instrSeqs.size() == this->regInfoSeqs.size(), "Inner logic error.");
 
@@ -112,6 +144,7 @@ ROP::PayloadGenX86::PayloadGenX86(int processPid) {
     this->numBytesOfAddress = (this->processArchSize == BitSizeClass::BIT64) ? 8 : 4;
 
     this->preloadTheRegisterMaps();
+    this->preloadThePopInstructionMap();
 }
 
 ROP::PayloadGenX86::PayloadGenX86(const std::vector<std::string> execPaths,
@@ -125,6 +158,7 @@ ROP::PayloadGenX86::PayloadGenX86(const std::vector<std::string> execPaths,
     this->numBytesOfAddress = (this->processArchSize == BitSizeClass::BIT64) ? 8 : 4;
 
     this->preloadTheRegisterMaps();
+    this->preloadThePopInstructionMap();
 }
 
 
@@ -258,6 +292,34 @@ bool ROP::PayloadGenX86::instructionIsBlacklistedInSequence(const std::string& i
     return false;
 }
 
+int ROP::PayloadGenX86::instructionIsSafeStackPointerIncrease(const std::string& instruction,
+                                                              const RegisterInfo& regInfo,
+                                                              std::set<x86_reg> forbiddenRegisters) {
+    const auto& mapEnd = this->popInstructionToStackPointerOffset.end();
+    if (this->popInstructionToStackPointerOffset.find(instruction) == mapEnd) {
+        return -1;
+    }
+
+    // So this is a valid pop instruction.
+    // We just need to check if it pops any forbidden register.
+
+    // Remove stack pointer registers from the forbidden registers set,
+    // since any "pop reg" instruction will change the stack pointer.
+    for (x86_reg regId : this->regToPartialRegs[X86_REG_RSP]) {
+        forbiddenRegisters.erase(regId);
+    }
+
+    for (x86_reg forbiddenRegId : forbiddenRegisters) {
+        bool writesToRegister = regInfo.wRegs.test(forbiddenRegId);
+        if (writesToRegister) {
+            return -1;
+        }
+    }
+
+    int offset = (int)this->popInstructionToStackPointerOffset[instruction];
+    return offset;
+}
+
 int ROP::PayloadGenX86::checkInstructionIsRetAndGetImmediateValue(const std::string& instruction,
                                                                   const RegisterInfo& regInfo) {
     UNUSED(regInfo);
@@ -303,6 +365,7 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
 
         // See if the other instructions in the sequence, ignoring the last one, don't break anything important.
         bool sequenceIsGood = true;
+        unsigned totalNumPaddingNeeded = 0;
         for (unsigned instructionIndex = 1; instructionIndex < currInstrSequence.size() - 1; ++instructionIndex) {
             const std::string& currentInstruction = currInstrSequence[instructionIndex];
             const RegisterInfo& currentRegInfo = currRegInfoSequence[instructionIndex];
@@ -326,6 +389,18 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
                 break;
             }
 
+            int rspOffset = this->instructionIsSafeStackPointerIncrease(currentInstruction,
+                                                                        currentRegInfo,
+                                                                        forbiddenRegisters);
+            bool isSafeStackPointerIncreaseInstruction = (rspOffset != -1);
+            if (isSafeStackPointerIncreaseInstruction) {
+                // The current instruction is something like "pop rbx".
+                // We checked and it doesn't write to any forbidden registers, so it's fine;
+                totalNumPaddingNeeded += rspOffset;
+                continue;
+            }
+
+            // Check if the instruction writes to any of the forbidden registers.
             bool instructionWritesToForbiddenRegisters = false;
             for (x86_reg forbiddenRegId : forbiddenRegisters) {
                 bool writesToRegister = currentRegInfo.wRegs.test(forbiddenRegId);
@@ -334,7 +409,6 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
                     break;
                 }
             }
-
             if (instructionWritesToForbiddenRegisters) {
                 sequenceIsGood = false;
                 break;
@@ -353,6 +427,7 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
         bool lastInstructionIsRet = (imm != -1);
         if (lastInstructionIsRet && imm <= this->numAcceptablePaddingBytesForOneInstruction) {
             // All good.
+            totalNumPaddingNeeded += imm;
         }
         else {
             // Bad final instruction.
@@ -362,7 +437,7 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
         if (sequenceIsGood) {
             SequenceLookupResult currentResult;
             currentResult.index = sequenceIndex;
-            currentResult.numNeededPaddingBytes = imm;
+            currentResult.numNeededPaddingBytes = totalNumPaddingNeeded;
             results.push_back(currentResult);
         }
     }

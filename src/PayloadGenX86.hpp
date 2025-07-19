@@ -61,6 +61,16 @@ namespace ROP {
          */
         std::map<x86_reg, std::set<x86_reg>> regToEndingPartialRegs;
 
+        /**
+         * Example:
+         * popInstructionToStackPointerOffset["pop rcx"] = 8;
+         * popInstructionToStackPointerOffset["pop ecx"] = 4;
+         * @note
+         * Instructions that pop the stack pointer (e.g. "pop rsp")
+         * are intentionally excluded from this map.
+         */
+        std::map<std::string, unsigned> popInstructionToStackPointerOffset;
+
 
         byteSequence payloadBytes = {};
         std::vector<std::string> pythonScript = {};
@@ -69,6 +79,7 @@ namespace ROP {
         void preconfigureVMInstructionsObject();
         void computeRelevantSequenceIndexes();
         void preloadTheRegisterMaps();
+        void preloadThePopInstructionMap();
 
         public:
         /**
@@ -123,6 +134,18 @@ namespace ROP {
          */
         bool instructionIsBlacklistedInSequence(const std::string& instruction,
                                                 const RegisterInfo& regInfo);
+
+        /**
+         * Check if the instruction safely increases the stack pointer.
+         * E.g. "pop ebx" is safe if "ebx" is not a forbidden register.
+         * @return
+         * Will return `-1` if the instruction is not a safe stack pointer increase.
+         * Otherwise, will return the offset by which the stack pointer is increased
+         * after the given safe intruction is executed.
+         */
+        int instructionIsSafeStackPointerIncrease(const std::string& instruction,
+                                                  const RegisterInfo& regInfo,
+                                                  std::set<x86_reg> forbiddenRegisters);
 
         /**
          * Checks if the instruction is either `ret` or `ret imm16`.
