@@ -275,12 +275,10 @@ int ROP::PayloadGenX86::checkInstructionIsRetAndGetImmediateValue(const std::str
 }
 
 
-ROP::PayloadGenX86::SequenceLookupResult
+std::vector<ROP::PayloadGenX86::SequenceLookupResult>
 ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& targetInstruction,
                                                              const std::set<x86_reg>& forbiddenRegisters) {
-    SequenceLookupResult ret;
-    ret.index = this->instrSeqs.size();
-    ret.numNeededPaddingBytes = 0;
+    std::vector<SequenceLookupResult> results;
 
     for (unsigned sequenceIndex : this->sequenceIndexList) {
         auto addressAndSequencePair = this->instrSeqs[sequenceIndex];
@@ -354,13 +352,14 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
         }
 
         if (sequenceIsGood) {
-            ret.index = sequenceIndex;
-            ret.numNeededPaddingBytes += imm;
-            break;
+            SequenceLookupResult currentResult;
+            currentResult.index = sequenceIndex;
+            currentResult.numNeededPaddingBytes = imm;
+            results.push_back(currentResult);
         }
     }
 
-    return ret;
+    return results;
 }
 
 
@@ -380,17 +379,23 @@ bool ROP::PayloadGenX86::searchGadgetForAssignValueToRegister(x86_reg regKey,
         forbiddenRegisters.insert(regSet.begin(), regSet.end());
     }
 
-    SequenceLookupResult seqResult = this->searchForSequenceStartingWithInstruction(targetInstruction,
-                                                                                    forbiddenRegisters);
-    if (seqResult.index == this->instrSeqs.size()) {
+    std::vector<SequenceLookupResult> seqResults;
+    seqResults = this->searchForSequenceStartingWithInstruction(targetInstruction,
+                                                                forbiddenRegisters);
+    if (seqResults.size() == 0) {
         LogWarn("Can't find a useful instruction sequence containing \"%s\".", targetInstruction.c_str());
         return false;
     }
 
     if (shouldAppend) {
-        this->appendInstructionSequenceToPayload(seqResult.index);
-        this->appendBytesOfRegisterSizedConstantToPayload(cValue);
-        this->appendPaddingBytesToPayload(seqResult.numNeededPaddingBytes);
+        this->addLineToPythonScript("if True:");
+        for (unsigned idx = 0; idx < seqResults.size(); ++idx) {
+            bool isComment = (idx != 0);
+            this->appendInstructionSequenceToPayload(seqResults[idx].index, isComment, 4);
+            this->appendBytesOfRegisterSizedConstantToPayload(cValue, isComment, 4);
+            this->appendPaddingBytesToPayload(seqResults[idx].numNeededPaddingBytes, isComment, 4);
+            this->addLineToPythonScript(""); // New line.
+        }
     }
 
     return true;

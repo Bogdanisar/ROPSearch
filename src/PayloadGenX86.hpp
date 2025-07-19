@@ -135,7 +135,7 @@ namespace ROP {
 
 
         struct SequenceLookupResult {
-            // The index of the found sequence, in the sequence vector. Otherwise, the size of the vector.
+            // The index of the found sequence, in the sequence vector.
             unsigned index;
             // If any of the instructions in the sequence need extra padding on the stack
             // (e.g. the last instruction is `ret imm16`), then this is the total amount of needed padding.
@@ -148,8 +148,9 @@ namespace ROP {
          * the forbidden registers given in the argument, or accesses any memory region
          * (i.e. it checks that the remaining instructions are effective NOPs).
          */
-        SequenceLookupResult searchForSequenceStartingWithInstruction(const std::string& targetInstruction,
-                                                                      const std::set<x86_reg>& forbiddenRegisters);
+        std::vector<SequenceLookupResult>
+        searchForSequenceStartingWithInstruction(const std::string& targetInstruction,
+                                                 const std::set<x86_reg>& forbiddenRegisters);
 
         bool searchGadgetForAssignValueToRegister(x86_reg regKey,
                                                   const uint64_t value,
