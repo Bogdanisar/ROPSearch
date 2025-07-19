@@ -24,6 +24,11 @@ namespace ROP {
         VirtualMemoryInstructions vmInstructionsObject;
         std::vector< std::pair<addressType, std::vector<std::string>> > instrSeqs;
         std::vector< std::vector<RegisterInfo> > regInfoSeqs;
+        /**
+         * Indexes into `instrSeqs` and `regInfoSeqs`.
+         * We use this in order to be able to do sorting and filtering.
+         */
+        std::vector<unsigned> sequenceIndexList;
 
         BitSizeClass processArchSize;
         unsigned numBytesOfAddress;
@@ -61,8 +66,8 @@ namespace ROP {
 
 
         void preconfigureVMInstructionsObject();
+        void computeRelevantSequenceIndexes();
         void preloadTheRegisterMaps();
-        void sortInstructionSequences();
 
         public:
         /**

@@ -1,5 +1,6 @@
 #include "PayloadGenX86.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <fstream>
 #include <sstream>
@@ -86,20 +87,30 @@ void ROP::PayloadGenX86::preloadTheRegisterMaps() {
     }
 }
 
-void ROP::PayloadGenX86::sortInstructionSequences() {
-    // TODO;
+void ROP::PayloadGenX86::computeRelevantSequenceIndexes() {
+    assertMessage(this->instrSeqs.size() == this->regInfoSeqs.size(), "Inner logic error.");
+
+    // Generate all indexes;
+    for (unsigned idx = 0; idx < this->instrSeqs.size(); ++idx) {
+        this->sequenceIndexList.push_back(idx);
+    }
+
+    // Sort the sequences by the length of the instruction sequence, increasingly.
+    auto comparator = [&](unsigned idxA, unsigned idxB) {
+        return (this->instrSeqs[idxA].second.size() < this->instrSeqs[idxB].second.size());
+    };
+    sort(this->sequenceIndexList.begin(), this->sequenceIndexList.end(), comparator);
 }
 
 ROP::PayloadGenX86::PayloadGenX86(int processPid) {
     this->preconfigureVMInstructionsObject();
     this->vmInstructionsObject = VirtualMemoryInstructions(processPid);
     this->instrSeqs = this->vmInstructionsObject.getInstructionSequences(&this->regInfoSeqs);
-    assertMessage(this->instrSeqs.size() == this->regInfoSeqs.size(), "Inner logic error.");
+    this->computeRelevantSequenceIndexes();
 
     this->processArchSize = this->vmInstructionsObject.getVirtualMemoryBytes().getProcessArchSize();
     this->numBytesOfAddress = (this->processArchSize == BitSizeClass::BIT64) ? 8 : 4;
 
-    this->sortInstructionSequences();
     this->preloadTheRegisterMaps();
 }
 
@@ -108,12 +119,11 @@ ROP::PayloadGenX86::PayloadGenX86(const std::vector<std::string> execPaths,
     this->preconfigureVMInstructionsObject();
     this->vmInstructionsObject = VirtualMemoryInstructions(execPaths, baseAddresses);
     this->instrSeqs = this->vmInstructionsObject.getInstructionSequences(&this->regInfoSeqs);
-    assertMessage(this->instrSeqs.size() == this->regInfoSeqs.size(), "Inner logic error.");
+    this->computeRelevantSequenceIndexes();
 
     this->processArchSize = this->vmInstructionsObject.getVirtualMemoryBytes().getProcessArchSize();
     this->numBytesOfAddress = (this->processArchSize == BitSizeClass::BIT64) ? 8 : 4;
 
-    this->sortInstructionSequences();
     this->preloadTheRegisterMaps();
 }
 
@@ -189,7 +199,7 @@ void ROP::PayloadGenX86::appendBytesOfRegisterSizedConstantToPayload(const uint6
 unsigned ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& targetInstruction,
                                                                       const std::set<x86_reg>& forbiddenRegisters) {
     unsigned foundIndex = this->instrSeqs.size();
-    for (unsigned sequenceIndex = 0; sequenceIndex < this->instrSeqs.size(); ++sequenceIndex) {
+    for (unsigned sequenceIndex : this->sequenceIndexList) {
         auto addressAndSequencePair = this->instrSeqs[sequenceIndex];
         addressType address = addressAndSequencePair.first;
         const std::vector<std::string>& currInstrSequence = addressAndSequencePair.second;
