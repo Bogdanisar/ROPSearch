@@ -396,6 +396,8 @@ bool ROP::PayloadGenX86::searchGadgetForAssignValueToRegister(x86_reg regKey,
     }
 
     if (shouldAppend) {
+        std::string regStringUpper = InstructionConverter::convertCapstoneRegIdToShortString(this->regToMainReg[regKey]);
+        this->addLineToPythonScript("# " + regStringUpper + " = value;");
         this->addLineToPythonScript("if True:");
 
         unsigned numToOutput = this->getNumberOfVariantsToOutputForThisStep(seqResults.size());
