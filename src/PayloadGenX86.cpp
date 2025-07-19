@@ -7,7 +7,7 @@
 
 
 void ROP::PayloadGenX86::preconfigureVMInstructionsObject() {
-    VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = 6;
+    VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = 10;
     VirtualMemoryInstructions::SearchForSequencesWithDirectRelativeJumpsInTheMiddle = true;
     VirtualMemoryInstructions::IgnoreOutputSequencesThatStartWithDirectRelativeJumps = true;
     VirtualMemoryInstructions::innerAssemblySyntax = ROP::AssemblySyntax::Intel;
@@ -240,10 +240,30 @@ bool ROP::PayloadGenX86::instructionIsBlacklistedInSequence(const std::string& i
     return false;
 }
 
+int ROP::PayloadGenX86::checkInstructionIsRetAndGetImmediateValue(const std::string& instruction,
+                                                                  const RegisterInfo& regInfo) {
+    UNUSED(regInfo);
 
-unsigned ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& targetInstruction,
-                                                                      const std::set<x86_reg>& forbiddenRegisters) {
-    unsigned foundIndex = this->instrSeqs.size();
+    // Check if this is a "ret" instruction.
+    if (instruction == "ret") {
+        return 0;
+    }
+
+    // Check if this is a "ret imm16" instruction.
+    unsigned immediateValue = 0;
+    int bytesRead = -1;
+    sscanf(instruction.c_str(), "ret 0x%x%n", &immediateValue, &bytesRead);
+    return (bytesRead == (int)instruction.size()) ? (int)immediateValue : -1;
+}
+
+
+ROP::PayloadGenX86::SequenceLookupResult
+ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& targetInstruction,
+                                                             const std::set<x86_reg>& forbiddenRegisters) {
+    SequenceLookupResult ret;
+    ret.index = this->instrSeqs.size();
+    ret.numNeededPaddingBytes = 0;
+
     for (unsigned sequenceIndex : this->sequenceIndexList) {
         auto addressAndSequencePair = this->instrSeqs[sequenceIndex];
         addressType address = addressAndSequencePair.first;
@@ -303,13 +323,26 @@ unsigned ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std:
             }
         }
 
+        // Check if the last instruction is ok.
+        int imm = this->checkInstructionIsRetAndGetImmediateValue(currInstrSequence.back(),
+                                                                  currRegInfoSequence.back());
+        bool lastInstructionIsRet = (imm != -1);
+        if (lastInstructionIsRet && imm <= this->numAcceptablePaddingBytesForOneInstruction) {
+            // All good.
+        }
+        else {
+            // Bad final instruction.
+            sequenceIsGood = false;
+        }
+
         if (sequenceIsGood) {
-            foundIndex = sequenceIndex;
+            ret.index = sequenceIndex;
+            ret.numNeededPaddingBytes += imm;
             break;
         }
     }
 
-    return foundIndex;
+    return ret;
 }
 
 
@@ -329,15 +362,17 @@ bool ROP::PayloadGenX86::searchGadgetForAssignValueToRegister(x86_reg regKey,
         forbiddenRegisters.insert(regSet.begin(), regSet.end());
     }
 
-    unsigned sequenceIndex = this->searchForSequenceStartingWithInstruction(targetInstruction, forbiddenRegisters);
-    if (sequenceIndex == this->instrSeqs.size()) {
+    SequenceLookupResult seqResult = this->searchForSequenceStartingWithInstruction(targetInstruction,
+                                                                                    forbiddenRegisters);
+    if (seqResult.index == this->instrSeqs.size()) {
         LogWarn("Can't find a useful instruction sequence containing \"%s\".", targetInstruction.c_str());
         return false;
     }
 
     if (shouldAppend) {
-        this->appendInstructionSequenceToPayload(sequenceIndex);
+        this->appendInstructionSequenceToPayload(seqResult.index);
         this->appendBytesOfRegisterSizedConstantToPayload(cValue);
+        this->appendPaddingBytesToPayload(seqResult.numNeededPaddingBytes);
     }
 
     return true;
