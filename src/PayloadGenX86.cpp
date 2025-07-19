@@ -196,6 +196,43 @@ void ROP::PayloadGenX86::appendBytesOfRegisterSizedConstantToPayload(const uint6
 }
 
 
+bool ROP::PayloadGenX86::instructionIsWhitelistedInSequence(const std::string& instruction,
+                                                            const RegisterInfo& regInfo) {
+    UNUSED(regInfo);
+    auto instrSize = instruction.size();
+
+    // Check if this is a direct relative jmp instruction (i.e. "jmp 0xAddress -->").
+    if (instrSize >= 3) {
+        bool hasRelJmpPrefix = (instruction.compare(0, 3, "jmp") == 0);
+        bool hasRelJmpSuffix = (instruction.compare(instrSize - 3, 3, "-->") == 0);
+        if (hasRelJmpPrefix && hasRelJmpSuffix) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool ROP::PayloadGenX86::instructionIsBlacklistedInSequence(const std::string& instruction,
+                                                            const RegisterInfo& regInfo) {
+    UNUSED(regInfo);
+
+    std::vector<std::string> badPrefixList = {
+        "enter ", // Wrong Capstone register info. E.g. "enter 0x280f, -0x3f".
+        "j", // For (conditional) jumps. The relative jumps are whitelisted beforehand.
+    };
+
+    for (const std::string& badPrefix : badPrefixList) {
+        bool hasPrefix = (instruction.compare(0, badPrefix.size(), badPrefix) == 0);
+        if (hasPrefix) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
 unsigned ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& targetInstruction,
                                                                       const std::set<x86_reg>& forbiddenRegisters) {
     unsigned foundIndex = this->instrSeqs.size();
@@ -217,7 +254,11 @@ unsigned ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std:
         for (unsigned instructionIndex = 1; instructionIndex < currInstrSequence.size() - 1; ++instructionIndex) {
             const std::string& currentInstruction = currInstrSequence[instructionIndex];
             const RegisterInfo& currentRegInfo = currRegInfoSequence[instructionIndex];
-            UNUSED(currentInstruction);
+
+            if (this->instructionIsWhitelistedInSequence(currentInstruction, currentRegInfo)) {
+                // The current instruction is fine.
+                continue;
+            }
 
             // Writing to memory could overwrite something important.
             // Or we might not have access to that address, which would cause a segmentation fault.
@@ -233,16 +274,22 @@ unsigned ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std:
                 break;
             }
 
-            bool instructionIsGood = true;
+            bool instructionWritesToForbiddenRegisters = false;
             for (x86_reg forbiddenRegId : forbiddenRegisters) {
                 bool writesToRegister = currentRegInfo.wRegs.test(forbiddenRegId);
                 if (writesToRegister) {
-                    instructionIsGood = false;
+                    instructionWritesToForbiddenRegisters = true;
                     break;
                 }
             }
 
-            if (!instructionIsGood) {
+            if (instructionWritesToForbiddenRegisters) {
+                sequenceIsGood = false;
+                break;
+            }
+
+            if (this->instructionIsBlacklistedInSequence(currentInstruction, currentRegInfo)) {
+                // The current instruction is bad. We can't accept this sequence.
                 sequenceIsGood = false;
                 break;
             }

@@ -101,6 +101,20 @@ namespace ROP {
         void appendBytesOfRegisterSizedConstantToPayload(const uint64_t cValue);
 
         /**
+         * Some instructions are acceptable inside an instruction sequence,
+         * but it's harder to check for them so we hardcode them in this method.
+         */
+        bool instructionIsWhitelistedInSequence(const std::string& instruction,
+                                                const RegisterInfo& regInfo);
+
+        /**
+         * The register information provided by Capstone is incorrect for a few instruction types,
+         * so we hardcode in this method a few of the misconfigured instructions that we know are bad.
+         */
+        bool instructionIsBlacklistedInSequence(const std::string& instruction,
+                                                const RegisterInfo& regInfo);
+
+        /**
          * Search for an instruction sequence that starts with the given instruction.
          * Also, it checks that the rest of the instructions in the sequence don't write to
          * the forbidden registers given in the argument, or to any memory region
