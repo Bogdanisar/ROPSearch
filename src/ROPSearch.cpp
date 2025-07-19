@@ -297,7 +297,7 @@ void SortListOutput(const vector< pair<addressType, vector<string>> >& instrSeqs
     }
 
     using elemType = pair<addressType, vector<string>>;
-    auto comparator = [&](unsigned idxA, unsigned idxB){
+    auto comparator = [&](unsigned idxA, unsigned idxB) {
         const elemType& a = instrSeqs[idxA];
         const elemType& b = instrSeqs[idxB];
 

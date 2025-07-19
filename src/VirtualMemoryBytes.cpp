@@ -148,7 +148,7 @@ void ROP::VirtualMemoryBytes::buildVirtualMemorySegments(const std::vector<std::
 
 void ROP::VirtualMemoryBytes::sortSegments() {
     // Sort the found segments.
-    auto comparator = [](const VirtualMemorySegmentBytes& a, const VirtualMemorySegmentBytes& b){
+    auto comparator = [](const VirtualMemorySegmentBytes& a, const VirtualMemorySegmentBytes& b) {
         return a.startVirtualAddress < b.startVirtualAddress;
     };
     std::sort(this->readSegments.begin(), this->readSegments.end(), comparator);
