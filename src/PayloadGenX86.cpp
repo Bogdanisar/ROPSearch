@@ -128,7 +128,19 @@ ROP::PayloadGenX86::PayloadGenX86(const std::vector<std::string> execPaths,
 }
 
 
-void ROP::PayloadGenX86::appendInstructionSequenceToPayload(unsigned sequenceIndex) {
+void ROP::PayloadGenX86::addLineToPythonScript(const std::string& line, bool isComment, int indentSize) {
+    std::string prefix = "";
+    prefix.insert(0, indentSize, ' ');
+    if (isComment) {
+        prefix.append("# ");
+    }
+
+    this->pythonScript.push_back(prefix + line);
+}
+
+void ROP::PayloadGenX86::appendInstructionSequenceToPayload(unsigned sequenceIndex,
+                                                            bool isComment,
+                                                            int indentSize) {
     const auto& currentPair = this->instrSeqs[sequenceIndex];
     addressType address = currentPair.first;
     const std::vector<std::string>& instrSequence = currentPair.second;
@@ -143,7 +155,9 @@ void ROP::PayloadGenX86::appendInstructionSequenceToPayload(unsigned sequenceInd
         addressBytes = BytesOfInteger((uint32_t)address);
     }
 
-    this->payloadBytes.insert(this->payloadBytes.end(), addressBytes.begin(), addressBytes.end());
+    if (!isComment) {
+        this->payloadBytes.insert(this->payloadBytes.end(), addressBytes.begin(), addressBytes.end());
+    }
 
     std::ostringstream ss;
 
@@ -160,10 +174,12 @@ void ROP::PayloadGenX86::appendInstructionSequenceToPayload(unsigned sequenceInd
     ss << std::hex << std::setfill('0') << std::setw(2 * this->numBytesOfAddress) << address;
     ss << ": " << sequenceString;
 
-    this->pythonScript.push_back(ss.str()); ss.str("");
+    this->addLineToPythonScript(ss.str(), isComment, indentSize); ss.str("");
 }
 
-void ROP::PayloadGenX86::appendBytesOfRegisterSizedConstantToPayload(const uint64_t cValue) {
+void ROP::PayloadGenX86::appendBytesOfRegisterSizedConstantToPayload(const uint64_t cValue,
+                                                                     bool isComment,
+                                                                     int indentSize) {
     byteSequence bytes;
     if (this->processArchSize == BitSizeClass::BIT64) {
         bytes = BytesOfInteger((uint64_t)cValue);
@@ -173,7 +189,9 @@ void ROP::PayloadGenX86::appendBytesOfRegisterSizedConstantToPayload(const uint6
         bytes = BytesOfInteger((uint32_t)cValue);
     }
 
-    this->payloadBytes.insert(this->payloadBytes.end(), bytes.begin(), bytes.end());
+    if (!isComment) {
+        this->payloadBytes.insert(this->payloadBytes.end(), bytes.begin(), bytes.end());
+    }
 
     std::ostringstream ss;
     ss << "payload += b'";
@@ -184,19 +202,23 @@ void ROP::PayloadGenX86::appendBytesOfRegisterSizedConstantToPayload(const uint6
     ss << "' # Value: 0x";
     ss << std::hex << std::setfill('0');
     ss << std::setw(2 * this->numBytesOfAddress) << cValue;
-    this->pythonScript.push_back(ss.str()); ss.str("");
+    this->addLineToPythonScript(ss.str(), isComment, indentSize); ss.str("");
 }
 
-void ROP::PayloadGenX86::appendPaddingBytesToPayload(const unsigned numPaddingBytes) {
+void ROP::PayloadGenX86::appendPaddingBytesToPayload(const unsigned numPaddingBytes,
+                                                     bool isComment,
+                                                     int indentSize) {
     if (numPaddingBytes == 0) {
         return;
     }
 
-    this->payloadBytes.insert(this->payloadBytes.end(), numPaddingBytes, 0xFF);
+    if (!isComment) {
+        this->payloadBytes.insert(this->payloadBytes.end(), numPaddingBytes, 0xFF);
+    }
 
     std::ostringstream ss;
     ss << "payload += b'0xFF' * " << numPaddingBytes;
-    this->pythonScript.push_back(ss.str()); ss.str("");
+    this->addLineToPythonScript(ss.str(), isComment, indentSize); ss.str("");
 }
 
 
