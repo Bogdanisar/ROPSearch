@@ -147,24 +147,20 @@ void ROP::PayloadGenX86::appendInstructionSequenceToPayload(unsigned sequenceInd
 
     std::ostringstream ss;
 
-    ss << "# Instruction sequence: '" << sequenceString << "'";
-    this->pythonScript.push_back(ss.str()); ss.str("");
-
-    ss << "# Address: 0x";
-    ss << std::hex << std::setfill('0');
-    ss << std::setw(2 * this->numBytesOfAddress) << address;
-    this->pythonScript.push_back(ss.str()); ss.str("");
-
+    // Add assignment statement for the bytes.
     ss << "payload += b'";
     ss << std::hex << std::uppercase << std::setfill('0');
     for (ROP::byte currByte : addressBytes) {
         ss << "\\x" << std::setw(2) << (unsigned)currByte;
     }
-    ss << "'";
-    this->pythonScript.push_back(ss.str()); ss.str("");
+    ss << "' ";
 
-    // New line;
-    this->pythonScript.push_back("");
+    // Add "# 0xAddress: Instruction Sequence" comment.
+    ss << "# 0x";
+    ss << std::hex << std::setfill('0') << std::setw(2 * this->numBytesOfAddress) << address;
+    ss << ": " << sequenceString;
+
+    this->pythonScript.push_back(ss.str()); ss.str("");
 }
 
 void ROP::PayloadGenX86::appendBytesOfRegisterSizedConstantToPayload(const uint64_t cValue) {
