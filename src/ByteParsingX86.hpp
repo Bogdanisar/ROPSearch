@@ -8,9 +8,9 @@
 #include "common/utils.hpp"
 
 
-#pragma region Prefix, REX bytes
+#pragma region Prefix, REX, ModRM bytes
 #if false
-int ________Prefix_REX_Bytes________;
+int ________Prefix_REX_ModRM_bytes________;
 #endif
 
 /** Check if this byte represents an instruction prefix byte in x86. */
@@ -61,7 +61,20 @@ static inline bool ByteIsValidRexByte(ROP::byte b) {
     // return (0x40 <= b && b <= 0x4F);
 }
 
-#pragma endregion Prefix, REX bytes
+static inline unsigned GetModBitsOfModRMByte(ROP::byte b) {
+    // Most significant 2 bits.
+    return (b >> 6) & 0b11;
+}
+static inline unsigned GetRegBitsOfModRMByte(ROP::byte b) {
+    // Middle 3 bits;
+    return (b >> 3) & 0b111;
+}
+static inline unsigned GetRMBitsOfModRMByte(ROP::byte b) {
+    // Least significant 3 bits;
+    return b & 0b111;
+}
+
+#pragma endregion Prefix, REX, ModRM bytes
 
 
 #pragma region Unconditional direct JMPs
@@ -250,6 +263,62 @@ static inline bool BytesAreDirectAbsoluteJmpInstruction32bit(const ROP::byteSequ
 #pragma endregion Unconditional direct JMPs
 
 
+#pragma region Unconditional indirect JMPs
+#if false
+int ________Unconditional_indirect_JMPs________;
+#endif
+
+/**
+ * Check if the bytes are a near, absolute indirect "jmp" instruction,
+ * i.e. "JMP r/m16", "JMP r/m32" or "JMP r/m64".
+ * @return `false`, if the bytes definitely don't match this instruction type.
+ *         `true`, if the bytes match this instruction type or are invalid.
+ */
+static inline bool BytesAreNearAbsoluteIndirectJmpInstructionOrInvalid(const ROP::byteSequence& bSeq,
+                                                                       int first, int last) {
+    const int numBytes = (last - first + 1);
+
+    // Opcode: 0xFF /4.
+    if (numBytes >= 2 && bSeq[first] == 0xFF && GetRegBitsOfModRMByte(bSeq[first + 1]) == 4) {
+        return true;
+    }
+
+    // Preceded by REX byte.
+    if (numBytes >= 3 && ByteIsValidRexByte(bSeq[first])
+        && BytesAreNearAbsoluteIndirectJmpInstructionOrInvalid(bSeq, first + 1, last)) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Check if the bytes are a far, absolute indirect "jmp" instruction,
+ * i.e. "JMP m16:16", "JMP m16:32" or "JMP m16:64".
+ * @return `false`, if the bytes definitely don't match this instruction type.
+ *         `true`, if the bytes match this instruction type or are invalid.
+ */
+static inline bool BytesAreFarAbsoluteIndirectJmpInstructionOrInvalid(const ROP::byteSequence& bSeq,
+                                                                      int first, int last) {
+    const int numBytes = (last - first + 1);
+
+    // Opcode: 0xFF /5.
+    if (numBytes >= 2 && bSeq[first] == 0xFF && GetRegBitsOfModRMByte(bSeq[first + 1]) == 5) {
+        return true;
+    }
+
+    // Preceded by REX byte.
+    if (numBytes >= 3 && ByteIsValidRexByte(bSeq[first])
+        && BytesAreFarAbsoluteIndirectJmpInstructionOrInvalid(bSeq, first + 1, last)) {
+        return true;
+    }
+
+    return false;
+}
+
+#pragma endregion Unconditional indirect JMPs
+
+
 #pragma region Misc
 #if false
 int ________Misc________;
@@ -355,6 +424,13 @@ static inline bool BytesAreBadInstructionInsideSequence(const ROP::byteSequence&
     }
     if (bsc == ROP::BitSizeClass::BIT32
         && BytesAreDirectAbsoluteJmpInstruction32bit(bSeq, first, last, prefixBytesMask)) {
+        return true;
+    }
+
+    if (BytesAreNearAbsoluteIndirectJmpInstructionOrInvalid(bSeq, first, last)) {
+        return true;
+    }
+    if (BytesAreFarAbsoluteIndirectJmpInstructionOrInvalid(bSeq, first, last)) {
         return true;
     }
 
