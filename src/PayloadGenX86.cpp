@@ -129,11 +129,10 @@ ROP::PayloadGenX86::PayloadGenX86(const std::vector<std::string> execPaths,
 
 
 void ROP::PayloadGenX86::appendInstructionSequenceToPayload(unsigned sequenceIndex) {
-    InstructionConverter ic(this->processArchSize);
     const auto& currentPair = this->instrSeqs[sequenceIndex];
     addressType address = currentPair.first;
     const std::vector<std::string>& instrSequence = currentPair.second;
-    std::string sequenceString = ic.concatenateInstructionsAsm(instrSequence);
+    std::string sequenceString = InstructionConverter::concatenateInstructionsAsm(instrSequence);
 
     byteSequence addressBytes;
     if (this->processArchSize == BitSizeClass::BIT64) {
