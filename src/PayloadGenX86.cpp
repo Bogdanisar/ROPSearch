@@ -202,9 +202,9 @@ unsigned ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std:
             continue;
         }
 
-        // See if the other instructions in the sequence don't break anything important.
+        // See if the other instructions in the sequence, ignoring the last one, don't break anything important.
         bool sequenceIsGood = true;
-        for (unsigned instructionIndex = 1; instructionIndex < currInstrSequence.size(); ++instructionIndex) {
+        for (unsigned instructionIndex = 1; instructionIndex < currInstrSequence.size() - 1; ++instructionIndex) {
             const std::string& currentInstruction = currInstrSequence[instructionIndex];
             const RegisterInfo& currentRegInfo = currRegInfoSequence[instructionIndex];
             UNUSED(currentInstruction);
