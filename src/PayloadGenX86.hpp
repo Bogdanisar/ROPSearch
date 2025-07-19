@@ -12,7 +12,7 @@
 
 
 // Forward declarations for friend functions.
-void testPayloadGeneration(std::string targetExecutable);
+void testPayloadGeneration();
 
 
 namespace ROP {
@@ -124,7 +124,7 @@ namespace ROP {
         unsigned searchForSequenceStartingWithInstruction(const std::string& targetInstruction,
                                                           const std::set<x86_reg>& forbiddenRegisters);
 
-        bool searchGadgetForAssignValueToRegister(x86_reg reg,
+        bool searchGadgetForAssignValueToRegister(x86_reg regKey,
                                                   const uint64_t value,
                                                   std::set<x86_reg> forbiddenRegisters,
                                                   bool shouldAppend = false);
@@ -135,7 +135,7 @@ namespace ROP {
 
         public:
         // Mark these functions as friends so that they can access private members.
-        friend void ::testPayloadGeneration(std::string targetExecutable);
+        friend void ::testPayloadGeneration();
     };
 
 }

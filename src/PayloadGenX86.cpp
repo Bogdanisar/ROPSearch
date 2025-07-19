@@ -305,19 +305,23 @@ unsigned ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std:
 }
 
 
-bool ROP::PayloadGenX86::searchGadgetForAssignValueToRegister(x86_reg reg,
+bool ROP::PayloadGenX86::searchGadgetForAssignValueToRegister(x86_reg regKey,
                                                               const uint64_t cValue,
                                                               std::set<x86_reg> forbiddenRegisters,
                                                               bool shouldAppend) {
-    std::string regString = InstructionConverter::convertCapstoneRegIdToShortStringLowercase(reg);
+    std::string regString = InstructionConverter::convertCapstoneRegIdToShortStringLowercase(this->regToMainReg[regKey]);
     std::string targetInstruction = "pop " + regString;
 
-    // Append the current target register to the list of forbidden registers;
-    const std::set<x86_reg>& localForbiddenRegs = this->regToPartialRegs[reg];
-    forbiddenRegisters.insert(localForbiddenRegs.begin(), localForbiddenRegs.end());
+    // Append the current target register (and the partial registers) to the list of forbidden registers;
+    // Append the partial registers for RIP and RSP to the list of forbidden registers;
+    const std::set<x86_reg>& localForbiddenRegs = this->regToPartialRegs[regKey];
+    const std::set<x86_reg>& ripPartialRegs = this->regToPartialRegs[X86_REG_RIP];
+    const std::set<x86_reg>& rspPartialRegs = this->regToPartialRegs[X86_REG_RSP];
+    for (const auto& regSet : {localForbiddenRegs, ripPartialRegs, rspPartialRegs}) {
+        forbiddenRegisters.insert(regSet.begin(), regSet.end());
+    }
 
     unsigned sequenceIndex = this->searchForSequenceStartingWithInstruction(targetInstruction, forbiddenRegisters);
-
     if (sequenceIndex == this->instrSeqs.size()) {
         LogWarn("Can't find a useful instruction sequence containing \"%s\".", targetInstruction.c_str());
         return false;
