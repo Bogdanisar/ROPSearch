@@ -189,6 +189,7 @@ namespace ROP {
                                                   bool shouldAppend = false);
 
         public:
+        bool forbidNullBytesInPayload = false;
         unsigned numAcceptablePaddingBytesForOneInstruction = 30; // Max 400.
         unsigned numVariantsToOutputForEachStep = 1; // Set to `0` for "All of them".
         /**

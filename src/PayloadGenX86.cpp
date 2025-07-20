@@ -151,8 +151,38 @@ void ROP::PayloadGenX86::preloadTheStackPointerInstructionToOffsetMap() {
 void ROP::PayloadGenX86::computeRelevantSequenceIndexes() {
     assertMessage(this->instrSeqs.size() == this->regInfoSeqs.size(), "Inner logic error.");
 
-    // Generate all indexes;
+    // Generate relevant indexes;
     for (unsigned idx = 0; idx < this->instrSeqs.size(); ++idx) {
+
+        if (this->forbidNullBytesInPayload) {
+            // Check if there are any NULL bytes
+            // in the virtual memory address of this instruction sequence;
+            // If yes, ignore this sequence;
+
+            const addressType& addr = this->instrSeqs[idx].first;
+            byteSequence addressBytes;
+            if (this->processArchSize == BitSizeClass::BIT64) {
+                addressBytes = BytesOfInteger((uint64_t)addr);
+            }
+            else {
+                assert(this->processArchSize == BitSizeClass::BIT32);
+                addressBytes = BytesOfInteger((uint32_t)addr);
+            }
+
+            bool addressHasNullBytes = false;
+            for (const ROP::byte& currentAddressByte : addressBytes) {
+                if (currentAddressByte == 0x00) {
+                    addressHasNullBytes = true;
+                    break;
+                }
+            }
+
+            if (addressHasNullBytes) {
+                // Ignore this sequence
+                continue;
+            }
+        }
+
         this->sequenceIndexList.push_back(idx);
     }
 
@@ -168,14 +198,13 @@ void ROP::PayloadGenX86::configureGenerator() {
         this->numAcceptablePaddingBytesForOneInstruction = 400;
     }
 
-    this->instrSeqs = this->vmInstructionsObject.getInstructionSequences(&this->regInfoSeqs);
-    this->computeRelevantSequenceIndexes();
-
     this->processArchSize = this->vmInstructionsObject.getVirtualMemoryBytes().getProcessArchSize();
     this->numBytesOfAddress = (this->processArchSize == BitSizeClass::BIT64) ? 8 : 4;
-
     this->preloadTheRegisterMaps();
     this->preloadTheStackPointerInstructionToOffsetMap();
+
+    this->instrSeqs = this->vmInstructionsObject.getInstructionSequences(&this->regInfoSeqs);
+    this->computeRelevantSequenceIndexes();
 }
 
 

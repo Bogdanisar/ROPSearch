@@ -1064,14 +1064,15 @@ void testConvertBytesToIntFunction() {
 }
 
 void testPayloadGeneration() {
-    // string targetExecutable = "vulnerable32bit.exe";
-    string targetExecutable = "vulnerable64bit.exe";
+    string targetExecutable = "vulnerable32bit.exe";
+    // string targetExecutable = "vulnerable64bit.exe";
     pv(targetExecutable); pn;
 
     int targetPid = getPidOfExecutable(targetExecutable);
     pv(targetPid); pn;
 
     PayloadGenX86 generator(targetPid);
+    generator.forbidNullBytesInPayload = false;
     generator.numAcceptablePaddingBytesForOneInstruction = 400;
     generator.numVariantsToOutputForEachStep = 0; // all of them.
     generator.configureGenerator();
