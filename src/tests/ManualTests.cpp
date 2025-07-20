@@ -1064,16 +1064,18 @@ void testConvertBytesToIntFunction() {
 }
 
 void testPayloadGeneration() {
-    string targetExecutable = "vulnerable32bit.exe";
-    // string targetExecutable = "vulnerable64bit.exe";
+    // string targetExecutable = "vulnerable32bit.exe";
+    string targetExecutable = "vulnerable64bit.exe";
     pv(targetExecutable); pn;
 
     int targetPid = getPidOfExecutable(targetExecutable);
     pv(targetPid); pn;
 
     PayloadGenX86 generator(targetPid);
-    generator.numVariantsToOutputForEachStep = 0;
-    generator.searchGadgetForAssignValueToRegister(X86_REG_RAX, 0x11223344, {}, true);
+    generator.numVariantsToOutputForEachStep = 0; // all of them.
+    generator.configureGenerator();
+
+    generator.searchGadgetForAssignValueToRegister(X86_REG_RBX, 0x11223344, {}, true);
 
     generator.writePayloadToFile("_payload.dat");
     generator.writeScriptToFile("_payloadScript.py");

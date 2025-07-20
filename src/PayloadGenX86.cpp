@@ -14,6 +14,18 @@ void ROP::PayloadGenX86::preconfigureVMInstructionsObject() {
     VirtualMemoryInstructions::computeRegisterInfo = true;
 }
 
+ROP::PayloadGenX86::PayloadGenX86(int processPid) {
+    this->preconfigureVMInstructionsObject();
+    this->vmInstructionsObject = VirtualMemoryInstructions(processPid);
+}
+
+ROP::PayloadGenX86::PayloadGenX86(const std::vector<std::string> execPaths,
+                                  const std::vector<addressType> baseAddresses) {
+    this->preconfigureVMInstructionsObject();
+    this->vmInstructionsObject = VirtualMemoryInstructions(execPaths, baseAddresses);
+}
+
+
 void ROP::PayloadGenX86::preloadTheRegisterMaps() {
     BitSizeClass archSize = this->processArchSize;
 
@@ -150,23 +162,7 @@ void ROP::PayloadGenX86::computeRelevantSequenceIndexes() {
     sort(this->sequenceIndexList.begin(), this->sequenceIndexList.end(), comparator);
 }
 
-ROP::PayloadGenX86::PayloadGenX86(int processPid) {
-    this->preconfigureVMInstructionsObject();
-    this->vmInstructionsObject = VirtualMemoryInstructions(processPid);
-    this->instrSeqs = this->vmInstructionsObject.getInstructionSequences(&this->regInfoSeqs);
-    this->computeRelevantSequenceIndexes();
-
-    this->processArchSize = this->vmInstructionsObject.getVirtualMemoryBytes().getProcessArchSize();
-    this->numBytesOfAddress = (this->processArchSize == BitSizeClass::BIT64) ? 8 : 4;
-
-    this->preloadTheRegisterMaps();
-    this->preloadTheStackPointerInstructionToOffsetMap();
-}
-
-ROP::PayloadGenX86::PayloadGenX86(const std::vector<std::string> execPaths,
-                                  const std::vector<addressType> baseAddresses) {
-    this->preconfigureVMInstructionsObject();
-    this->vmInstructionsObject = VirtualMemoryInstructions(execPaths, baseAddresses);
+void ROP::PayloadGenX86::configureGenerator() {
     this->instrSeqs = this->vmInstructionsObject.getInstructionSequences(&this->regInfoSeqs);
     this->computeRelevantSequenceIndexes();
 

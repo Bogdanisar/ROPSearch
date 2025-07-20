@@ -191,6 +191,13 @@ namespace ROP {
 
         public:
         unsigned numVariantsToOutputForEachStep = 1; // Set to `0` for "All of them".
+        /**
+         * Call this after setting the configuration fields above.
+         * You must not change the configuration fields after calling this method.
+         * You must call this method before trying to get any payloads.
+         */
+        void configureGenerator();
+
         void writePayloadToFile(const std::string& filename);
         void writeScriptToFile(const std::string& filename);
 
