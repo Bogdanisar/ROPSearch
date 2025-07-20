@@ -152,6 +152,7 @@ void ROP::PayloadGenX86::computeRelevantSequenceIndexes() {
     assertMessage(this->instrSeqs.size() == this->regInfoSeqs.size(), "Inner logic error.");
 
     // Generate relevant indexes;
+    std::set<std::string> concatenatedInstrSeqStrings;
     for (unsigned idx = 0; idx < this->instrSeqs.size(); ++idx) {
 
         if (this->forbidNullBytesInPayload) {
@@ -181,6 +182,20 @@ void ROP::PayloadGenX86::computeRelevantSequenceIndexes() {
                 // Ignore this sequence
                 continue;
             }
+        }
+
+        if (this->ignoreDuplicateInstructionSequenceResults) {
+            // Check if the current instruction has been found before.
+
+            const std::vector<std::string>& insSeq = this->instrSeqs[idx].second;
+            std::string seqString = InstructionConverter::concatenateInstructionsAsm(insSeq);
+            if (concatenatedInstrSeqStrings.count(seqString) != 0) {
+                // The current sequence is a duplicate. Ignore it.
+                continue;
+            }
+
+            // Remember the current sequence string.
+            concatenatedInstrSeqStrings.insert(seqString);
         }
 
         this->sequenceIndexList.push_back(idx);
