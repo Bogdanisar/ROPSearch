@@ -32,7 +32,6 @@ namespace ROP {
 
         BitSizeClass processArchSize;
         unsigned numBytesOfAddress;
-        const int numAcceptablePaddingBytesForOneInstruction = 100000;
 
         /**
          * Example on 64bit:
@@ -190,6 +189,7 @@ namespace ROP {
                                                   bool shouldAppend = false);
 
         public:
+        unsigned numAcceptablePaddingBytesForOneInstruction = 30; // Max 400.
         unsigned numVariantsToOutputForEachStep = 1; // Set to `0` for "All of them".
         /**
          * Call this after setting the configuration fields above.

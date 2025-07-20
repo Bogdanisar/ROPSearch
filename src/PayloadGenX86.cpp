@@ -135,7 +135,8 @@ void ROP::PayloadGenX86::preloadTheStackPointerInstructionToOffsetMap() {
     this->stackPointerIncreaseInstructionToOffset["inc sp"] = 1;
     this->stackPointerIncreaseInstructionToOffset["inc spl"] = 1;
 
-    for (unsigned offset = 0; offset <= 0xFF; ++offset) {
+    unsigned maxOffset = this->numAcceptablePaddingBytesForOneInstruction;
+    for (unsigned offset = 0; offset <= maxOffset; ++offset) {
         for (std::string regString : {"rsp", "esp", "sp", "spl"}) {
             char buff[10];
             memset(buff, 0, sizeof(buff));
@@ -163,6 +164,10 @@ void ROP::PayloadGenX86::computeRelevantSequenceIndexes() {
 }
 
 void ROP::PayloadGenX86::configureGenerator() {
+    if (this->numAcceptablePaddingBytesForOneInstruction > 400) {
+        this->numAcceptablePaddingBytesForOneInstruction = 400;
+    }
+
     this->instrSeqs = this->vmInstructionsObject.getInstructionSequences(&this->regInfoSeqs);
     this->computeRelevantSequenceIndexes();
 
@@ -438,7 +443,7 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
         int imm = this->checkInstructionIsRetAndGetImmediateValue(currInstrSequence.back(),
                                                                   currRegInfoSequence.back());
         bool lastInstructionIsRet = (imm != -1);
-        if (lastInstructionIsRet && imm <= this->numAcceptablePaddingBytesForOneInstruction) {
+        if (lastInstructionIsRet && imm <= (int)this->numAcceptablePaddingBytesForOneInstruction) {
             // All good.
             totalNumPaddingNeeded += imm;
         }

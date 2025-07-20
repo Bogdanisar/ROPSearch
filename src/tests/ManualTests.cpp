@@ -1072,6 +1072,7 @@ void testPayloadGeneration() {
     pv(targetPid); pn;
 
     PayloadGenX86 generator(targetPid);
+    generator.numAcceptablePaddingBytesForOneInstruction = 400;
     generator.numVariantsToOutputForEachStep = 0; // all of them.
     generator.configureGenerator();
 
