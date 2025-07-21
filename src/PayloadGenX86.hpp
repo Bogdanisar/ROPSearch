@@ -78,6 +78,7 @@ namespace ROP {
 
         byteSequence payloadBytes = {};
         std::vector<std::string> pythonScript = {};
+        unsigned int currLineIndent = 0;
 
 
         void preconfigureVMInstructionsObject();
@@ -104,25 +105,25 @@ namespace ROP {
 
         private:
 
-        void addLineToPythonScript(const std::string& line, bool isComment = false, int indentSize = 0);
+        void addLineToPythonScript(const std::string& line, bool isComment = false);
 
         /**
          * Takes the information from the instruction sequence at the given index
          * and appends it to the payload bytes and to the payload script.
          */
-        void appendInstructionSequenceToPayload(unsigned sequenceIndex, bool isComment, int indentSize);
+        void appendInstructionSequenceToPayload(unsigned sequenceIndex, bool isComment);
 
         /**
          * Takes the the bytes from the given value
          * and appends them to the payload bytes and to the payload script.
          */
-        void appendBytesOfRegisterSizedConstantToPayload(const uint64_t cValue, bool isComment, int indentSize);
+        void appendBytesOfRegisterSizedConstantToPayload(const uint64_t cValue, bool isComment);
 
         /**
          * Appends a total number of `numPaddingBytes` padding bytes with value `0xFF`
          * to the payload bytes and to the payload script.
          */
-        void appendPaddingBytesToPayload(const unsigned numPaddingBytes, bool isComment, int indentSize);
+        void appendPaddingBytesToPayload(const unsigned numPaddingBytes, bool isComment);
 
 
         /**

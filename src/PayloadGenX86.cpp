@@ -223,9 +223,9 @@ void ROP::PayloadGenX86::configureGenerator() {
 }
 
 
-void ROP::PayloadGenX86::addLineToPythonScript(const std::string& line, bool isComment, int indentSize) {
+void ROP::PayloadGenX86::addLineToPythonScript(const std::string& line, bool isComment) {
     std::string prefix = "";
-    prefix.insert(0, indentSize, ' ');
+    prefix.insert(0, this->currLineIndent * 4, ' ');
     if (isComment) {
         prefix.append("# ");
     }
@@ -234,8 +234,7 @@ void ROP::PayloadGenX86::addLineToPythonScript(const std::string& line, bool isC
 }
 
 void ROP::PayloadGenX86::appendInstructionSequenceToPayload(unsigned sequenceIndex,
-                                                            bool isComment,
-                                                            int indentSize) {
+                                                            bool isComment) {
     const auto& currentPair = this->instrSeqs[sequenceIndex];
     addressType address = currentPair.first;
     const std::vector<std::string>& instrSequence = currentPair.second;
@@ -270,12 +269,11 @@ void ROP::PayloadGenX86::appendInstructionSequenceToPayload(unsigned sequenceInd
     ss << std::setw(2 * this->numBytesOfAddress) << address;
     ss << ": " << sequenceString;
 
-    this->addLineToPythonScript(ss.str(), isComment, indentSize); ss.str("");
+    this->addLineToPythonScript(ss.str(), isComment);
 }
 
 void ROP::PayloadGenX86::appendBytesOfRegisterSizedConstantToPayload(const uint64_t cValue,
-                                                                     bool isComment,
-                                                                     int indentSize) {
+                                                                     bool isComment) {
     byteSequence bytes;
     if (this->processArchSize == BitSizeClass::BIT64) {
         bytes = BytesOfInteger((uint64_t)cValue);
@@ -289,6 +287,7 @@ void ROP::PayloadGenX86::appendBytesOfRegisterSizedConstantToPayload(const uint6
         this->payloadBytes.insert(this->payloadBytes.end(), bytes.begin(), bytes.end());
     }
 
+    // Add "payload += b'...' # Value: 0x..." line.
     std::ostringstream ss;
     ss << "payload += b'";
     ss << std::hex << std::uppercase << std::setfill('0');
@@ -298,12 +297,11 @@ void ROP::PayloadGenX86::appendBytesOfRegisterSizedConstantToPayload(const uint6
     ss << "' # Value: 0x";
     ss << std::hex << std::setfill('0');
     ss << std::setw(2 * this->numBytesOfAddress) << cValue;
-    this->addLineToPythonScript(ss.str(), isComment, indentSize); ss.str("");
+    this->addLineToPythonScript(ss.str(), isComment);
 }
 
 void ROP::PayloadGenX86::appendPaddingBytesToPayload(const unsigned numPaddingBytes,
-                                                     bool isComment,
-                                                     int indentSize) {
+                                                     bool isComment) {
     if (numPaddingBytes == 0) {
         return;
     }
@@ -314,7 +312,7 @@ void ROP::PayloadGenX86::appendPaddingBytesToPayload(const unsigned numPaddingBy
 
     std::ostringstream ss;
     ss << "payload += b'0xFF' * " << numPaddingBytes;
-    this->addLineToPythonScript(ss.str(), isComment, indentSize); ss.str("");
+    this->addLineToPythonScript(ss.str(), isComment);
 }
 
 
@@ -537,14 +535,16 @@ bool ROP::PayloadGenX86::searchGadgetForAssignValueToRegister(x86_reg regKey,
         this->addLineToPythonScript("# " + regStringUpper + " = value;");
         this->addLineToPythonScript("if True:");
 
+        this->currLineIndent++;
         unsigned numToOutput = this->getNumberOfVariantsToOutputForThisStep(seqResults.size());
         for (unsigned idx = 0; idx < numToOutput; ++idx) {
             bool isComment = (idx != 0);
-            this->appendInstructionSequenceToPayload(seqResults[idx].index, isComment, 4);
-            this->appendBytesOfRegisterSizedConstantToPayload(cValue, isComment, 4);
-            this->appendPaddingBytesToPayload(seqResults[idx].numNeededPaddingBytes, isComment, 4);
+            this->appendInstructionSequenceToPayload(seqResults[idx].index, isComment);
+            this->appendBytesOfRegisterSizedConstantToPayload(cValue, isComment);
+            this->appendPaddingBytesToPayload(seqResults[idx].numNeededPaddingBytes, isComment);
             this->addLineToPythonScript(""); // New line.
         }
+        this->currLineIndent--;
     }
 
     return true;
