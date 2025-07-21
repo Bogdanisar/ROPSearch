@@ -177,16 +177,23 @@ namespace ROP {
         /**
          * Search for an instruction sequence that starts with the given instruction.
          * Also, it checks that the rest of the instructions in the sequence don't write to
-         * the forbidden registers given in the argument, or accesses any memory region
+         * the given forbidden registers (or their partial registers), or accesses any memory region
          * (i.e. it checks that the remaining instructions are effective NOPs).
          */
         std::vector<SequenceLookupResult>
         searchForSequenceStartingWithInstruction(const std::string& targetInstruction,
-                                                 const std::set<x86_reg>& forbiddenRegisters);
+                                                 const std::set<x86_reg>& forbiddenRegisterKeys);
 
-        bool searchGadgetForAssignValueToRegister(x86_reg regKey,
-                                                  const uint64_t value,
-                                                  std::set<x86_reg> forbiddenRegisters,
+        /**
+         * Search for 'pop REG' instruction sequence and
+         * appends the found sequence(s) to the payload bytes and script.
+         * @return
+         * Will return `true`, if there's at least a match.
+         * Will return `false`, if there isn't a match.
+         */
+        bool appendGadgetForAssignValueToRegister(x86_reg regKey,
+                                                  const uint64_t cValue,
+                                                  std::set<x86_reg> forbiddenRegisterKeys,
                                                   bool shouldAppend = false);
 
         public:

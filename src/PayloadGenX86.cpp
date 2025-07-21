@@ -407,9 +407,21 @@ unsigned ROP::PayloadGenX86::getNumberOfVariantsToOutputForThisStep(unsigned num
 
 std::vector<ROP::PayloadGenX86::SequenceLookupResult>
 ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& targetInstruction,
-                                                             const std::set<x86_reg>& forbiddenRegisters) {
-    std::vector<SequenceLookupResult> results;
+                                                             const std::set<x86_reg>& forbiddenRegisterKeys) {
+    // Take the given list of register keys, which are just representatives for their partial register set,
+    // And append the full partial register set of those registers (+ RIP and RSP)
+    // to this expanded set of forbidden registers;
+    std::set<x86_reg> expandedForbiddenRegs;
+    for (const x86_reg regSetLeader : forbiddenRegisterKeys) {
+        const std::set<x86_reg>& partialRegSet = this->regToPartialRegs[regSetLeader];
+        expandedForbiddenRegs.insert(partialRegSet.begin(), partialRegSet.end());
+    }
+    for (const x86_reg regSetLeader : {X86_REG_RIP, X86_REG_RSP}) {
+        const std::set<x86_reg>& partialRegSet = this->regToPartialRegs[regSetLeader];
+        expandedForbiddenRegs.insert(partialRegSet.begin(), partialRegSet.end());
+    }
 
+    std::vector<SequenceLookupResult> results;
     for (unsigned sequenceIndex : this->sequenceIndexList) {
         auto addressAndSequencePair = this->instrSeqs[sequenceIndex];
         addressType address = addressAndSequencePair.first;
@@ -451,7 +463,7 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
 
             int rspOffset = this->instructionIsSafeStackPointerIncrease(currentInstruction,
                                                                         currentRegInfo,
-                                                                        forbiddenRegisters);
+                                                                        expandedForbiddenRegs);
             bool isSafeStackPointerIncreaseInstruction = (rspOffset != -1);
             if (isSafeStackPointerIncreaseInstruction) {
                 // The current instruction is something like "pop rbx" or "add esp, 0x20".
@@ -462,7 +474,7 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
 
             // Check if the instruction writes to any of the forbidden registers.
             bool instructionWritesToForbiddenRegisters = false;
-            for (x86_reg forbiddenRegId : forbiddenRegisters) {
+            for (x86_reg forbiddenRegId : expandedForbiddenRegs) {
                 bool writesToRegister = currentRegInfo.wRegs.test(forbiddenRegId);
                 if (writesToRegister) {
                     instructionWritesToForbiddenRegisters = true;
@@ -506,25 +518,17 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
 }
 
 
-bool ROP::PayloadGenX86::searchGadgetForAssignValueToRegister(x86_reg regKey,
+bool ROP::PayloadGenX86::appendGadgetForAssignValueToRegister(x86_reg regKey,
                                                               const uint64_t cValue,
-                                                              std::set<x86_reg> forbiddenRegisters,
+                                                              std::set<x86_reg> forbiddenRegisterKeys,
                                                               bool shouldAppend) {
     std::string regString = InstructionConverter::convertCapstoneRegIdToShortStringLowercase(this->regToMainReg[regKey]);
     std::string targetInstruction = "pop " + regString;
-
-    // Append the current target register (and the partial registers) to the list of forbidden registers;
-    // Append the partial registers for RIP and RSP to the list of forbidden registers;
-    const std::set<x86_reg>& localForbiddenRegs = this->regToPartialRegs[regKey];
-    const std::set<x86_reg>& ripPartialRegs = this->regToPartialRegs[X86_REG_RIP];
-    const std::set<x86_reg>& rspPartialRegs = this->regToPartialRegs[X86_REG_RSP];
-    for (const auto& regSet : {localForbiddenRegs, ripPartialRegs, rspPartialRegs}) {
-        forbiddenRegisters.insert(regSet.begin(), regSet.end());
-    }
+    forbiddenRegisterKeys.insert(regKey);
 
     std::vector<SequenceLookupResult> seqResults;
     seqResults = this->searchForSequenceStartingWithInstruction(targetInstruction,
-                                                                forbiddenRegisters);
+                                                                forbiddenRegisterKeys);
     if (seqResults.size() == 0) {
         LogWarn("Can't find a useful instruction sequence containing \"%s\".", targetInstruction.c_str());
         return false;
