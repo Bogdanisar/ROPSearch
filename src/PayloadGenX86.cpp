@@ -340,6 +340,19 @@ void ROP::PayloadGenX86::appendPaddingBytesToPayload(const unsigned numPaddingBy
     this->addLineToPythonScript(ss.str(), isComment);
 }
 
+bool ROP::PayloadGenX86::tryAppendOperationsAndRevertOnFailure(tryAppendCallback cb) {
+    unsigned prevPayloadBytesSize = this->payloadBytes.size();
+    unsigned prevPayloadScriptSize = this->pythonScript.size();
+
+    bool success = cb();
+    if (!success) {
+        this->payloadBytes.resize(prevPayloadBytesSize);
+        this->pythonScript.resize(prevPayloadScriptSize);
+    }
+
+    return success;
+}
+
 
 bool ROP::PayloadGenX86::instructionIsWhitelistedInSequence(const std::string& instruction,
                                                             const RegisterInfo& regInfo) {
@@ -545,8 +558,7 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
 
 bool ROP::PayloadGenX86::appendGadgetForAssignValueToRegister(x86_reg regKey,
                                                               const uint64_t cValue,
-                                                              std::set<x86_reg> forbiddenRegisterKeys,
-                                                              bool shouldAppend) {
+                                                              std::set<x86_reg> forbiddenRegisterKeys) {
     std::string regString = InstructionConverter::convertCapstoneRegIdToShortStringLowercase(this->regKeyToMainReg[regKey]);
     std::string targetInstruction = "pop " + regString;
     forbiddenRegisterKeys.insert(regKey);
@@ -559,22 +571,20 @@ bool ROP::PayloadGenX86::appendGadgetForAssignValueToRegister(x86_reg regKey,
         return false;
     }
 
-    if (shouldAppend) {
-        std::string regStringUpper = InstructionConverter::convertCapstoneRegIdToShortString(this->regKeyToMainReg[regKey]);
-        this->addLineToPythonScript("# " + regStringUpper + " = value;");
-        this->addLineToPythonScript("if True:");
+    std::string regStringUpper = InstructionConverter::convertCapstoneRegIdToShortString(this->regKeyToMainReg[regKey]);
+    this->addLineToPythonScript("# " + regStringUpper + " = value;");
+    this->addLineToPythonScript("if True:");
 
-        this->currLineIndent++;
-        unsigned numToOutput = this->getNumberOfVariantsToOutputForThisStep(seqResults.size());
-        for (unsigned idx = 0; idx < numToOutput; ++idx) {
-            bool isComment = (idx != 0);
-            this->appendInstructionSequenceToPayload(seqResults[idx].index, isComment);
-            this->appendBytesOfRegisterSizedConstantToPayload(cValue, isComment);
-            this->appendPaddingBytesToPayload(seqResults[idx].numNeededPaddingBytes, isComment);
-            this->addLineToPythonScript(""); // New line.
-        }
-        this->currLineIndent--;
+    this->currLineIndent++;
+    unsigned numToOutput = this->getNumberOfVariantsToOutputForThisStep(seqResults.size());
+    for (unsigned idx = 0; idx < numToOutput; ++idx) {
+        bool isComment = (idx != 0);
+        this->appendInstructionSequenceToPayload(seqResults[idx].index, isComment);
+        this->appendBytesOfRegisterSizedConstantToPayload(cValue, isComment);
+        this->appendPaddingBytesToPayload(seqResults[idx].numNeededPaddingBytes, isComment);
+        this->addLineToPythonScript(""); // New line.
     }
+    this->currLineIndent--;
 
     return true;
 }

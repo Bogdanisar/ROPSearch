@@ -137,6 +137,13 @@ namespace ROP {
          */
         void appendPaddingBytesToPayload(const unsigned numPaddingBytes, bool isComment);
 
+        typedef bool (*tryAppendCallback)(void);
+        /**
+         * Try to perform some (payload append) operations described by the callback.
+         * On failure, revert the payload bytes and script to their previous state.
+         */
+        bool tryAppendOperationsAndRevertOnFailure(tryAppendCallback cb);
+
 
         /**
          * Some instructions are acceptable inside an instruction sequence,
@@ -205,8 +212,7 @@ namespace ROP {
          */
         bool appendGadgetForAssignValueToRegister(x86_reg regKey,
                                                   const uint64_t cValue,
-                                                  std::set<x86_reg> forbiddenRegisterKeys,
-                                                  bool shouldAppend = false);
+                                                  std::set<x86_reg> forbiddenRegisterKeys);
 
         public:
         bool forbidNullBytesInPayload = false;

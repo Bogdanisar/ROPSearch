@@ -1078,7 +1078,7 @@ void testPayloadGeneration() {
     generator.numVariantsToOutputForEachStep = 0; // all of them.
     generator.configureGenerator();
 
-    generator.appendGadgetForAssignValueToRegister(X86_REG_RBX, 0x11223344, {}, true);
+    generator.appendGadgetForAssignValueToRegister(X86_REG_RBX, 0x11223344, {});
 
     generator.writePayloadToFile("_payload.dat");
     generator.writeScriptToFile("_payloadScript.py");
