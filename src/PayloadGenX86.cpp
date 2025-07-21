@@ -29,7 +29,7 @@ ROP::PayloadGenX86::PayloadGenX86(const std::vector<std::string> execPaths,
 void ROP::PayloadGenX86::preloadTheRegisterMaps() {
     BitSizeClass archSize = this->processArchSize;
 
-    // Compute values for `this->regToMainReg` member.
+    // Compute values for `this->regKeyToMainReg` member.
     if (archSize == BitSizeClass::BIT64) {
         std::vector<x86_reg> regIdentifiers = {
             X86_REG_RAX,
@@ -44,23 +44,23 @@ void ROP::PayloadGenX86::preloadTheRegisterMaps() {
         };
 
         for (x86_reg currReg : regIdentifiers) {
-            this->regToMainReg[currReg] = currReg;
+            this->regKeyToMainReg[currReg] = currReg;
         }
     }
     else {
         assert(archSize == BitSizeClass::BIT32);
-        this->regToMainReg[X86_REG_RAX] = X86_REG_EAX;
-        this->regToMainReg[X86_REG_RBX] = X86_REG_EBX;
-        this->regToMainReg[X86_REG_RCX] = X86_REG_ECX;
-        this->regToMainReg[X86_REG_RDX] = X86_REG_EDX;
-        this->regToMainReg[X86_REG_RSI] = X86_REG_ESI;
-        this->regToMainReg[X86_REG_RDI] = X86_REG_EDI;
-        this->regToMainReg[X86_REG_RBP] = X86_REG_EBP;
-        this->regToMainReg[X86_REG_RSP] = X86_REG_ESP;
-        this->regToMainReg[X86_REG_RIP] = X86_REG_EIP;
+        this->regKeyToMainReg[X86_REG_RAX] = X86_REG_EAX;
+        this->regKeyToMainReg[X86_REG_RBX] = X86_REG_EBX;
+        this->regKeyToMainReg[X86_REG_RCX] = X86_REG_ECX;
+        this->regKeyToMainReg[X86_REG_RDX] = X86_REG_EDX;
+        this->regKeyToMainReg[X86_REG_RSI] = X86_REG_ESI;
+        this->regKeyToMainReg[X86_REG_RDI] = X86_REG_EDI;
+        this->regKeyToMainReg[X86_REG_RBP] = X86_REG_EBP;
+        this->regKeyToMainReg[X86_REG_RSP] = X86_REG_ESP;
+        this->regKeyToMainReg[X86_REG_RIP] = X86_REG_EIP;
     }
 
-    // Compute values for `this->regToPartialRegs` member.
+    // Compute values for `this->regKeyToPartialRegs` member.
     std::vector<std::vector<x86_reg>> partialRegisterGroups = {
         { X86_REG_RAX, X86_REG_EAX, X86_REG_AX, X86_REG_AH, X86_REG_AL },
         { X86_REG_RBX, X86_REG_EBX, X86_REG_BX, X86_REG_BH, X86_REG_BL },
@@ -76,17 +76,17 @@ void ROP::PayloadGenX86::preloadTheRegisterMaps() {
         x86_reg leader = regGroup[0];
 
         if (archSize == BitSizeClass::BIT64) {
-            this->regToPartialRegs[leader] = std::set<x86_reg>(regGroup.begin(), regGroup.end());
+            this->regKeyToPartialRegs[leader] = std::set<x86_reg>(regGroup.begin(), regGroup.end());
         }
         else {
             assert(archSize == BitSizeClass::BIT32);
             regGroup.erase(regGroup.begin());
-            this->regToPartialRegs[leader] = std::set<x86_reg>(regGroup.begin(), regGroup.end());
+            this->regKeyToPartialRegs[leader] = std::set<x86_reg>(regGroup.begin(), regGroup.end());
         }
     }
 
-    // Compute values for `this->regToEndingPartialRegs` member.
-    for (const auto& it : this->regToPartialRegs) {
+    // Compute values for `this->regKeyToEndingPartialRegs` member.
+    for (const auto& it : this->regKeyToPartialRegs) {
         x86_reg leader = it.first;
         std::set<x86_reg> regGroup = it.second;
 
@@ -95,7 +95,7 @@ void ROP::PayloadGenX86::preloadTheRegisterMaps() {
         regGroup.erase(X86_REG_CH);
         regGroup.erase(X86_REG_DH);
 
-        this->regToEndingPartialRegs[leader] = regGroup;
+        this->regKeyToEndingPartialRegs[leader] = regGroup;
     }
 }
 
@@ -365,7 +365,7 @@ int ROP::PayloadGenX86::instructionIsSafeStackPointerIncrease(const std::string&
 
     // Remove stack pointer registers from the forbidden registers set,
     // since any "pop reg" instruction will change the stack pointer.
-    for (x86_reg regId : this->regToPartialRegs[X86_REG_RSP]) {
+    for (x86_reg regId : this->regKeyToPartialRegs[X86_REG_RSP]) {
         forbiddenRegisters.erase(regId);
     }
 
@@ -413,11 +413,11 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
     // to this expanded set of forbidden registers;
     std::set<x86_reg> expandedForbiddenRegs;
     for (const x86_reg regSetLeader : forbiddenRegisterKeys) {
-        const std::set<x86_reg>& partialRegSet = this->regToPartialRegs[regSetLeader];
+        const std::set<x86_reg>& partialRegSet = this->regKeyToPartialRegs[regSetLeader];
         expandedForbiddenRegs.insert(partialRegSet.begin(), partialRegSet.end());
     }
     for (const x86_reg regSetLeader : {X86_REG_RIP, X86_REG_RSP}) {
-        const std::set<x86_reg>& partialRegSet = this->regToPartialRegs[regSetLeader];
+        const std::set<x86_reg>& partialRegSet = this->regKeyToPartialRegs[regSetLeader];
         expandedForbiddenRegs.insert(partialRegSet.begin(), partialRegSet.end());
     }
 
@@ -522,7 +522,7 @@ bool ROP::PayloadGenX86::appendGadgetForAssignValueToRegister(x86_reg regKey,
                                                               const uint64_t cValue,
                                                               std::set<x86_reg> forbiddenRegisterKeys,
                                                               bool shouldAppend) {
-    std::string regString = InstructionConverter::convertCapstoneRegIdToShortStringLowercase(this->regToMainReg[regKey]);
+    std::string regString = InstructionConverter::convertCapstoneRegIdToShortStringLowercase(this->regKeyToMainReg[regKey]);
     std::string targetInstruction = "pop " + regString;
     forbiddenRegisterKeys.insert(regKey);
 
@@ -535,7 +535,7 @@ bool ROP::PayloadGenX86::appendGadgetForAssignValueToRegister(x86_reg regKey,
     }
 
     if (shouldAppend) {
-        std::string regStringUpper = InstructionConverter::convertCapstoneRegIdToShortString(this->regToMainReg[regKey]);
+        std::string regStringUpper = InstructionConverter::convertCapstoneRegIdToShortString(this->regKeyToMainReg[regKey]);
         this->addLineToPythonScript("# " + regStringUpper + " = value;");
         this->addLineToPythonScript("if True:");
 

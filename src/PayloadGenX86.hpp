@@ -35,30 +35,30 @@ namespace ROP {
 
         /**
          * Example on 64bit:
-         * `regToMainReg[X86_REG_RAX]` = X86_REG_RAX.
+         * `regKeyToMainReg[X86_REG_RAX]` = X86_REG_RAX.
          * Example on 32bit:
-         * `regToMainReg[X86_REG_RAX]` = X86_REG_EAX.
+         * `regKeyToMainReg[X86_REG_RAX]` = X86_REG_EAX.
          * Note: The map is always keyed by the 64bit reg identifiers, not the 32bit ones.
          */
-        std::map<x86_reg, x86_reg> regToMainReg;
+        std::map<x86_reg, x86_reg> regKeyToMainReg;
 
         /**
          * Example on 64bit:
-         * `regToPartialRegs[X86_REG_RAX]` = {_RAX, _EAX, _AX, _AH, _AL}.
+         * `regKeyToPartialRegs[X86_REG_RAX]` = {_RAX, _EAX, _AX, _AH, _AL}.
          * Example on 32bit:
-         * `regToPartialRegs[X86_REG_RAX]` = {_EAX, _AX, _AH, _AL}.
+         * `regKeyToPartialRegs[X86_REG_RAX]` = {_EAX, _AX, _AH, _AL}.
          * Note: The map is always keyed by the 64bit reg identifiers, not the 32bit ones.
          */
-        std::map<x86_reg, std::set<x86_reg>> regToPartialRegs;
+        std::map<x86_reg, std::set<x86_reg>> regKeyToPartialRegs;
 
         /**
          * Example on 64bit:
-         * `regToEndingPartialRegs[X86_REG_RAX]` = {_RAX, _EAX, _AX, _AL}, but not _AH.
+         * `regKeyToEndingPartialRegs[X86_REG_RAX]` = {_RAX, _EAX, _AX, _AL}, but not _AH.
          * Example on 32bit:
-         * `regToEndingPartialRegs[X86_REG_RAX]` = {_EAX, _AX, _AL}, but not _AH.
+         * `regKeyToEndingPartialRegs[X86_REG_RAX]` = {_EAX, _AX, _AL}, but not _AH.
          * Note: The map is always keyed by the 64bit reg identifiers, not the 32bit ones.
          */
-        std::map<x86_reg, std::set<x86_reg>> regToEndingPartialRegs;
+        std::map<x86_reg, std::set<x86_reg>> regKeyToEndingPartialRegs;
 
         /**
          * Example:
