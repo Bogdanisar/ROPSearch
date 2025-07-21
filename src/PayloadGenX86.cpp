@@ -553,13 +553,9 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
 }
 
 
-bool ROP::PayloadGenX86::appendGadgetForAssignValueToRegister(x86_reg regKey,
-                                                              const uint64_t cValue,
-                                                              std::set<x86_reg> forbiddenRegisterKeys) {
-    std::string regString = InstructionConverter::convertCapstoneRegIdToShortStringLowercase(this->regKeyToMainReg[regKey]);
-    std::string targetInstruction = "pop " + regString;
-    forbiddenRegisterKeys.insert(regKey);
-
+bool ROP::PayloadGenX86::appendGadgetStartingWithInstruction(const std::string& targetInstruction,
+                                                             std::set<x86_reg> forbiddenRegisterKeys,
+                                                             std::function<void()> appendLinesAfterAddressBytesCallback) {
     std::vector<SequenceLookupResult> seqResults;
     seqResults = this->searchForSequenceStartingWithInstruction(targetInstruction,
                                                                 forbiddenRegisterKeys);
@@ -568,24 +564,38 @@ bool ROP::PayloadGenX86::appendGadgetForAssignValueToRegister(x86_reg regKey,
         return false;
     }
 
-    std::string regStringUpper = InstructionConverter::convertCapstoneRegIdToShortString(this->regKeyToMainReg[regKey]);
-    this->addLineToPythonScript("# " + regStringUpper + " = value;");
     this->addLineToPythonScript("if True:");
-
     this->currLineIndent++;
+
     unsigned numToOutput = this->getNumberOfVariantsToOutputForThisStep(seqResults.size());
     for (unsigned idx = 0; idx < numToOutput; ++idx) {
         this->currScriptLineIsComment = (idx != 0);
         this->appendInstructionSequenceToPayload(seqResults[idx].index);
-        this->appendBytesOfRegisterSizedConstantToPayload(cValue);
+        appendLinesAfterAddressBytesCallback();
         this->appendPaddingBytesToPayload(seqResults[idx].numNeededPaddingBytes);
         this->currScriptLineIsComment = false;
 
         this->addLineToPythonScript(""); // New line.
     }
+
     this->currLineIndent--;
 
     return true;
+}
+
+bool ROP::PayloadGenX86::appendGadgetForAssignValueToRegister(x86_reg regKey,
+                                                              const uint64_t cValue,
+                                                              std::set<x86_reg> forbiddenRegisterKeys) {
+    std::string regString = InstructionConverter::convertCapstoneRegIdToShortStringLowercase(this->regKeyToMainReg[regKey]);
+    std::string targetInstruction = "pop " + regString;
+    forbiddenRegisterKeys.insert(regKey);
+
+    std::string regStringUpper = InstructionConverter::convertCapstoneRegIdToShortString(this->regKeyToMainReg[regKey]);
+    this->addLineToPythonScript("# " + regStringUpper + " = value;");
+
+    return this->appendGadgetStartingWithInstruction(targetInstruction, forbiddenRegisterKeys, [&]{
+        this->appendBytesOfRegisterSizedConstantToPayload(cValue);
+    });
 }
 
 

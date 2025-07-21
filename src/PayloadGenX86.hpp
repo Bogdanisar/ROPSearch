@@ -1,6 +1,7 @@
 #ifndef PAYLOAD_GEN_X86_H
 #define PAYLOAD_GEN_X86_H
 
+#include <functional>
 #include <map>
 #include <set>
 #include <string>
@@ -205,11 +206,21 @@ namespace ROP {
                                                  const std::set<x86_reg>& forbiddenRegisterKeys);
 
         /**
-         * Search for 'pop REG' instruction sequence and
-         * appends the found sequence(s) to the payload bytes and script.
+         * Search for an instruction sequence that starts with the given instruction.
+         * Then, append the found sequence(s) to the payload bytes and script.
+         * Optionally, the callback can be used to append something else to the payload
+         * between the instruction sequence bytes and the padding bytes (if any).
          * @return
          * Will return `true`, if there's at least a match.
          * Will return `false`, if there isn't a match.
+         */
+        bool appendGadgetStartingWithInstruction(const std::string& targetInstruction,
+                                                 std::set<x86_reg> forbiddenRegisterKeys,
+                                                 std::function<void()> appendLinesAfterAddressBytesCallback);
+
+        /**
+         * Search for 'pop REG' instruction sequence and
+         * append the found sequence(s) to the payload bytes and script.
          */
         bool appendGadgetForAssignValueToRegister(x86_reg regKey,
                                                   const uint64_t cValue,
