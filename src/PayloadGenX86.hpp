@@ -34,6 +34,17 @@ namespace ROP {
         unsigned numBytesOfAddress;
 
         /**
+         * Example on 64bit Linux:
+         * `syscallArgNumberToRegKey[0]` = X86_REG_RAX.
+         * `syscallArgNumberToRegKey[1]` = X86_REG_RDI.
+         * Example on 32bit Linux:
+         * `syscallArgNumberToRegKey[0]` = X86_REG_RAX.
+         * `syscallArgNumberToRegKey[1]` = X86_REG_RBX.
+         * Note: Register keys are always 64bit register identifiers.
+         *  */
+        std::vector<x86_reg> syscallArgNumberToRegKey;
+
+        /**
          * Example on 64bit:
          * `regKeyToMainReg[X86_REG_RAX]` = X86_REG_RAX.
          * Example on 32bit:
@@ -83,8 +94,9 @@ namespace ROP {
 
         void preconfigureVMInstructionsObject();
         void computeRelevantSequenceIndexes();
-        void preloadTheRegisterMaps();
-        void preloadTheStackPointerInstructionToOffsetMap();
+        void loadTheSyscallArgNumberMap();
+        void loadTheRegisterMaps();
+        void loadTheStackPointerInstructionToOffsetMap();
 
         public:
         /**

@@ -26,7 +26,31 @@ ROP::PayloadGenX86::PayloadGenX86(const std::vector<std::string> execPaths,
 }
 
 
-void ROP::PayloadGenX86::preloadTheRegisterMaps() {
+void ROP::PayloadGenX86::loadTheSyscallArgNumberMap() {
+    if (this->processArchSize == BitSizeClass::BIT64) {
+        this->syscallArgNumberToRegKey.push_back(X86_REG_RAX);
+        this->syscallArgNumberToRegKey.push_back(X86_REG_RDI);
+        this->syscallArgNumberToRegKey.push_back(X86_REG_RSI);
+        this->syscallArgNumberToRegKey.push_back(X86_REG_RDX);
+        this->syscallArgNumberToRegKey.push_back(X86_REG_R10);
+        this->syscallArgNumberToRegKey.push_back(X86_REG_R8);
+        this->syscallArgNumberToRegKey.push_back(X86_REG_R9);
+    }
+    else {
+        assert(this->processArchSize == BitSizeClass::BIT32);
+
+        // Register keys are always represented by 64bit enums.
+        this->syscallArgNumberToRegKey.push_back(X86_REG_RAX);
+        this->syscallArgNumberToRegKey.push_back(X86_REG_RBX);
+        this->syscallArgNumberToRegKey.push_back(X86_REG_RCX);
+        this->syscallArgNumberToRegKey.push_back(X86_REG_RDX);
+        this->syscallArgNumberToRegKey.push_back(X86_REG_RSI);
+        this->syscallArgNumberToRegKey.push_back(X86_REG_RDI);
+        this->syscallArgNumberToRegKey.push_back(X86_REG_RBP);
+    }
+}
+
+void ROP::PayloadGenX86::loadTheRegisterMaps() {
     BitSizeClass archSize = this->processArchSize;
 
     // Compute values for `this->regKeyToMainReg` member.
@@ -99,7 +123,7 @@ void ROP::PayloadGenX86::preloadTheRegisterMaps() {
     }
 }
 
-void ROP::PayloadGenX86::preloadTheStackPointerInstructionToOffsetMap() {
+void ROP::PayloadGenX86::loadTheStackPointerInstructionToOffsetMap() {
     std::map<unsigned, std::vector<std::string>> offsetToRegs;
     offsetToRegs[8] = {
         "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", // "rsp",
@@ -215,8 +239,9 @@ void ROP::PayloadGenX86::configureGenerator() {
 
     this->processArchSize = this->vmInstructionsObject.getVirtualMemoryBytes().getProcessArchSize();
     this->numBytesOfAddress = (this->processArchSize == BitSizeClass::BIT64) ? 8 : 4;
-    this->preloadTheRegisterMaps();
-    this->preloadTheStackPointerInstructionToOffsetMap();
+    this->loadTheSyscallArgNumberMap();
+    this->loadTheRegisterMaps();
+    this->loadTheStackPointerInstructionToOffsetMap();
 
     this->instrSeqs = this->vmInstructionsObject.getInstructionSequences(&this->regInfoSeqs);
     this->computeRelevantSequenceIndexes();
