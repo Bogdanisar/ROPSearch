@@ -643,7 +643,8 @@ ROP::PayloadGenX86::appendGadgetStartingWithInstruction(const std::vector<std::s
 bool ROP::PayloadGenX86::appendGadgetForCopyOrExchangeRegisters(x86_reg destRegKey,
                                                                 x86_reg srcRegKey,
                                                                 std::set<x86_reg> forbiddenRegisterKeys,
-                                                                int numAllowedIntermediates) {
+                                                                int numAllowedIntermediates,
+                                                                bool isParentCall) {
     std::string destStr = InstructionConverter::convertCapstoneRegIdToShortStringLowercase(this->regKeyToMainReg[destRegKey]);
     std::string srcStr = InstructionConverter::convertCapstoneRegIdToShortStringLowercase(this->regKeyToMainReg[srcRegKey]);
     LogDebug("Trying to do: (%s = %s).", destStr.c_str(), srcStr.c_str());
@@ -651,6 +652,7 @@ bool ROP::PayloadGenX86::appendGadgetForCopyOrExchangeRegisters(x86_reg destRegK
     assertMessage(forbiddenRegisterKeys.count(destRegKey) == 0, "The destination register has to be changed...");
     bool success;
 
+    // if (numAllowedIntermediates <= 1) {
     success = this->tryAppendOperationsAndRevertOnFailure([&] {
         std::vector<std::string> targetFirstInstructionList = {
             "mov " + destStr + ", " + srcStr,
@@ -669,6 +671,7 @@ bool ROP::PayloadGenX86::appendGadgetForCopyOrExchangeRegisters(x86_reg destRegK
                                                          []{});
     });
     if (success) { return true; }
+    // }
 
     // Try with some intermediate registers.
     if (numAllowedIntermediates != 0) {
@@ -681,15 +684,28 @@ bool ROP::PayloadGenX86::appendGadgetForCopyOrExchangeRegisters(x86_reg destRegK
             }
 
             success = this->tryAppendOperationsAndRevertOnFailure([&] {
+                if (isParentCall) {
+                    this->addLineToPythonScript("# " + destStr + " = " + srcStr + " (with intermediates).");
+                    this->addLineToPythonScript("if True:");
+                    this->currLineIndent++;
+                }
+
                 bool ok = true;
                 ok = ok && this->appendGadgetForCopyOrExchangeRegisters(midRegKey,
                                                                         srcRegKey,
                                                                         forbiddenRegisterKeys,
-                                                                        0);
+                                                                        0,
+                                                                        false);
                 ok = ok && this->appendGadgetForCopyOrExchangeRegisters(destRegKey,
                                                                         midRegKey,
                                                                         forbiddenRegisterKeys,
-                                                                        numAllowedIntermediates - 1);
+                                                                        numAllowedIntermediates - 1,
+                                                                        false);
+
+                if (isParentCall) {
+                    this->currLineIndent--;
+                }
+
                 return ok;
             });
             if (success) { return true; }

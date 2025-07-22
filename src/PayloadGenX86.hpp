@@ -231,7 +231,8 @@ namespace ROP {
         bool appendGadgetForCopyOrExchangeRegisters(x86_reg destRegKey,
                                                     x86_reg srcRegKey,
                                                     std::set<x86_reg> forbiddenRegisterKeys,
-                                                    int numAllowedIntermediates = 3);
+                                                    int numAllowedIntermediates = 3,
+                                                    bool isParentCall = true);
 
         /**
          * Search for 'pop REG' instruction sequence and
