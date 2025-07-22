@@ -652,7 +652,6 @@ bool ROP::PayloadGenX86::appendGadgetForCopyOrExchangeRegisters(x86_reg destRegK
     assertMessage(forbiddenRegisterKeys.count(destRegKey) == 0, "The destination register has to be changed...");
     bool success;
 
-    // if (numAllowedIntermediates <= 1) {
     success = this->tryAppendOperationsAndRevertOnFailure([&] {
         std::vector<std::string> targetFirstInstructionList = {
             "mov " + destStr + ", " + srcStr,
@@ -671,7 +670,6 @@ bool ROP::PayloadGenX86::appendGadgetForCopyOrExchangeRegisters(x86_reg destRegK
                                                          []{});
     });
     if (success) { return true; }
-    // }
 
     // Try with some intermediate registers.
     if (numAllowedIntermediates != 0) {
