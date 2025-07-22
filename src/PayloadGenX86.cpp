@@ -593,31 +593,42 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
     return results;
 }
 
-
 bool
-ROP::PayloadGenX86::appendGadgetStartingWithInstruction(const std::string& targetInstruction,
+ROP::PayloadGenX86::appendGadgetStartingWithInstruction(const std::vector<std::string>& targetFirstInstructionList,
                                                         std::set<x86_reg> forbiddenRegisterKeys,
                                                         const std::function<void()>& appendLinesAfterAddressBytesCallback) {
-    std::vector<SequenceLookupResult> seqResults;
-    seqResults = this->searchForSequenceStartingWithInstruction(targetInstruction,
-                                                                forbiddenRegisterKeys);
-    if (seqResults.size() == 0) {
-        LogDebug("Can't find a useful instruction sequence starting with \"%s\".", targetInstruction.c_str());
-        return false;
+    std::vector<SequenceLookupResult> allSeqResults;
+
+    for (const std::string& targetFirstInstr : targetFirstInstructionList) {
+        std::vector<SequenceLookupResult> currSeqResults;
+        currSeqResults = this->searchForSequenceStartingWithInstruction(targetFirstInstr,
+                                                                        forbiddenRegisterKeys);
+        if (currSeqResults.size() != 0) {
+            LogDebug("Found a useful instruction sequence starting with \"%s\".", targetFirstInstr.c_str());
+            allSeqResults.insert(allSeqResults.end(), currSeqResults.begin(), currSeqResults.end());
+        }
     }
-    else {
-        LogDebug("Found a useful instruction sequence starting with \"%s\".", targetInstruction.c_str());
+
+    if (allSeqResults.size() == 0) {
+        std::ostringstream ss;
+        ss << "Can't find a useful instruction sequence starting with any of: ";
+        for (const std::string& targetFirstInstr : targetFirstInstructionList) {
+            ss << '"' << targetFirstInstr << '"' << ", ";
+        }
+        LogDebug("%s", ss.str().c_str());
+
+        return false;
     }
 
     this->addLineToPythonScript("if True:");
     this->currLineIndent++;
 
-    unsigned numToOutput = this->getNumberOfVariantsToOutputForThisStep(seqResults.size());
+    unsigned numToOutput = this->getNumberOfVariantsToOutputForThisStep(allSeqResults.size());
     for (unsigned idx = 0; idx < numToOutput; ++idx) {
         this->currScriptLineIsComment = (idx != 0);
-        this->appendInstructionSequenceToPayload(seqResults[idx].index);
+        this->appendInstructionSequenceToPayload(allSeqResults[idx].index);
         appendLinesAfterAddressBytesCallback();
-        this->appendPaddingBytesToPayload(seqResults[idx].numNeededPaddingBytes);
+        this->appendPaddingBytesToPayload(allSeqResults[idx].numNeededPaddingBytes);
         this->currScriptLineIsComment = false;
 
         this->addLineToPythonScript(""); // New line.
@@ -641,46 +652,23 @@ bool ROP::PayloadGenX86::appendGadgetForCopyOrExchangeRegisters(x86_reg destRegK
     bool success;
 
     success = this->tryAppendOperationsAndRevertOnFailure([&] {
-        std::string targetInstruction = "mov " + destStr + ", " + srcStr;
+        std::vector<std::string> targetFirstInstructionList = {
+            "mov " + destStr + ", " + srcStr,
+            "lea " + destStr + ", [" + srcStr + "]",
+        };
+
+        if (forbiddenRegisterKeys.count(srcRegKey) == 0) {
+            // It's fine to change the value of the source register.
+            targetFirstInstructionList.push_back("xchg " + destStr + ", " + srcStr);
+            targetFirstInstructionList.push_back("xchg " + srcStr + ", " + destStr);
+        }
+
         this->addLineToPythonScript("# " + destStr + " = " + srcStr);
-        return this->appendGadgetStartingWithInstruction(targetInstruction,
+        return this->appendGadgetStartingWithInstruction(targetFirstInstructionList,
                                                          AddSets(forbiddenRegisterKeys, {destRegKey}),
                                                          []{});
     });
     if (success) { return true; }
-
-    success = this->tryAppendOperationsAndRevertOnFailure([&] {
-        std::string targetInstruction = "lea " + destStr + ", [" + srcStr + "]";
-        this->addLineToPythonScript("# " + destStr + " = " + srcStr);
-        return this->appendGadgetStartingWithInstruction(targetInstruction,
-                                                         AddSets(forbiddenRegisterKeys, {destRegKey}),
-                                                         []{});
-    });
-    if (success) { return true; }
-
-    if (forbiddenRegisterKeys.count(srcRegKey) == 0) {
-        // It's fine to change the value of the source register.
-
-        // Try an `xchg` instruction instead of a `mov` instruction.
-        success = this->tryAppendOperationsAndRevertOnFailure([&] {
-            std::string targetInstruction = "xchg " + destStr + ", " + srcStr;
-            this->addLineToPythonScript("# Exchange " + destStr + " and " + srcStr);
-            return this->appendGadgetStartingWithInstruction(targetInstruction,
-                                                             AddSets(forbiddenRegisterKeys, {destRegKey}),
-                                                             []{});
-        });
-        if (success) { return true; }
-
-        // Try again but with the registers in the opposite order.
-        success = this->tryAppendOperationsAndRevertOnFailure([&] {
-            std::string targetInstruction = "xchg " + srcStr + ", " + destStr;
-            this->addLineToPythonScript("# Exchange " + srcStr + " and " + destStr);
-            return this->appendGadgetStartingWithInstruction(targetInstruction,
-                                                             AddSets(forbiddenRegisterKeys, {destRegKey}),
-                                                             []{});
-        });
-        if (success) { return true; }
-    }
 
     // Try with some intermediate registers.
     if (numAllowedIntermediates != 0) {
@@ -721,7 +709,7 @@ bool ROP::PayloadGenX86::appendGadgetForAssignValueToRegister(x86_reg regKey,
     std::string regStringUpper = InstructionConverter::convertCapstoneRegIdToShortString(this->regKeyToMainReg[regKey]);
     this->addLineToPythonScript("# " + regStringUpper + " = value;");
 
-    return this->appendGadgetStartingWithInstruction(targetInstruction, forbiddenRegisterKeys, [&]{
+    return this->appendGadgetStartingWithInstruction({targetInstruction}, forbiddenRegisterKeys, [&]{
         this->appendBytesOfRegisterSizedConstantToPayload(cValue);
     });
 }

@@ -212,7 +212,7 @@ namespace ROP {
                                                  const std::set<x86_reg>& forbiddenRegisterKeys);
 
         /**
-         * Search for an instruction sequence that starts with the given instruction.
+         * Search for an instruction sequence that starts with any of the given instructions.
          * Also, it checks that the rest of the instructions in the sequence don't write to
          * the given forbidden registers (or their partial registers), or access any memory region
          * (i.e. it checks that the remaining instructions are effective NOPs).
@@ -223,7 +223,7 @@ namespace ROP {
          * Will return `true`, if there's at least a match.
          * Will return `false`, if there isn't a match.
          */
-        bool appendGadgetStartingWithInstruction(const std::string& targetInstruction,
+        bool appendGadgetStartingWithInstruction(const std::vector<std::string>& targetFirstInstructionList,
                                                  std::set<x86_reg> forbiddenRegisterKeys,
                                                  const std::function<void()>& appendLinesAfterAddressBytesCallback);
 

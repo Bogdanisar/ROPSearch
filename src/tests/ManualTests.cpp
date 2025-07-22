@@ -1064,8 +1064,8 @@ void testConvertBytesToIntFunction() {
 }
 
 void testPayloadGeneration() {
-    // string targetExecutable = "vulnerable32bit.exe";
-    string targetExecutable = "vulnerable64bit.exe";
+    string targetExecutable = "vulnerable32bit.exe";
+    // string targetExecutable = "vulnerable64bit.exe";
     pv(targetExecutable); pn;
 
     int targetPid = getPidOfExecutable(targetExecutable);
@@ -1078,7 +1078,7 @@ void testPayloadGeneration() {
     generator.numVariantsToOutputForEachStep = 0; // all of them.
     generator.configureGenerator();
 
-    generator.appendGadgetForCopyOrExchangeRegisters(X86_REG_RAX, X86_REG_RBX, {X86_REG_R12});
+    generator.appendGadgetForCopyOrExchangeRegisters(X86_REG_RAX, X86_REG_RDX, {});
     // generator.appendGadgetForCopyOrExchangeRegisters(X86_REG_RBX, X86_REG_RAX, {X86_REG_RAX});
 
     // generator.appendGadgetForAssignValueToRegister(X86_REG_RBX, 0x11223344, {});
