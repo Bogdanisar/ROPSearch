@@ -201,13 +201,13 @@ void ROP::PayloadGenX86::loadTheStackPointerInstructionToOffsetMap() {
     this->stackPointerIncreaseInstructionToOffset["inc spl"] = 1;
 
     unsigned maxOffset = this->numAcceptablePaddingBytesForOneInstruction;
+    char offsetBuffer[100];
     for (unsigned offset = 0; offset <= maxOffset; ++offset) {
         for (std::string regString : {"rsp", "esp", "sp", "spl"}) {
-            char buff[10];
-            memset(buff, 0, sizeof(buff));
-            sprintf(buff, "%hhx", (unsigned char)offset);
+            memset(offsetBuffer, 0, sizeof(offsetBuffer));
+            sprintf(offsetBuffer, "%x", offset);
 
-            std::string instruction = "add " + regString + ", 0x" + buff;
+            std::string instruction = "add " + regString + ", 0x" + offsetBuffer;
             this->stackPointerIncreaseInstructionToOffset[instruction] = offset;
         }
     }
