@@ -6,6 +6,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
+#include <set>
 #include <sstream>
 #include <unistd.h>
 
@@ -154,6 +155,12 @@ static ResultIntType ConvertLittleEndianBytesToInteger(const ROP::byte *ptr) {
     }
 
     return result;
+}
+
+template<typename InnerType>
+static std::set<InnerType> AddSets(std::set<InnerType> s1, const std::set<InnerType>& s2) {
+    s1.insert(s2.begin(), s2.end());
+    return s1;
 }
 
 

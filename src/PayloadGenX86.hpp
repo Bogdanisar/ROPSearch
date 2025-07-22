@@ -45,6 +45,13 @@ namespace ROP {
          *  */
         std::vector<x86_reg> syscallArgNumberToRegKey;
 
+
+        /**
+         * Register keys that can be used as working registers during our gadgets.
+         * Example: X86_REG_RAX, X86_REG_RBX.
+         */
+        std::set<x86_reg> usableRegKeys;
+
         /**
          * Example on 64bit:
          * `regKeyToMainReg[X86_REG_RAX]` = X86_REG_RAX.
@@ -197,7 +204,7 @@ namespace ROP {
         /**
          * Search for an instruction sequence that starts with the given instruction.
          * Also, it checks that the rest of the instructions in the sequence don't write to
-         * the given forbidden registers (or their partial registers), or accesses any memory region
+         * the given forbidden registers (or their partial registers), or access any memory region
          * (i.e. it checks that the remaining instructions are effective NOPs).
          */
         std::vector<SequenceLookupResult>
@@ -206,6 +213,9 @@ namespace ROP {
 
         /**
          * Search for an instruction sequence that starts with the given instruction.
+         * Also, it checks that the rest of the instructions in the sequence don't write to
+         * the given forbidden registers (or their partial registers), or access any memory region
+         * (i.e. it checks that the remaining instructions are effective NOPs).
          * Then, append the found sequence(s) to the payload bytes and script.
          * Optionally, the callback can be used to append something else to the payload
          * between the instruction sequence bytes and the padding bytes (if any).
@@ -216,6 +226,12 @@ namespace ROP {
         bool appendGadgetStartingWithInstruction(const std::string& targetInstruction,
                                                  std::set<x86_reg> forbiddenRegisterKeys,
                                                  const std::function<void()>& appendLinesAfterAddressBytesCallback);
+
+
+        bool appendGadgetForCopyOrExchangeRegisters(x86_reg destRegKey,
+                                                    x86_reg srcRegKey,
+                                                    std::set<x86_reg> forbiddenRegisterKeys,
+                                                    int numAllowedIntermediates = 3);
 
         /**
          * Search for 'pop REG' instruction sequence and

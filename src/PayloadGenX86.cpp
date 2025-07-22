@@ -5,6 +5,8 @@
 #include <fstream>
 #include <sstream>
 
+#include "common/utils.hpp"
+
 
 void ROP::PayloadGenX86::preconfigureVMInstructionsObject() {
     VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = 10;
@@ -52,6 +54,15 @@ void ROP::PayloadGenX86::loadTheSyscallArgNumberMap() {
 
 void ROP::PayloadGenX86::loadTheRegisterMaps() {
     BitSizeClass archSize = this->processArchSize;
+
+    // Compute values for `this->usableRegKeys` member.
+    this->usableRegKeys.insert(X86_REG_RAX);
+    this->usableRegKeys.insert(X86_REG_RBX);
+    this->usableRegKeys.insert(X86_REG_RCX);
+    this->usableRegKeys.insert(X86_REG_RDX);
+    this->usableRegKeys.insert(X86_REG_RSI);
+    this->usableRegKeys.insert(X86_REG_RDI);
+    this->usableRegKeys.insert(X86_REG_RBP);
 
     // Compute values for `this->regKeyToMainReg` member.
     if (archSize == BitSizeClass::BIT64) {
@@ -561,8 +572,11 @@ ROP::PayloadGenX86::appendGadgetStartingWithInstruction(const std::string& targe
     seqResults = this->searchForSequenceStartingWithInstruction(targetInstruction,
                                                                 forbiddenRegisterKeys);
     if (seqResults.size() == 0) {
-        LogWarn("Can't find a useful instruction sequence containing \"%s\".", targetInstruction.c_str());
+        LogDebug("Can't find a useful instruction sequence starting with \"%s\".", targetInstruction.c_str());
         return false;
+    }
+    else {
+        LogDebug("Found a useful instruction sequence starting with \"%s\".", targetInstruction.c_str());
     }
 
     this->addLineToPythonScript("if True:");
@@ -582,6 +596,89 @@ ROP::PayloadGenX86::appendGadgetStartingWithInstruction(const std::string& targe
     this->currLineIndent--;
 
     return true;
+}
+
+
+bool ROP::PayloadGenX86::appendGadgetForCopyOrExchangeRegisters(x86_reg destRegKey,
+                                                                x86_reg srcRegKey,
+                                                                std::set<x86_reg> forbiddenRegisterKeys,
+                                                                int numAllowedIntermediates) {
+    std::string destStr = InstructionConverter::convertCapstoneRegIdToShortStringLowercase(this->regKeyToMainReg[destRegKey]);
+    std::string srcStr = InstructionConverter::convertCapstoneRegIdToShortStringLowercase(this->regKeyToMainReg[srcRegKey]);
+    LogDebug("Trying to do: (%s = %s).", destStr.c_str(), srcStr.c_str());
+
+    assertMessage(forbiddenRegisterKeys.count(destRegKey) == 0, "The destination register has to be changed...");
+    bool success;
+
+    success = this->tryAppendOperationsAndRevertOnFailure([&] {
+        std::string targetInstruction = "mov " + destStr + ", " + srcStr;
+        this->addLineToPythonScript("# " + destStr + " = " + srcStr);
+        return this->appendGadgetStartingWithInstruction(targetInstruction,
+                                                         AddSets(forbiddenRegisterKeys, {destRegKey}),
+                                                         []{});
+    });
+    if (success) { return true; }
+
+    success = this->tryAppendOperationsAndRevertOnFailure([&] {
+        std::string targetInstruction = "lea " + destStr + ", [" + srcStr + "]";
+        this->addLineToPythonScript("# " + destStr + " = " + srcStr);
+        return this->appendGadgetStartingWithInstruction(targetInstruction,
+                                                         AddSets(forbiddenRegisterKeys, {destRegKey}),
+                                                         []{});
+    });
+    if (success) { return true; }
+
+    if (forbiddenRegisterKeys.count(srcRegKey) == 0) {
+        // It's fine to change the value of the source register.
+
+        // Try an `xchg` instruction instead of a `mov` instruction.
+        success = this->tryAppendOperationsAndRevertOnFailure([&] {
+            std::string targetInstruction = "xchg " + destStr + ", " + srcStr;
+            this->addLineToPythonScript("# Exchange " + destStr + " and " + srcStr);
+            return this->appendGadgetStartingWithInstruction(targetInstruction,
+                                                             AddSets(forbiddenRegisterKeys, {destRegKey}),
+                                                             []{});
+        });
+        if (success) { return true; }
+
+        // Try again but with the registers in the opposite order.
+        success = this->tryAppendOperationsAndRevertOnFailure([&] {
+            std::string targetInstruction = "xchg " + srcStr + ", " + destStr;
+            this->addLineToPythonScript("# Exchange " + srcStr + " and " + destStr);
+            return this->appendGadgetStartingWithInstruction(targetInstruction,
+                                                             AddSets(forbiddenRegisterKeys, {destRegKey}),
+                                                             []{});
+        });
+        if (success) { return true; }
+    }
+
+    // Try with some intermediate registers.
+    if (numAllowedIntermediates != 0) {
+        for (x86_reg midRegKey : this->usableRegKeys) {
+            if (midRegKey == destRegKey || midRegKey == srcRegKey) {
+                continue;
+            }
+            if (forbiddenRegisterKeys.count(midRegKey) != 0) {
+                continue;
+            }
+
+            success = this->tryAppendOperationsAndRevertOnFailure([&] {
+                bool ok = true;
+                ok = ok && this->appendGadgetForCopyOrExchangeRegisters(midRegKey,
+                                                                        srcRegKey,
+                                                                        forbiddenRegisterKeys,
+                                                                        0);
+                ok = ok && this->appendGadgetForCopyOrExchangeRegisters(destRegKey,
+                                                                        midRegKey,
+                                                                        forbiddenRegisterKeys,
+                                                                        numAllowedIntermediates - 1);
+                return ok;
+            });
+            if (success) { return true; }
+        }
+    }
+
+    return false;
 }
 
 bool ROP::PayloadGenX86::appendGadgetForAssignValueToRegister(x86_reg regKey,
