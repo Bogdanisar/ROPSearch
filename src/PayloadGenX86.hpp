@@ -139,12 +139,11 @@ namespace ROP {
          */
         void appendPaddingBytesToPayload(const unsigned numPaddingBytes);
 
-        typedef bool (*tryAppendCallback)(void);
         /**
          * Try to perform some (payload append) operations described by the callback.
          * On failure, revert the payload bytes and script to their previous state.
          */
-        bool tryAppendOperationsAndRevertOnFailure(tryAppendCallback cb);
+        bool tryAppendOperationsAndRevertOnFailure(const std::function<bool(void)>& cb);
 
 
         /**
@@ -216,7 +215,7 @@ namespace ROP {
          */
         bool appendGadgetStartingWithInstruction(const std::string& targetInstruction,
                                                  std::set<x86_reg> forbiddenRegisterKeys,
-                                                 std::function<void()> appendLinesAfterAddressBytesCallback);
+                                                 const std::function<void()>& appendLinesAfterAddressBytesCallback);
 
         /**
          * Search for 'pop REG' instruction sequence and

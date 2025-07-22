@@ -337,7 +337,7 @@ void ROP::PayloadGenX86::appendPaddingBytesToPayload(const unsigned numPaddingBy
     this->addLineToPythonScript(ss.str());
 }
 
-bool ROP::PayloadGenX86::tryAppendOperationsAndRevertOnFailure(tryAppendCallback cb) {
+bool ROP::PayloadGenX86::tryAppendOperationsAndRevertOnFailure(const std::function<bool(void)>& cb) {
     unsigned prevPayloadBytesSize = this->payloadBytes.size();
     unsigned prevPayloadScriptSize = this->pythonScript.size();
 
@@ -553,9 +553,10 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
 }
 
 
-bool ROP::PayloadGenX86::appendGadgetStartingWithInstruction(const std::string& targetInstruction,
-                                                             std::set<x86_reg> forbiddenRegisterKeys,
-                                                             std::function<void()> appendLinesAfterAddressBytesCallback) {
+bool
+ROP::PayloadGenX86::appendGadgetStartingWithInstruction(const std::string& targetInstruction,
+                                                        std::set<x86_reg> forbiddenRegisterKeys,
+                                                        const std::function<void()>& appendLinesAfterAddressBytesCallback) {
     std::vector<SequenceLookupResult> seqResults;
     seqResults = this->searchForSequenceStartingWithInstruction(targetInstruction,
                                                                 forbiddenRegisterKeys);
