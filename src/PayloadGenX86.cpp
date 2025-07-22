@@ -63,6 +63,16 @@ void ROP::PayloadGenX86::loadTheRegisterMaps() {
     this->usableRegKeys.insert(X86_REG_RSI);
     this->usableRegKeys.insert(X86_REG_RDI);
     this->usableRegKeys.insert(X86_REG_RBP);
+    if (archSize == BitSizeClass::BIT64) {
+        this->usableRegKeys.insert(X86_REG_R8);
+        this->usableRegKeys.insert(X86_REG_R9);
+        this->usableRegKeys.insert(X86_REG_R10);
+        this->usableRegKeys.insert(X86_REG_R11);
+        this->usableRegKeys.insert(X86_REG_R12);
+        this->usableRegKeys.insert(X86_REG_R13);
+        this->usableRegKeys.insert(X86_REG_R14);
+        this->usableRegKeys.insert(X86_REG_R15);
+    }
 
     // Compute values for `this->regKeyToMainReg` member.
     if (archSize == BitSizeClass::BIT64) {
@@ -76,6 +86,14 @@ void ROP::PayloadGenX86::loadTheRegisterMaps() {
             X86_REG_RBP,
             X86_REG_RSP,
             X86_REG_RIP,
+            X86_REG_R8,
+            X86_REG_R9,
+            X86_REG_R10,
+            X86_REG_R11,
+            X86_REG_R12,
+            X86_REG_R13,
+            X86_REG_R14,
+            X86_REG_R15,
         };
 
         for (x86_reg currReg : regIdentifiers) {
@@ -106,6 +124,14 @@ void ROP::PayloadGenX86::loadTheRegisterMaps() {
         { X86_REG_RBP, X86_REG_EBP, X86_REG_BP, X86_REG_BPL },
         { X86_REG_RSP, X86_REG_ESP, X86_REG_SP, X86_REG_SPL },
         { X86_REG_RIP, X86_REG_EIP },
+        { X86_REG_R8, X86_REG_R8D, X86_REG_R8W, X86_REG_R8B },
+        { X86_REG_R9, X86_REG_R9D, X86_REG_R9W, X86_REG_R9B },
+        { X86_REG_R10, X86_REG_R10D, X86_REG_R10W, X86_REG_R10B },
+        { X86_REG_R11, X86_REG_R11D, X86_REG_R11W, X86_REG_R11B },
+        { X86_REG_R12, X86_REG_R12D, X86_REG_R12W, X86_REG_R12B },
+        { X86_REG_R13, X86_REG_R13D, X86_REG_R13W, X86_REG_R13B },
+        { X86_REG_R14, X86_REG_R14D, X86_REG_R14W, X86_REG_R14B },
+        { X86_REG_R15, X86_REG_R15D, X86_REG_R15W, X86_REG_R15B },
     };
     for (std::vector<x86_reg> regGroup : partialRegisterGroups) {
         x86_reg leader = regGroup[0];
@@ -115,6 +141,10 @@ void ROP::PayloadGenX86::loadTheRegisterMaps() {
         }
         else {
             assert(archSize == BitSizeClass::BIT32);
+            if (leader == X86_REG_R8) {
+                break;
+            }
+
             regGroup.erase(regGroup.begin());
             this->regKeyToPartialRegs[leader] = std::set<x86_reg>(regGroup.begin(), regGroup.end());
         }
