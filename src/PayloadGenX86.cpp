@@ -226,23 +226,7 @@ void ROP::PayloadGenX86::computeRelevantSequenceIndexes() {
             // If yes, ignore this sequence;
 
             const addressType& addr = this->instrSeqs[idx].first;
-            byteSequence addressBytes;
-            if (this->processArchSize == BitSizeClass::BIT64) {
-                addressBytes = BytesOfInteger((uint64_t)addr);
-            }
-            else {
-                assert(this->processArchSize == BitSizeClass::BIT32);
-                addressBytes = BytesOfInteger((uint32_t)addr);
-            }
-
-            bool addressHasNullBytes = false;
-            for (const ROP::byte& currentAddressByte : addressBytes) {
-                if (currentAddressByte == 0x00) {
-                    addressHasNullBytes = true;
-                    break;
-                }
-            }
-
+            bool addressHasNullBytes = (GetNumNullBytesOfRegisterSizedConstant(this->processArchSize, addr) > 0);
             if (addressHasNullBytes) {
                 // Ignore this sequence
                 continue;

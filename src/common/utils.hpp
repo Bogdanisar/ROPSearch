@@ -142,6 +142,26 @@ static ResultIntType ConvertLittleEndianBytesToInteger(const ROP::byte *ptr) {
     return result;
 }
 
+static unsigned GetNumNullBytesOfRegisterSizedConstant(ROP::BitSizeClass archSize, uint64_t cValue) {
+    ROP::byteSequence bytes;
+    if (archSize == ROP::BitSizeClass::BIT64) {
+        bytes = BytesOfInteger((uint64_t)cValue);
+    }
+    else {
+        assert(archSize == ROP::BitSizeClass::BIT32);
+        bytes = BytesOfInteger((uint32_t)cValue);
+    }
+
+    unsigned numNullBytes = 0;
+    for (const ROP::byte& currentAddressByte : bytes) {
+        if (currentAddressByte == 0x00) {
+            numNullBytes += 1;
+        }
+    }
+
+    return numNullBytes;
+}
+
 #pragma endregion Bytes
 
 
