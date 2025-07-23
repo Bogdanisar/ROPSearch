@@ -32,7 +32,8 @@ namespace ROP {
         std::vector<unsigned> sequenceIndexList;
 
         BitSizeClass processArchSize;
-        unsigned numBytesOfAddress;
+        // How many bytes a register has for the current architecture size. 4 or 8.
+        unsigned registerByteSize;
 
         /**
          * Example on 64bit Linux:
