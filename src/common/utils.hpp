@@ -49,6 +49,12 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
 
+
+#pragma region Paths
+#if false
+int ________Paths________;
+#endif
+
 static inline std::string GetAbsPathToProcExecutable() {
     char buffer[PATH_MAX];
     memset(buffer, 0, sizeof(buffer));
@@ -72,23 +78,13 @@ static inline void SetCWDToExecutableLocation() {
     std::filesystem::current_path(parentDirPath);
 }
 
-static std::string XmlNodeToString(pugi::xml_node node) {
+#pragma endregion Paths
 
-    // Declare helper class;
-    struct xml_string_writer : pugi::xml_writer {
-        std::string result;
 
-        virtual void write(const void *data, size_t size)
-        {
-            result.append((const char *)data, size);
-        }
-    };
-
-    xml_string_writer writer;
-    node.print(writer);
-
-    return writer.result;
-}
+#pragma region Bytes
+#if false
+int ________Bytes________;
+#endif
 
 template<typename integerType>
 static ROP::byteSequence BytesOfInteger(integerType integer) {
@@ -131,17 +127,6 @@ static unsigned GetMinimumNumberOfBytesToStoreInteger(integerType integer) {
     return numBytes;
 }
 
-static void RightPadString(std::string& str, unsigned minSize, char padChar) {
-    if (str.size() < minSize) {
-        str += std::string(minSize - str.size(), padChar);
-    }
-}
-
-static void RightTrimString(std::string& str, const char *badChars = " \t\n\r\f\v") {
-    const std::size_t pos = str.find_last_not_of(badChars);
-    str.erase(pos + 1);
-}
-
 template<typename ResultIntType>
 static ResultIntType ConvertLittleEndianBytesToInteger(const ROP::byte *ptr) {
     ResultIntType result = 0;
@@ -157,14 +142,59 @@ static ResultIntType ConvertLittleEndianBytesToInteger(const ROP::byte *ptr) {
     return result;
 }
 
+#pragma endregion Bytes
+
+
+#pragma region Strings
+#if false
+int ________Strings________;
+#endif
+
+static std::string XmlNodeToString(pugi::xml_node node) {
+    // Declare helper class;
+    struct xml_string_writer : pugi::xml_writer {
+        std::string result;
+
+        virtual void write(const void *data, size_t size)
+        {
+            result.append((const char *)data, size);
+        }
+    };
+
+    xml_string_writer writer;
+    node.print(writer);
+
+    return writer.result;
+}
+
+static void RightPadString(std::string& str, unsigned minSize, char padChar) {
+    if (str.size() < minSize) {
+        str += std::string(minSize - str.size(), padChar);
+    }
+}
+
+static void RightTrimString(std::string& str, const char *badChars = " \t\n\r\f\v") {
+    const std::size_t pos = str.find_last_not_of(badChars);
+    str.erase(pos + 1);
+}
+
+#pragma endregion Strings
+
+
+#pragma region Misc
+#if false
+int ________Misc________;
+#endif
+
 template<typename InnerType>
 static std::set<InnerType> AddSets(std::set<InnerType> s1, const std::set<InnerType>& s2) {
     s1.insert(s2.begin(), s2.end());
     return s1;
 }
 
+#pragma endregion Misc
+
 
 #pragma GCC diagnostic pop
-
 
 #endif // UTILS_H
