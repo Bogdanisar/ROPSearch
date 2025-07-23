@@ -225,7 +225,7 @@ namespace ROP {
          */
         bool appendGadgetStartingWithInstruction(const std::vector<std::string>& targetFirstInstructionList,
                                                  std::set<x86_reg> forbiddenRegisterKeys,
-                                                 const std::function<void()>& appendLinesAfterAddressBytesCallback);
+                                                 const std::function<void(const std::string&)>& appendLinesAfterAddressBytesCb);
 
 
         bool appendGadgetForCopyOrExchangeRegisters(x86_reg destRegKey,

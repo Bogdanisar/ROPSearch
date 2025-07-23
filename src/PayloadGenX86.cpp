@@ -576,7 +576,7 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
 bool
 ROP::PayloadGenX86::appendGadgetStartingWithInstruction(const std::vector<std::string>& targetFirstInstructionList,
                                                         std::set<x86_reg> forbiddenRegisterKeys,
-                                                        const std::function<void()>& appendLinesAfterAddressBytesCallback) {
+                                                        const std::function<void(const std::string&)>& appendLinesAfterAddressBytesCb) {
     std::vector<SequenceLookupResult> allSeqResults;
 
     for (const std::string& targetFirstInstr : targetFirstInstructionList) {
@@ -605,9 +605,12 @@ ROP::PayloadGenX86::appendGadgetStartingWithInstruction(const std::vector<std::s
 
     unsigned numToOutput = this->getNumberOfVariantsToOutputForThisStep(allSeqResults.size());
     for (unsigned idx = 0; idx < numToOutput; ++idx) {
+        const std::vector<std::string>& sequence = this->instrSeqs[allSeqResults[idx].index].second;
+        const std::string& firstInstruction = sequence[0];
+
         this->currScriptLineIsComment = (idx != 0);
         this->appendInstructionSequenceToPayload(allSeqResults[idx].index);
-        appendLinesAfterAddressBytesCallback();
+        appendLinesAfterAddressBytesCb(firstInstruction);
         this->appendPaddingBytesToPayload(allSeqResults[idx].numNeededPaddingBytes);
         this->currScriptLineIsComment = false;
 
@@ -647,7 +650,7 @@ bool ROP::PayloadGenX86::appendGadgetForCopyOrExchangeRegisters(x86_reg destRegK
         this->addLineToPythonScript("# " + destStr + " = " + srcStr);
         return this->appendGadgetStartingWithInstruction(targetFirstInstructionList,
                                                          AddSets(forbiddenRegisterKeys, {destRegKey}),
-                                                         []{});
+                                                         [](const std::string&){});
     });
     if (success) { return true; }
 
@@ -733,8 +736,10 @@ bool ROP::PayloadGenX86::appendGadgetForAssignValueToRegister(x86_reg destRegKey
 
         return this->appendGadgetStartingWithInstruction(targetFirstInstructionList,
                                                          AddSets(forbiddenRegisterKeys, {destRegKey}),
-                                                         [&]{
-            this->appendBytesOfRegisterSizedConstantToPayload(cValue);
+                                                         [&](const std::string& firstInstr) {
+            if (firstInstr.compare(0, 3, "pop") == 0) {
+                this->appendBytesOfRegisterSizedConstantToPayload(cValue);
+            }
         });
     });
     if (success) { return true; }
