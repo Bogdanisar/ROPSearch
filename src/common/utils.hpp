@@ -178,6 +178,16 @@ static void RightTrimString(std::string& str, const char *badChars = " \t\n\r\f\
     str.erase(pos + 1);
 }
 
+template<typename IntType>
+static std::string IntToHex(IntType intValue, int minWidth, bool isUppercase) {
+    std::ostringstream ss;
+    ss << std::hex << std::setfill('0');
+    ss << std::setw(minWidth);
+    ss << (isUppercase ? std::uppercase : std::nouppercase);
+    ss << intValue;
+    return ss.str();
+}
+
 #pragma endregion Strings
 
 
@@ -195,6 +205,6 @@ static std::set<InnerType> AddSets(std::set<InnerType> s1, const std::set<InnerT
 #pragma endregion Misc
 
 
-#pragma GCC diagnostic pop
+#pragma GCC diagnostic pop // "-Wunused-function"
 
 #endif // UTILS_H
