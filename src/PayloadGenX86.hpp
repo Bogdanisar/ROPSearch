@@ -239,8 +239,10 @@ namespace ROP {
          * append the found sequence(s) to the payload bytes and script.
          */
         bool appendGadgetForAssignValueToRegister(x86_reg regKey,
-                                                  const uint64_t cValue,
-                                                  std::set<x86_reg> forbiddenRegisterKeys);
+                                                  uint64_t cValue,
+                                                  std::set<x86_reg> forbiddenRegisterKeys,
+                                                  int numAllowedIntermediates = 3,
+                                                  bool isParentCall = true);
 
         public:
         bool forbidNullBytesInPayload = false;

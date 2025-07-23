@@ -1081,7 +1081,8 @@ void testPayloadGeneration() {
     // generator.appendGadgetForCopyOrExchangeRegisters(X86_REG_RAX, X86_REG_RDX, {});
     // generator.appendGadgetForCopyOrExchangeRegisters(X86_REG_RBX, X86_REG_RAX, {X86_REG_RAX});
 
-    generator.appendGadgetForAssignValueToRegister(X86_REG_RBX, 0x11223344, {});
+    generator.appendGadgetForAssignValueToRegister(X86_REG_RCX, 0x11223344, {});
+    generator.appendGadgetForAssignValueToRegister(X86_REG_RCX, -1, {});
 
     generator.writePayloadToFile("_payload.dat");
     generator.writeScriptToFile("_payloadScript.py");

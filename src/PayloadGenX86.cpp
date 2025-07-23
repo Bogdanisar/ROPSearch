@@ -709,19 +709,84 @@ bool ROP::PayloadGenX86::appendGadgetForCopyOrExchangeRegisters(x86_reg destRegK
     return false;
 }
 
-bool ROP::PayloadGenX86::appendGadgetForAssignValueToRegister(x86_reg regKey,
-                                                              const uint64_t cValue,
-                                                              std::set<x86_reg> forbiddenRegisterKeys) {
-    std::string regString = InstructionConverter::convertCapstoneRegIdToShortStringLowercase(this->regKeyToMainReg[regKey]);
-    std::string targetInstruction = "pop " + regString;
-    forbiddenRegisterKeys.insert(regKey);
+bool ROP::PayloadGenX86::appendGadgetForAssignValueToRegister(x86_reg destRegKey,
+                                                              uint64_t cValue,
+                                                              std::set<x86_reg> forbiddenRegisterKeys,
+                                                              int numAllowedIntermediates,
+                                                              bool isParentCall) {
+    if (this->processArchSize == BitSizeClass::BIT32) { cValue = (uint32_t)cValue; }
+    std::string prettyHexValue = IntToHex(cValue, 2 * this->numBytesOfAddress, true);
 
-    std::string regStringUpper = InstructionConverter::convertCapstoneRegIdToShortString(this->regKeyToMainReg[regKey]);
-    this->addLineToPythonScript("# " + regStringUpper + " = value;");
+    std::string destRegStr = InstructionConverter::convertCapstoneRegIdToShortStringLowercase(this->regKeyToMainReg[destRegKey]);
+    LogDebug("Trying to do: (%s = %s).", destRegStr.c_str(), prettyHexValue.c_str());
 
-    return this->appendGadgetStartingWithInstruction({targetInstruction}, forbiddenRegisterKeys, [&]{
-        this->appendBytesOfRegisterSizedConstantToPayload(cValue);
+    assertMessage(forbiddenRegisterKeys.count(destRegKey) == 0, "The destination register has to be changed...");
+    bool success;
+
+    success = this->tryAppendOperationsAndRevertOnFailure([&] {
+        this->addLineToPythonScript("# " + destRegStr + " = 0x" + prettyHexValue);
+
+        std::string shortHexValue;
+        if (this->processArchSize == BitSizeClass::BIT64) {
+            shortHexValue = IntToHex((uint64_t)cValue, 0, false);
+        }
+        else {
+            assert(this->processArchSize == BitSizeClass::BIT32);
+            shortHexValue = IntToHex((uint32_t)cValue, 0, false);
+        }
+
+        std::vector<std::string> targetFirstInstructionList = {
+            "pop " + destRegStr,
+            "mov " + destRegStr + ", 0x" + shortHexValue,
+        };
+        return this->appendGadgetStartingWithInstruction(targetFirstInstructionList,
+                                                         AddSets(forbiddenRegisterKeys, {destRegKey}),
+                                                         [&]{
+            this->appendBytesOfRegisterSizedConstantToPayload(cValue);
+        });
     });
+    if (success) { return true; }
+
+    // Try with some intermediate registers.
+    if (numAllowedIntermediates != 0) {
+        for (x86_reg midRegKey : this->usableRegKeys) {
+            if (midRegKey == destRegKey) {
+                continue;
+            }
+            if (forbiddenRegisterKeys.count(midRegKey) != 0) {
+                continue;
+            }
+
+            success = this->tryAppendOperationsAndRevertOnFailure([&] {
+                if (isParentCall) {
+                    this->addLineToPythonScript("# " + destRegStr + " = 0x" + prettyHexValue + " (with intermediates)");
+                    this->addLineToPythonScript("if True:");
+                    this->currLineIndent++;
+                }
+
+                bool ok = true;
+                ok = ok && this->appendGadgetForAssignValueToRegister(midRegKey,
+                                                                      cValue,
+                                                                      forbiddenRegisterKeys,
+                                                                      numAllowedIntermediates - 1,
+                                                                      false);
+                ok = ok && this->appendGadgetForCopyOrExchangeRegisters(destRegKey,
+                                                                        midRegKey,
+                                                                        forbiddenRegisterKeys,
+                                                                        0,
+                                                                        false);
+
+                if (isParentCall) {
+                    this->currLineIndent--;
+                }
+
+                return ok;
+            });
+            if (success) { return true; }
+        }
+    }
+
+    return false;
 }
 
 
