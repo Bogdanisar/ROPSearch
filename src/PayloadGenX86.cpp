@@ -720,9 +720,17 @@ bool ROP::PayloadGenX86::appendGadgetForAssignValueToRegister(x86_reg destRegKey
         }
 
         std::vector<std::string> targetFirstInstructionList = {
-            "pop " + destRegStr,
             "mov " + destRegStr + ", 0x" + shortHexValue,
         };
+
+        bool nullBytesAreAllowed = !this->forbidNullBytesInPayload;
+        bool valueIsNullFree = (GetNumNullBytesOfRegisterSizedConstant(this->processArchSize, cValue) == 0);
+        if (nullBytesAreAllowed || valueIsNullFree) {
+            targetFirstInstructionList.push_back(
+                "pop " + destRegStr
+            );
+        }
+
         return this->appendGadgetStartingWithInstruction(targetFirstInstructionList,
                                                          AddSets(forbiddenRegisterKeys, {destRegKey}),
                                                          [&]{
@@ -752,12 +760,12 @@ bool ROP::PayloadGenX86::appendGadgetForAssignValueToRegister(x86_reg destRegKey
                 ok = ok && this->appendGadgetForAssignValueToRegister(midRegKey,
                                                                       cValue,
                                                                       forbiddenRegisterKeys,
-                                                                      numAllowedIntermediates - 1,
+                                                                      0,
                                                                       false);
                 ok = ok && this->appendGadgetForCopyOrExchangeRegisters(destRegKey,
                                                                         midRegKey,
                                                                         forbiddenRegisterKeys,
-                                                                        0,
+                                                                        numAllowedIntermediates - 1,
                                                                         false);
 
                 if (isParentCall) {
