@@ -245,6 +245,12 @@ namespace ROP {
                                                   int numAllowedIntermediates = 3,
                                                   bool isParentCall = true);
 
+        /**
+         * Try to build a ROP-chain that performs `execve("/bin/sh", NULL, NULL)`.
+         * Passing NULL for arguments and environment is explicitly allowed for some Linux versions.
+         */
+        bool appendROPChainForShellCodeWithPathNullNull();
+
         public:
         bool forbidNullBytesInPayload = false;
         bool ignoreDuplicateInstructionSequenceResults = true;

