@@ -24,6 +24,7 @@ namespace ROP {
     class PayloadGenX86 {
         VirtualMemoryInstructions vmInstructionsObject;
         std::vector< std::pair<addressType, std::vector<std::string>> > instrSeqs;
+        std::map<std::string, std::vector<unsigned>> firstInstrToSequenceIndexes;
         std::vector< std::vector<RegisterInfo> > regInfoSeqs;
         /**
          * Indexes into `instrSeqs` and `regInfoSeqs`.

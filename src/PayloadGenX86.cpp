@@ -255,6 +255,13 @@ void ROP::PayloadGenX86::computeRelevantSequenceIndexes() {
         return (this->instrSeqs[idxA].second.size() < this->instrSeqs[idxB].second.size());
     };
     sort(this->sequenceIndexList.begin(), this->sequenceIndexList.end(), comparator);
+
+    // Compute `this->firstInstrToSequenceIndexes` member.
+    for (unsigned seqIndex : this->sequenceIndexList) {
+        const std::vector<std::string>& instrSequence = this->instrSeqs[seqIndex].second;
+        const std::string& firstInstr = instrSequence[0];
+        this->firstInstrToSequenceIndexes[firstInstr].push_back(seqIndex);
+    }
 }
 
 void ROP::PayloadGenX86::configureGenerator() {
@@ -478,7 +485,7 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
     }
 
     std::vector<SequenceLookupResult> results;
-    for (unsigned sequenceIndex : this->sequenceIndexList) {
+    for (unsigned sequenceIndex : this->firstInstrToSequenceIndexes[targetInstruction]) {
         auto addressAndSequencePair = this->instrSeqs[sequenceIndex];
         addressType address = addressAndSequencePair.first;
         const std::vector<std::string>& currInstrSequence = addressAndSequencePair.second;
@@ -487,9 +494,7 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
 
         // See if the first instruction in the sequence is the one that we want.
         assert(currInstrSequence.size() > 0);
-        if (currInstrSequence[0] != targetInstruction) {
-            continue;
-        }
+        assert(currInstrSequence[0] == targetInstruction);
 
         // See if the other instructions in the sequence, ignoring the last one, don't break anything important.
         bool sequenceIsGood = true;
