@@ -722,16 +722,23 @@ bool ROP::PayloadGenX86::appendGadgetForAssignValueToRegister(x86_reg destRegKey
             shortHexValue = IntToHex((uint32_t)cValue, 0, false);
         }
 
-        std::vector<std::string> targetFirstInstructionList = {
-            "mov " + destRegStr + ", 0x" + shortHexValue,
-        };
+        std::vector<std::string> targetFirstInstructionList;
+        if (cValue == 0) {
+            targetFirstInstructionList.push_back("mov " + destRegStr + ", 0"); // This seems to be the syntax.
+            targetFirstInstructionList.push_back("mov " + destRegStr + ", 0x0");
+            targetFirstInstructionList.push_back("and " + destRegStr + ", 0"); // This seems to be the syntax.
+            targetFirstInstructionList.push_back("and " + destRegStr + ", 0x0");
+            targetFirstInstructionList.push_back("xor " + destRegStr + ", " + destRegStr);
+            targetFirstInstructionList.push_back("sub " + destRegStr + ", " + destRegStr);
+        }
+        else {
+            targetFirstInstructionList.push_back("mov " + destRegStr + ", 0x" + shortHexValue);
+        }
 
         bool nullBytesAreAllowed = !this->forbidNullBytesInPayload;
         bool valueIsNullFree = (GetNumNullBytesOfRegisterSizedConstant(this->processArchSize, cValue) == 0);
         if (nullBytesAreAllowed || valueIsNullFree) {
-            targetFirstInstructionList.push_back(
-                "pop " + destRegStr
-            );
+            targetFirstInstructionList.push_back("pop " + destRegStr);
         }
 
         return this->appendGadgetStartingWithInstruction(targetFirstInstructionList,
