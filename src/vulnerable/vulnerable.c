@@ -3,103 +3,92 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 
-// Just to have an example of a function that has bounded buffer writing and that is compiled with stack canaries.
-void printUserMessageSafe() {
-    char localBuffer[105];
-    memset(localBuffer, 0, sizeof(localBuffer));
+char userInput[10000000];
+unsigned userInputByteSize;
 
-    // Read the message from the standard input.
-    fread(localBuffer, 1, 100, stdin);
+// Safe read of the user input from stdin.
+void readUserInputSafely() {
+    memset(userInput, 0x00, sizeof(userInput));
 
-    printf("User message: %s\n", localBuffer);
+    // Read the first chunk of input (the payload),
+    // but keep stdin open for subsequent reads (the commands for the shell).
+    userInputByteSize = read(STDIN_FILENO, userInput, sizeof(userInput));
+    printf("Bytes read from input = %u\n", userInputByteSize);
 }
 
 
-void
-__attribute__ ((__optimize__ ("-fno-stack-protector")))
-printUserMessageVulnerableFread() {
-    uint32_t inputSize;
-    char localBuffer[100];
-    memset(localBuffer, 0x00, sizeof(localBuffer));
-
-    // Read the size of the input buffer;
-    fread(&inputSize, sizeof(inputSize), 1, stdin);
-    printf("Input size: %u\n", (unsigned)inputSize);
-
-    // Read the message from the standard input.
-    // Not checking the size => Vulnerability.
-    fread(localBuffer, 1, inputSize, stdin);
-
-    printf("User message: %s\n", localBuffer);
+void printUppercaseVersionOfCString(char * const str, unsigned prefixSize) {
+    for (unsigned idx = 0; idx < prefixSize; ++idx) {
+        str[idx] = toupper(str[idx]);
+    }
+    printf("Uppercased input: %s\n", str);
 }
 
 
-void
-__attribute__ ((__optimize__ ("-fno-stack-protector")))
-printUserMessageUpperCaseVulnerableStrcpy(const char * const userInput) {
+void copyAndPrintUserMessageWithSafeMemcpy() {
     char inputCopy[100];
     memset(inputCopy, 0x00, sizeof(inputCopy));
 
-    // Make a copy of the input. No bounds check => Oops.
-    strcpy(inputCopy, userInput);
+    // Copy the message safely into the local buffer.
+    memcpy(inputCopy, userInput, sizeof(inputCopy));
 
-    // Turn the copy to upper case.
-    for (unsigned i = 0; i < sizeof(inputCopy); ++i) {
-        inputCopy[i] = toupper(inputCopy[i]);
-    }
-
-    printf("Uppercase user message: %s\n", inputCopy);
+    printUppercaseVersionOfCString(inputCopy, sizeof(inputCopy));
 }
 
 void
 __attribute__ ((__optimize__ ("-fno-stack-protector")))
-printUserMessageVulnerableStrcpyParent() {
-    uint32_t inputSize;
-    char userInput[1024];
-    memset(userInput, 0x00, sizeof(userInput));
+copyAndPrintUserMessageWithVulnerableMemcpy() {
+    char inputCopy[100];
+    memset(inputCopy, 0x00, sizeof(inputCopy));
 
-    // Read the size of the input buffer.
-    fread(&inputSize, sizeof(inputSize), 1, stdin);
-    printf("Input size: %u\n", (unsigned)inputSize);
+    // Make a copy of the input.
+    // Using the size of the source, not the destination => Oops.
+    memcpy(inputCopy, userInput, userInputByteSize);
 
-    // Make sure the user input doesn't overflow the buffer.
-    if (inputSize > sizeof(userInput) - 1) {
-        inputSize = sizeof(userInput) - 1;
-    }
+    printUppercaseVersionOfCString(inputCopy, sizeof(inputCopy));
+}
 
-    // Read the message from the standard input (safe).
-    fread(userInput, 1, inputSize, stdin);
-    printf("Initial user message: %s\n", userInput);
+void
+__attribute__ ((__optimize__ ("-fno-stack-protector")))
+copyAndPrintUserMessageWithVulnerableStrcpy() {
+    char inputCopy[100];
+    memset(inputCopy, 0x00, sizeof(inputCopy));
 
-    printUserMessageUpperCaseVulnerableStrcpy(userInput);
+    // Make a copy of the input.
+    // No bounds check => Oops.
+    strcpy(inputCopy, userInput);
+
+    printUppercaseVersionOfCString(inputCopy, sizeof(inputCopy));
 }
 
 
 int main(int argc, char* argv[]) {
-    printf("argc = %i\n", argc);
-    for (int i = 0; i < argc; ++i) {
-        printf("argv[%i] = %s\n", i, argv[i]);
-    }
+    // printf("argc = %i\n", argc);
+    // for (int i = 0; i < argc; ++i) {
+    //     printf("argv[%i] = %s\n", i, argv[i]);
+    // }
 
-    if (argc < 2) {
-        printf("Usage: %s function ... \n", argv[0]);
+    if (argc != 2) {
+        printf("Usage: %s function \n", argv[0]);
         printf("Notes:\n");
         printf("- The 'function' argument means which vulnerable code branch to take. \n");
-        printf("  Options: 'safe', 'fread', 'strcpy'.\n");
-        printf("- Using further arguments or the standard input depends on the chosen 'function' argument.\n");
+        printf("  Options: 'safe', 'vulnerable_memcpy', 'vulnerable_strcpy'.\n");
         exit(-1);
     }
 
+    readUserInputSafely();
+
     if (strcmp(argv[1], "safe") == 0) {
-        printUserMessageSafe();
+        copyAndPrintUserMessageWithSafeMemcpy();
     }
-    else if (strcmp(argv[1], "fread") == 0) {
-        printUserMessageVulnerableFread();
+    else if (strcmp(argv[1], "vulnerable_memcpy") == 0) {
+        copyAndPrintUserMessageWithVulnerableMemcpy();
     }
-    else if (strcmp(argv[1], "strcpy") == 0) {
-        printUserMessageVulnerableStrcpyParent();
+    else if (strcmp(argv[1], "vulnerable_strcpy") == 0) {
+        copyAndPrintUserMessageWithVulnerableStrcpy();
     }
     else {
         printf("Got wrong 'function' CLI argument.\n");
