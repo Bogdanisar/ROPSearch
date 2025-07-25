@@ -31,6 +31,14 @@ namespace ROP {
          * We use this in order to be able to do sorting and filtering.
          */
         std::vector<unsigned> sequenceIndexList;
+        /**
+         * An index into `sequenceIndexList` for a valid "ret" instruction sequence
+         * (a sequence with just one "ret" instruction).
+         * If an index for a valid sequence is not found
+         * (no "ret" instructions at all or they all have NULL bytes and NULL bytes are forbidden),
+         * then the value is `this->instrSeqs.size()`.
+         */
+        unsigned indexValidRetInstrSeq;
 
         BitSizeClass processArchSize;
         // How many bytes a register has for the current architecture size. 4 or 8.
@@ -151,6 +159,15 @@ namespace ROP {
         void appendPaddingBytesToPayload(const unsigned numPaddingBytes);
 
         /**
+         * Appends the virtual memory address of a "ret" instruction (many times)
+         * to the payload bytes in order to cover at least `minByteSizeToCover` bytes in the payload.
+         * If the CPU starts executing this, nothing happens until after the RET-sled.
+         * A Ret-sled is useful for padding the beginning of the payload
+         * if you don't know the exact size of the needed padding for covering the stack buffer.
+         */
+        void appendRetSledBytesToPayload(const unsigned minByteSizeToCover);
+
+        /**
          * Try to perform some (payload append) operations described by the callback.
          * On failure, revert the payload bytes and script to their previous state.
          */
@@ -257,8 +274,9 @@ namespace ROP {
         public:
         bool forbidNullBytesInPayload = false;
         bool ignoreDuplicateInstructionSequenceResults = true;
-        unsigned numAcceptablePaddingBytesForOneInstruction = 30; // Max 400.
+        unsigned approximateByteSizeOfStackBuffer = 100; // i.e. the payload overflows into something like `char buffer[100]`.
         unsigned numVariantsToOutputForEachStep = 1; // Set to `0` for "All of them".
+        unsigned numAcceptablePaddingBytesForOneInstruction = 30; // Max 400.
         /**
          * Call this after setting the configuration fields above.
          * You must not change the configuration fields after calling this method.

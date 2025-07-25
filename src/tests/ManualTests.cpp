@@ -1074,8 +1074,9 @@ void testPayloadGeneration() {
     PayloadGenX86 generator(targetPid);
     generator.forbidNullBytesInPayload = false;
     generator.ignoreDuplicateInstructionSequenceResults = true;
-    generator.numAcceptablePaddingBytesForOneInstruction = 400;
+    generator.approximateByteSizeOfStackBuffer = 100;
     generator.numVariantsToOutputForEachStep = 0; // all of them.
+    generator.numAcceptablePaddingBytesForOneInstruction = 400;
     generator.configureGenerator();
 
     // generator.appendGadgetForCopyOrExchangeRegisters(X86_REG_RAX, X86_REG_RDX, {});
