@@ -420,7 +420,7 @@ void ROP::PayloadGenX86::appendPaddingBytesToPayload(const unsigned numPaddingBy
     }
 
     std::ostringstream ss;
-    ss << "payload += b'0xFF' * " << numPaddingBytes;
+    ss << "payload += b'\\xFF' * " << numPaddingBytes;
     this->addLineToPythonScript(ss.str());
 }
 
