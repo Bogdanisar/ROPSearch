@@ -254,7 +254,7 @@ void ROP::PayloadGenX86::computeRelevantSequenceIndexes() {
     auto comparator = [&](unsigned idxA, unsigned idxB) {
         return (this->instrSeqs[idxA].second.size() < this->instrSeqs[idxB].second.size());
     };
-    sort(this->sequenceIndexList.begin(), this->sequenceIndexList.end(), comparator);
+    std::sort(this->sequenceIndexList.begin(), this->sequenceIndexList.end(), comparator);
 
     // Compute `this->firstInstrToSequenceIndexes` member.
     for (unsigned seqIndex : this->sequenceIndexList) {
@@ -640,6 +640,12 @@ ROP::PayloadGenX86::appendGadgetStartingWithInstruction(const std::vector<std::s
 
         return false;
     }
+
+    // Sort the results by the length of the instruction sequence, increasingly.
+    auto comparator = [&](const SequenceLookupResult& seqA, const SequenceLookupResult& seqB) {
+        return (this->instrSeqs[seqA.index].second.size() < this->instrSeqs[seqB.index].second.size());
+    };
+    std::sort(allSeqResults.begin(), allSeqResults.end(), comparator);
 
     this->addLineToPythonScript("if True:");
     this->currLineIndent++;
