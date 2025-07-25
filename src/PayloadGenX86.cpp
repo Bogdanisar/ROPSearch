@@ -837,18 +837,22 @@ bool ROP::PayloadGenX86::appendGadgetForAssignValueToRegister(x86_reg destRegKey
 
 bool ROP::PayloadGenX86::appendROPChainForShellCodeWithPathNullNull() {
     // Find "/bin/sh" in memory.
+    bool foundBinShAddress = false;
     addressType binShAddress = 0;
+
     std::vector<addressType> matchedAddressList;
     matchedAddressList = this->vmInstructionsObject.getVirtualMemoryBytes().matchStringInVirtualMemory("/bin/sh");
     for (addressType addr : matchedAddressList) {
         bool nullBytesAreAllowed = !this->forbidNullBytesInPayload;
         bool valueIsNullFree = (GetNumNullBytesOfRegisterSizedConstant(this->processArchSize, addr) == 0);
         if (nullBytesAreAllowed || valueIsNullFree) {
+            foundBinShAddress = true;
             binShAddress = addr;
+            break;
         }
     }
 
-    if (binShAddress == 0) {
+    if (!foundBinShAddress) {
         exitError("Can't find good address for \"/bin/sh\" in virtual memory...");
     }
 
