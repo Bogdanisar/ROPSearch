@@ -264,6 +264,41 @@ void ROP::PayloadGenX86::computeRelevantSequenceIndexes() {
     }
 }
 
+void ROP::PayloadGenX86::addPythonScriptPrelude() {
+    std::ostringstream ss;
+    this->addLineToPythonScript("# Configuration options:");
+
+    ss.str("");
+    ss << "# Allow NULL bytes in payload: ";
+    ss << (this->forbidNullBytesInPayload ? "Yes" : "No");
+    this->addLineToPythonScript(ss.str());
+
+    ss.str("");
+    ss << "# Ignore duplicate instruction sequence results: ";
+    ss << (this->ignoreDuplicateInstructionSequenceResults ? "Yes" : "No");
+    this->addLineToPythonScript(ss.str());
+
+    ss.str("");
+    ss << "# Number of acceptable padding bytes for a single instruction: ";
+    ss << this->numAcceptablePaddingBytesForOneInstruction;
+    this->addLineToPythonScript(ss.str());
+
+    ss.str("");
+    ss << "# Maximum number of instruction sequence variants to output for each step: ";
+    if (this->numVariantsToOutputForEachStep != 0) {
+        ss << this->numVariantsToOutputForEachStep;
+    }
+    else {
+        ss << "All of them";
+    }
+    this->addLineToPythonScript(ss.str());
+
+    this->addLineToPythonScript(""); // New line
+    this->addLineToPythonScript("# Init the payload");
+    this->addLineToPythonScript("payload = b''");
+    this->addLineToPythonScript(""); // New line
+}
+
 void ROP::PayloadGenX86::configureGenerator() {
     if (this->numAcceptablePaddingBytesForOneInstruction > 400) {
         this->numAcceptablePaddingBytesForOneInstruction = 400;
@@ -277,6 +312,7 @@ void ROP::PayloadGenX86::configureGenerator() {
 
     this->instrSeqs = this->vmInstructionsObject.getInstructionSequences(&this->regInfoSeqs);
     this->computeRelevantSequenceIndexes();
+    this->addPythonScriptPrelude();
 }
 
 

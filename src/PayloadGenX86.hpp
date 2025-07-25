@@ -104,10 +104,12 @@ namespace ROP {
 
 
         void preconfigureVMInstructionsObject();
-        void computeRelevantSequenceIndexes();
+
         void loadTheSyscallArgNumberMap();
         void loadTheRegisterMaps();
         void loadTheStackPointerInstructionToOffsetMap();
+        void computeRelevantSequenceIndexes();
+        void addPythonScriptPrelude();
 
         public:
         /**
