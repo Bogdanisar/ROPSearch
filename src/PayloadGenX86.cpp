@@ -280,6 +280,9 @@ void ROP::PayloadGenX86::computeRelevantSequenceIndexes() {
 
 void ROP::PayloadGenX86::addPythonScriptPrelude() {
     std::ostringstream ss;
+
+    this->addLineToPythonScript("import os, pathlib");
+    this->addLineToPythonScript(""); // New line.
     this->addLineToPythonScript("# Configuration options:");
 
     ss.str("");
@@ -312,10 +315,10 @@ void ROP::PayloadGenX86::addPythonScriptPrelude() {
     ss << this->numAcceptablePaddingBytesForOneInstruction;
     this->addLineToPythonScript(ss.str());
 
-    this->addLineToPythonScript(""); // New line
+    this->addLineToPythonScript(""); // New line.
     this->addLineToPythonScript("# Init the payload");
     this->addLineToPythonScript("payload = b''");
-    this->addLineToPythonScript(""); // New line
+    this->addLineToPythonScript(""); // New line.
 }
 
 void ROP::PayloadGenX86::configureGenerator() {
@@ -1045,6 +1048,22 @@ void ROP::PayloadGenX86::writePayloadToFile(const std::string& filename) {
 
 void ROP::PayloadGenX86::writeScriptToFile(const std::string& filename) {
     const std::string& filePathString = GetPathToFileInSameParentDirectory(filename);
+
+    // Add some code at the end of the python script for changing the CWD.
+    this->addLineToPythonScript("# Change the CWD of the script to its own directory.");
+    this->addLineToPythonScript("abspath = os.path.abspath(__file__)");
+    this->addLineToPythonScript("dname = os.path.dirname(abspath)");
+    this->addLineToPythonScript("os.chdir(dname)");
+    this->addLineToPythonScript(""); // New line.
+
+    // Add some code at the end of the python script for writing the payload bytes to a file.
+    this->addLineToPythonScript("# Write the payload bytes to a file.");
+    this->addLineToPythonScript("scriptFileNameWithoutExtension = pathlib.Path(__file__).stem");
+    this->addLineToPythonScript("with open(f'{scriptFileNameWithoutExtension}.dat', 'wb') as fout:");
+    this->currLineIndent++;
+    this->addLineToPythonScript("fout.write(payload)");
+    this->currLineIndent--;
+    this->addLineToPythonScript(""); // New line.
 
     // Open the file for writing.
     std::ofstream fout(filePathString);
