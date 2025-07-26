@@ -285,9 +285,15 @@ void ROP::PayloadGenX86::computeRelevantSequenceIndexes() {
 void ROP::PayloadGenX86::addPythonScriptPrelude() {
     std::ostringstream ss;
 
+    this->addLineToPythonScript("# This script was generated automatically by the ROPSearch tool.");
     this->addLineToPythonScript("import os, pathlib");
     this->addLineToPythonScript(""); // New line.
+
     this->addLineToPythonScript("# Configuration options:");
+    ss.str("");
+    ss << "# Max length of each instruction sequence: ";
+    ss << VirtualMemoryInstructions::MaxInstructionsInInstructionSequence;
+    this->addLineToPythonScript(ss.str());
 
     ss.str("");
     ss << "# Allow NULL bytes in payload: ";
@@ -310,7 +316,7 @@ void ROP::PayloadGenX86::addPythonScriptPrelude() {
         ss << this->numVariantsToOutputForEachStep;
     }
     else {
-        ss << "All of them";
+        ss << "All";
     }
     this->addLineToPythonScript(ss.str());
 
