@@ -310,11 +310,11 @@ void ConfigureROPChainCommandSubparser() {
         .scan<'u', unsigned>()
         .default_value(5u);
     gROPChainCmdSubparser.add_argument("-mp", "--max-padding")
-        .help("maximum number of padding bytes that is allowed for each instruction in each of the detected sequences")
+        .help("maximum number of padding bytes that is allowed for each detected instruction sequence")
         .metavar("UINT")
         .nargs(1)
         .scan<'u', unsigned>()
-        .default_value(30u);
+        .default_value(100u);
     gROPChainCmdSubparser.add_argument("--no-null")
         .help("ignore payload results that contain NULL (\"0x00\") bytes. Note: This may print nothing on 64bit arch")
         .flag();
@@ -931,14 +931,14 @@ void DoROPChainCommand() {
     const unsigned approximateStackBufferSize = gROPChainCmdSubparser.get<unsigned>("--buffer-length");
     const unsigned maxInstructions = gROPChainCmdSubparser.get<unsigned>("--max-instructions");
     const unsigned maxInstrSeqVariants = gROPChainCmdSubparser.get<unsigned>("--max-variants");
-    const unsigned maxPaddingBytesForEachInstruction = gROPChainCmdSubparser.get<unsigned>("--max-padding");
+    const unsigned maxPaddingBytesForEachInstructionSequence = gROPChainCmdSubparser.get<unsigned>("--max-padding");
     const bool forbidNullBytes = gROPChainCmdSubparser.get<bool>("--no-null");
     const bool allowDuplicates = gROPChainCmdSubparser.get<bool>("--allow-duplicates");
 
     // Check that the configuration values are sensible.
     assertMessage(approximateStackBufferSize <= 100000, "Too big");
     assertMessage(1 <= maxInstructions && maxInstructions <= 100, "Please input a different number of max instructions...");
-    assertMessage(maxPaddingBytesForEachInstruction <= 400, "Too big");
+    assertMessage(maxPaddingBytesForEachInstructionSequence <= 1000, "Too big");
 
     // Set the preconfiguration variables.
     VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = maxInstructions;
@@ -960,7 +960,7 @@ void DoROPChainCommand() {
     generator.ignoreDuplicateInstructionSequenceResults = !allowDuplicates;
     generator.approximateByteSizeOfStackBuffer = approximateStackBufferSize;
     generator.numVariantsToOutputForEachStep = maxInstrSeqVariants;
-    generator.numAcceptablePaddingBytesForOneInstruction = maxPaddingBytesForEachInstruction;
+    generator.numAcceptablePaddingBytesForOneInstrSequence = maxPaddingBytesForEachInstructionSequence;
     generator.configureGenerator();
 
     bool success = false;

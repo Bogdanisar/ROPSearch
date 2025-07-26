@@ -199,7 +199,7 @@ void ROP::PayloadGenX86::loadTheStackPointerInstructionToOffsetMap() {
     this->stackPointerIncreaseInstructionToOffset["inc sp"] = 1;
     this->stackPointerIncreaseInstructionToOffset["inc spl"] = 1;
 
-    unsigned maxOffset = this->numAcceptablePaddingBytesForOneInstruction;
+    unsigned maxOffset = this->numAcceptablePaddingBytesForOneInstrSequence;
     char offsetBuffer[100];
     for (unsigned offset = 0; offset <= maxOffset; ++offset) {
         for (std::string regString : {"rsp", "esp", "sp", "spl"}) {
@@ -315,8 +315,8 @@ void ROP::PayloadGenX86::addPythonScriptPrelude() {
     this->addLineToPythonScript(ss.str());
 
     ss.str("");
-    ss << "# Number of acceptable padding bytes for a single instruction: ";
-    ss << this->numAcceptablePaddingBytesForOneInstruction;
+    ss << "# Number of acceptable padding bytes for a single instruction sequence: ";
+    ss << this->numAcceptablePaddingBytesForOneInstrSequence;
     this->addLineToPythonScript(ss.str());
 
     this->addLineToPythonScript(""); // New line.
@@ -682,12 +682,16 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
         int imm = this->checkInstructionIsRetAndGetImmediateValue(currInstrSequence.back(),
                                                                   currRegInfoSequence.back());
         bool lastInstructionIsRet = (imm != -1);
-        if (lastInstructionIsRet && imm <= (int)this->numAcceptablePaddingBytesForOneInstruction) {
+        if (lastInstructionIsRet && imm <= (int)this->numAcceptablePaddingBytesForOneInstrSequence) {
             // All good.
             numReturnPaddingNeeded = imm;
         }
         else {
             // Bad final instruction.
+            sequenceIsGood = false;
+        }
+
+        if (numMiddlePaddingNeeded + numReturnPaddingNeeded > this->numAcceptablePaddingBytesForOneInstrSequence) {
             sequenceIsGood = false;
         }
 

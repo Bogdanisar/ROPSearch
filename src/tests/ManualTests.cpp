@@ -1079,7 +1079,7 @@ void testPayloadGeneration() {
     generator.ignoreDuplicateInstructionSequenceResults = true;
     generator.approximateByteSizeOfStackBuffer = 100;
     generator.numVariantsToOutputForEachStep = 0; // all of them.
-    generator.numAcceptablePaddingBytesForOneInstruction = 400;
+    generator.numAcceptablePaddingBytesForOneInstrSequence = 400;
     generator.configureGenerator();
 
     // generator.appendGadgetForCopyOrExchangeRegisters(X86_REG_RAX, X86_REG_RDX, {});
