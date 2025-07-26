@@ -1071,6 +1071,9 @@ void testPayloadGeneration() {
     int targetPid = getPidOfExecutable(targetExecutable);
     pv(targetPid); pn;
 
+    // Preconfiguration.
+    VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = 10;
+
     PayloadGenX86 generator(targetPid);
     generator.forbidNullBytesInPayload = true;
     generator.ignoreDuplicateInstructionSequenceResults = true;

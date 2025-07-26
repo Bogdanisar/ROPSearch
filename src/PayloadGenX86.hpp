@@ -268,24 +268,24 @@ namespace ROP {
                                                   int numAllowedIntermediates = 3,
                                                   bool isParentCall = true);
 
-        /**
-         * Try to build a ROP-chain that performs `execve("/bin/sh", NULL, NULL)`.
-         * Passing NULL for arguments and environment is explicitly allowed for some Linux versions.
-         */
-        bool appendROPChainForShellCodeWithPathNullNull();
-
         public:
         bool forbidNullBytesInPayload = false;
         bool ignoreDuplicateInstructionSequenceResults = true;
-        unsigned approximateByteSizeOfStackBuffer = 100; // i.e. the payload overflows into something like `char buffer[100]`.
+        unsigned approximateByteSizeOfStackBuffer = 100; // i.e. the payload overflows something like `char buffer[100]`.
         unsigned numVariantsToOutputForEachStep = 1; // Set to `0` for "All of them".
-        unsigned numAcceptablePaddingBytesForOneInstruction = 30; // Max 400.
+        unsigned numAcceptablePaddingBytesForOneInstruction = 30;
         /**
          * Call this after setting the configuration fields above.
          * You must not change the configuration fields after calling this method.
          * You must call this method before trying to get any payloads.
          */
         void configureGenerator();
+
+        /**
+         * Try to build a ROP-chain that performs `execve("/bin/sh", NULL, NULL)`.
+         * Passing NULL for arguments and environment is explicitly allowed for some Linux versions.
+         */
+        bool appendROPChainForShellCodeWithPathNullNull();
 
         void writePayloadToFile(const std::string& filename);
         void writeScriptToFile(const std::string& filename);

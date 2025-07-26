@@ -8,6 +8,7 @@
 
 #include "common/utils.hpp"
 #include "InstructionConverter.hpp"
+#include "PayloadGenX86.hpp"
 #include "RegisterQueryX86.hpp"
 #include "VirtualMemoryInstructions.hpp"
 
@@ -38,6 +39,7 @@ ArgumentParser gProgramParser("ROPSearch", "1.0", default_arguments::help);
 ArgumentParser gListCmdSubparser("list", "1.0", default_arguments::help);
 ArgumentParser gAssemblyInfoCmdSubparser("asmInfo", "1.0", default_arguments::help);
 ArgumentParser gFindDataCmdSubparser("findData", "1.0", default_arguments::help);
+ArgumentParser gROPChainCmdSubparser("ropChain", "1.0", default_arguments::help);
 
 #define SORT_CRIT_ADDRESS_ASC "address-asc"
 #define SORT_CRIT_ADDRESS_DESC "address-desc"
@@ -45,6 +47,8 @@ ArgumentParser gFindDataCmdSubparser("findData", "1.0", default_arguments::help)
 #define SORT_CRIT_STRING_DESC "string-desc"
 #define SORT_CRIT_NUM_INSTRUCTIONS_ASC "num-instr-asc"
 #define SORT_CRIT_NUM_INSTRUCTIONS_DESC "num-instr-desc"
+
+#define ROPCHAIN_TYPE_SHELLNULLNULL "shellNullNull"
 
 
 void AddVerboseArgumentToParser(ArgumentParser& parser) {
@@ -246,6 +250,92 @@ void ConfigureFindDataSubparser() {
     gProgramParser.add_subparser(gFindDataCmdSubparser);
 }
 
+void ConfigureROPChainCommandSubparser() {
+    gROPChainCmdSubparser.add_description("Automatically build a payload for a chain of Return-Oriented-Programming gadgets.");
+    gROPChainCmdSubparser.set_usage_max_line_width(160);
+
+    AddVerboseArgumentToParser(gROPChainCmdSubparser);
+
+    // "Source" arguments
+    gROPChainCmdSubparser.add_usage_newline();
+    auto &mutExGroup = gROPChainCmdSubparser.add_mutually_exclusive_group(true);
+    mutExGroup.add_argument("-pid", "--process-id")
+        .help("the pid for the target running process. "
+              "The tool needs permission to access the \"/proc/PID/maps\" file. "
+              "For example, run it under the same user as the target process or under the super-user")
+        .metavar("PID")
+        .scan<'i', int>();
+    mutExGroup.add_argument("-exec", "--executable-path")
+        .help("a path to an executable (ELF) file. "
+              "The tool will load all readable segments found in the file. "
+              "Can pass multiple paths. "
+              "Can be used with the \"--base-address\" argument")
+        .metavar("PATH")
+        .nargs(argparse::nargs_pattern::at_least_one);
+    gROPChainCmdSubparser.add_argument("-addr", "--base-address")
+        .help("this argument is only relevant when used with \"--executable-path\". "
+              "It's a hexadecimal address which will be used as a base address "
+              "at which the segments of an ELF file are loaded. "
+              "Can pass multiple values and each new base address will be used for the next ELF file. "
+              "If not enough addresses, then 0 will be used as a default.")
+        .metavar("HEX")
+        .scan<'x', addressType>()
+        .nargs(argparse::nargs_pattern::any)
+        .default_value(vector<addressType>{});
+
+    // "Configuration" arguments
+    gROPChainCmdSubparser.add_usage_newline();
+    gROPChainCmdSubparser.add_argument("-t", "--type")
+        .help("the kind of ROP-chain you want to generate. Options: \"" ROPCHAIN_TYPE_SHELLNULLNULL "\"")
+        .metavar("STR")
+        .nargs(1)
+        .required()
+        .choices(ROPCHAIN_TYPE_SHELLNULLNULL);
+    gROPChainCmdSubparser.add_argument("--buffer-length")
+        .help("approximate total byte size of the stack variables/buffers that need to be overflowed")
+        .metavar("UINT")
+        .nargs(1)
+        .scan<'u', unsigned>()
+        .required();
+    gROPChainCmdSubparser.add_argument("-maxi", "--max-instructions")
+        .help("the maximum number of assembly instructions contained in the same instruction sequence")
+        .metavar("UINT")
+        .nargs(1)
+        .scan<'u', unsigned>()
+        .default_value(10u);
+    gROPChainCmdSubparser.add_argument("-mv", "--max-variants")
+        .help("maximum number of instruction sequence variants to show for each step in the payload script. Pass 0 for \"all of them\"")
+        .metavar("UINT")
+        .nargs(1)
+        .scan<'u', unsigned>()
+        .default_value(5u);
+    gROPChainCmdSubparser.add_argument("-mp", "--max-padding")
+        .help("maximum number of padding bytes that is allowed for each instruction in each of the detected sequences")
+        .metavar("UINT")
+        .nargs(1)
+        .scan<'u', unsigned>()
+        .default_value(30u);
+    gROPChainCmdSubparser.add_argument("--no-null")
+        .help("ignore payload results that contain NULL (\"0x00\") bytes. Note: This may print nothing on 64bit arch")
+        .flag();
+    gROPChainCmdSubparser.add_argument("--allow-duplicates")
+        .help("keep duplicate instruction sequence results when showing multiple variants in the payload script")
+        .flag();
+
+    // "Output" arguments
+    gROPChainCmdSubparser.add_usage_newline();
+    gROPChainCmdSubparser.add_argument("-pf", "--payload-file")
+        .help("a path where you want the payload bytes to be written, as a binary file")
+        .metavar("PATH")
+        .nargs(1);
+    gROPChainCmdSubparser.add_argument("-sf", "--script-file")
+        .help("a path where you want the generated Python script (which can generate the payload bytes) to be written")
+        .metavar("PATH")
+        .nargs(1);
+
+    gProgramParser.add_subparser(gROPChainCmdSubparser);
+}
+
 void ConfigureArgumentParser() {
     gProgramParser.add_argument("--version")
     .help("prints version information and exits")
@@ -260,6 +350,7 @@ void ConfigureArgumentParser() {
     ConfigureListCommandSubparser();
     ConfigureAssemblyInfoCommandSubparser();
     ConfigureFindDataSubparser();
+    ConfigureROPChainCommandSubparser();
 }
 
 #pragma endregion Configure argument parser
@@ -830,6 +921,85 @@ void DoFindDataCommand() {
 #pragma endregion Find Data command
 
 
+#pragma region ROP Chain command
+#if false
+int ________ROP_Chain_command________;
+#endif
+
+void DoROPChainCommand() {
+    const string ropChainType = gROPChainCmdSubparser.get<string>("--type");
+    const unsigned approximateStackBufferSize = gROPChainCmdSubparser.get<unsigned>("--buffer-length");
+    const unsigned maxInstructions = gROPChainCmdSubparser.get<unsigned>("--max-instructions");
+    const unsigned maxInstrSeqVariants = gROPChainCmdSubparser.get<unsigned>("--max-variants");
+    const unsigned maxPaddingBytesForEachInstruction = gROPChainCmdSubparser.get<unsigned>("--max-padding");
+    const bool forbidNullBytes = gROPChainCmdSubparser.get<bool>("--no-null");
+    const bool allowDuplicates = gROPChainCmdSubparser.get<bool>("--allow-duplicates");
+
+    // Check that the configuration values are sensible.
+    assertMessage(approximateStackBufferSize <= 100000, "Too big");
+    assertMessage(1 <= maxInstructions && maxInstructions <= 100, "Please input a different number of max instructions...");
+    assertMessage(maxPaddingBytesForEachInstruction <= 400, "Too big");
+
+    // Set the preconfiguration variables.
+    VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = maxInstructions;
+
+    // Load the generator object with the information of the given source.
+    PayloadGenX86 generator = [&]() {
+        if (auto pid = gROPChainCmdSubparser.present<int>("--process-id")) {
+            return PayloadGenX86(*pid);
+        }
+        else {
+            vector<string> execs = gROPChainCmdSubparser.get<vector<string>>("--executable-path");
+            vector<addressType> addrs = gROPChainCmdSubparser.get<vector<addressType>>("--base-address");
+            return PayloadGenX86(execs, addrs);
+        }
+    }();
+
+    // Configure the generator object.
+    generator.forbidNullBytesInPayload = forbidNullBytes;
+    generator.ignoreDuplicateInstructionSequenceResults = !allowDuplicates;
+    generator.approximateByteSizeOfStackBuffer = approximateStackBufferSize;
+    generator.numVariantsToOutputForEachStep = maxInstrSeqVariants;
+    generator.numAcceptablePaddingBytesForOneInstruction = maxPaddingBytesForEachInstruction;
+    generator.configureGenerator();
+
+    bool success = false;
+    if (ropChainType == ROPCHAIN_TYPE_SHELLNULLNULL) {
+        success = generator.appendROPChainForShellCodeWithPathNullNull();
+    }
+    else {
+        exitError("Unrecognized ROP-chain type.");
+    }
+
+    if (!success) {
+        LogWarn("Can't generate the selected ROP-chain...");
+        return;
+    }
+    LogInfo("Payload generation successful!");
+
+    // Write output.
+    int numOutputOptions = 0;
+    if (gROPChainCmdSubparser.is_used("--payload-file")) {
+        string payloadFile = gROPChainCmdSubparser.get<string>("--payload-file");
+        generator.writePayloadToFile(payloadFile);
+        LogInfo("Wrote payload bytes to %s", payloadFile.c_str());
+        numOutputOptions++;
+    }
+    if (gROPChainCmdSubparser.is_used("--script-file")) {
+        string scriptFile = gROPChainCmdSubparser.get<string>("--script-file");
+        generator.writeScriptToFile(scriptFile);
+        LogInfo("Wrote payload python script to %s", scriptFile.c_str());
+        numOutputOptions++;
+    }
+
+    if (numOutputOptions == 0) {
+        LogInfo("No output options given...");
+    }
+}
+
+#pragma endregion ROP Chain command
+
+
 #pragma region Main
 #if false
 int ________Main________;
@@ -862,6 +1032,11 @@ int main(int argc, char* argv[]) {
 
     if (gFindDataCmdSubparser) {
         DoFindDataCommand();
+        return 0;
+    }
+
+    if (gROPChainCmdSubparser) {
+        DoROPChainCommand();
         return 0;
     }
 

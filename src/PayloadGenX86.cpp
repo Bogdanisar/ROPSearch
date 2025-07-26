@@ -9,7 +9,6 @@
 
 
 void ROP::PayloadGenX86::preconfigureVMInstructionsObject() {
-    VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = 10;
     VirtualMemoryInstructions::SearchForSequencesWithDirectRelativeJumpsInTheMiddle = true;
     VirtualMemoryInstructions::IgnoreOutputSequencesThatStartWithDirectRelativeJumps = true;
     VirtualMemoryInstructions::innerAssemblySyntax = ROP::AssemblySyntax::Intel;
@@ -327,14 +326,6 @@ void ROP::PayloadGenX86::addPythonScriptPrelude() {
 }
 
 void ROP::PayloadGenX86::configureGenerator() {
-    if (this->approximateByteSizeOfStackBuffer > 10000) {
-        this->approximateByteSizeOfStackBuffer = 10000;
-    }
-
-    if (this->numAcceptablePaddingBytesForOneInstruction > 400) {
-        this->numAcceptablePaddingBytesForOneInstruction = 400;
-    }
-
     this->processArchSize = this->vmInstructionsObject.getVirtualMemoryBytes().getProcessArchSize();
     this->registerByteSize = (this->processArchSize == BitSizeClass::BIT64) ? 8 : 4;
     this->loadTheSyscallArgNumberMap();
