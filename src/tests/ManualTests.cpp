@@ -1082,13 +1082,14 @@ void testPayloadGeneration() {
     // generator.appendGadgetForCopyOrExchangeRegisters(X86_REG_RAX, X86_REG_RDX, {});
     // generator.appendGadgetForCopyOrExchangeRegisters(X86_REG_RBX, X86_REG_RAX, {X86_REG_RAX});
 
-    // generator.appendGadgetForAssignValueToRegister(X86_REG_RAX, 0x00112233, {});
-    // generator.appendGadgetForAssignValueToRegister(X86_REG_RBX, 0x11223344, {});
-    // generator.appendGadgetForAssignValueToRegister(X86_REG_RCX, -1, {});
+    // generator.appendGadgetForAssignValueToRegister(X86_REG_RAX, 0x11223344, {});
+    // generator.appendGadgetForAssignValueToRegister(X86_REG_RBX, 0x00112233, {});
+    generator.appendGadgetForAssignValueToRegister(X86_REG_RCX, -1, {});
 
-    generator.appendROPChainForShellCodeWithPathNullNull();
+    // generator.appendROPChainForShellCodeWithPathNullNull();
 
     generator.writePayloadToFile("_payload.dat");
+    // generator.writePayloadToFile("mypipe");
     generator.writeScriptToFile("_payloadScript.py");
 }
 

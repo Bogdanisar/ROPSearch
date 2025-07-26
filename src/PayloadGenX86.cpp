@@ -207,7 +207,12 @@ void ROP::PayloadGenX86::loadTheStackPointerInstructionToOffsetMap() {
             memset(offsetBuffer, 0, sizeof(offsetBuffer));
             sprintf(offsetBuffer, "%x", offset);
 
-            std::string instruction = "add " + regString + ", 0x" + offsetBuffer;
+            std::string instruction;
+            instruction = "add " + regString + ", 0x" + offsetBuffer;
+            this->stackPointerIncreaseInstructionToOffset[instruction] = offset;
+
+            // I think Capstone doesn't place a "0x" prefix if the value is the same in both decimal and hex.
+            instruction = "add " + regString + ", " + offsetBuffer;
             this->stackPointerIncreaseInstructionToOffset[instruction] = offset;
         }
     }
