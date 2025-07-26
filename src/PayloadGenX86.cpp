@@ -378,6 +378,25 @@ bool ROP::PayloadGenX86::registerSizedValueIsFreeOfForbiddenBytes(uint64_t cValu
     return true;
 }
 
+ROP::addressType ROP::PayloadGenX86::findValidVirtualMemoryAddressOfString(const char * const cStr) {
+    // Find the string in memory.
+    std::vector<addressType> matchedAddressList;
+    matchedAddressList = this->vmInstructionsObject.getVirtualMemoryBytes().matchStringInVirtualMemory(cStr);
+    if (matchedAddressList.size() == 0) {
+        LogWarn("Can't find any address for \"%s\" in virtual memory...", cStr);
+        return 0;
+    }
+
+    for (addressType addr : matchedAddressList) {
+        if (this->registerSizedValueIsFreeOfForbiddenBytes(addr)) {
+            return addr;
+        }
+    }
+
+    LogWarn("Can't find any address for \"%s\" in virtual memory that doesn't have forbidden bytes...", cStr);
+    return 0;
+}
+
 
 void ROP::PayloadGenX86::addLineToPythonScript(const std::string& line) {
     std::string prefix = "";
@@ -984,22 +1003,8 @@ bool ROP::PayloadGenX86::appendGadgetForAssignValueToRegister(x86_reg destRegKey
 
 bool ROP::PayloadGenX86::appendROPChainForShellCodeWithPathNullNull() {
     // Find "/bin/sh" in memory.
-    bool foundBinShAddress = false;
-    addressType binShAddress = 0;
-
-    std::vector<addressType> matchedAddressList;
-    matchedAddressList = this->vmInstructionsObject.getVirtualMemoryBytes().matchStringInVirtualMemory("/bin/sh");
-    for (addressType addr : matchedAddressList) {
-        if (this->registerSizedValueIsFreeOfForbiddenBytes(addr)) {
-            foundBinShAddress = true;
-            binShAddress = addr;
-            break;
-        }
-    }
-
-    if (!foundBinShAddress) {
-        exitError("Can't find good address for \"/bin/sh\" in virtual memory...");
-    }
+    addressType binShAddress = this->findValidVirtualMemoryAddressOfString("/bin/sh");
+    assertMessage(binShAddress != 0, "Can't make this work without a \"/bin/sh\" address in virtual memory...");
 
     return this->tryAppendOperationsAndRevertOnFailure([&] {
         // Explain in the script what we are doing.

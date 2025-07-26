@@ -142,6 +142,8 @@ namespace ROP {
 
         bool registerSizedValueIsFreeOfForbiddenBytes(uint64_t cValue);
 
+        addressType findValidVirtualMemoryAddressOfString(const char * const cStr);
+
 
         /**
          * Add the given line to the Python script,
