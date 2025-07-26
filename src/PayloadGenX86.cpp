@@ -412,7 +412,7 @@ void ROP::PayloadGenX86::appendBytesOfRegisterSizedConstantToPayload(const uint6
     for (ROP::byte currByte : bytes) {
         ss << "\\x" << std::setw(2) << (unsigned)currByte;
     }
-    ss << "' # Value: 0x" << IntToHex(cValue, 2 * this->registerByteSize, true);
+    ss << "' # Value: 0x" << IntToHex(cValue, 2 * this->registerByteSize, false);
     this->addLineToPythonScript(ss.str());
 }
 
@@ -859,7 +859,7 @@ bool ROP::PayloadGenX86::appendGadgetForAssignValueToRegister(x86_reg destRegKey
                                                               int numAllowedIntermediates,
                                                               bool isParentCall) {
     if (this->processArchSize == BitSizeClass::BIT32) { cValue = (uint32_t)cValue; }
-    std::string prettyHexValue = IntToHex(cValue, 2 * this->registerByteSize, true);
+    std::string prettyHexValue = IntToHex(cValue, 2 * this->registerByteSize, false);
 
     std::string destRegStr = InstructionConverter::convertCapstoneRegIdToShortStringLowercase(this->regKeyToMainReg[destRegKey]);
     std::string docString = destRegStr + " = 0x" + prettyHexValue;
