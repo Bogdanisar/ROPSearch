@@ -358,6 +358,7 @@ void ROP::PayloadGenX86::addLineToPythonScript(const std::string& line) {
 }
 
 void ROP::PayloadGenX86::appendInstructionSequenceToPayload(unsigned sequenceIndex) {
+    assertMessage(sequenceIndex < this->instrSeqs.size(), "Bad instruction sequence index");
     const auto& currentPair = this->instrSeqs[sequenceIndex];
     addressType address = currentPair.first;
     const std::vector<std::string>& instrSequence = currentPair.second;
@@ -629,7 +630,8 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
 
         // See if the other instructions in the sequence, ignoring the last one, don't break anything important.
         bool sequenceIsGood = true;
-        unsigned totalNumPaddingNeeded = 0;
+        unsigned numMiddlePaddingNeeded = 0;
+        unsigned numReturnPaddingNeeded = 0;
         for (unsigned instructionIndex = 1; instructionIndex < currInstrSequence.size() - 1; ++instructionIndex) {
             const std::string& currentInstruction = currInstrSequence[instructionIndex];
             const RegisterInfo& currentRegInfo = currRegInfoSequence[instructionIndex];
@@ -660,7 +662,7 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
             if (isSafeStackPointerIncreaseInstruction) {
                 // The current instruction is something like "pop rbx" or "add esp, 0x20".
                 // We checked and it doesn't write to any forbidden registers, so it's fine;
-                totalNumPaddingNeeded += rspOffset;
+                numMiddlePaddingNeeded += rspOffset;
                 continue;
             }
 
@@ -691,7 +693,7 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
         bool lastInstructionIsRet = (imm != -1);
         if (lastInstructionIsRet && imm <= (int)this->numAcceptablePaddingBytesForOneInstruction) {
             // All good.
-            totalNumPaddingNeeded += imm;
+            numReturnPaddingNeeded = imm;
         }
         else {
             // Bad final instruction.
@@ -701,7 +703,8 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
         if (sequenceIsGood) {
             SequenceLookupResult currentResult;
             currentResult.index = sequenceIndex;
-            currentResult.numNeededPaddingBytes = totalNumPaddingNeeded;
+            currentResult.numMiddlePaddingBytes = numMiddlePaddingNeeded;
+            currentResult.numReturnPaddingBytes = numReturnPaddingNeeded;
             results.push_back(currentResult);
         }
     }
@@ -749,13 +752,24 @@ ROP::PayloadGenX86::appendGadgetStartingWithInstruction(const std::vector<std::s
     for (unsigned idx = 0; idx < numToOutput; ++idx) {
         const std::vector<std::string>& sequence = this->instrSeqs[allSeqResults[idx].index].second;
         const std::string& firstInstruction = sequence[0];
-
         this->currScriptLineIsComment = (idx != 0);
+
         this->appendInstructionSequenceToPayload(allSeqResults[idx].index);
         appendLinesAfterAddressBytesCb(firstInstruction);
-        this->appendPaddingBytesToPayload(allSeqResults[idx].numNeededPaddingBytes);
-        this->currScriptLineIsComment = false;
 
+        if (allSeqResults[idx].numMiddlePaddingBytes != 0) {
+            this->appendPaddingBytesToPayload(allSeqResults[idx].numMiddlePaddingBytes);
+        }
+
+        if (allSeqResults[idx].numReturnPaddingBytes != 0) {
+            // Get an index for a simple "ret" (0xC3) instruction sequence (as a NOP).
+            assertMessage(this->indexValidRetInstrSeq != this->instrSeqs.size(),
+                          "We need a virtual memory address for a \"ret\" instruction but no valid address found...");
+            this->appendInstructionSequenceToPayload(this->indexValidRetInstrSeq);
+            this->appendPaddingBytesToPayload(allSeqResults[idx].numReturnPaddingBytes);
+        }
+
+        this->currScriptLineIsComment = false;
         this->addLineToPythonScript(""); // New line.
     }
 

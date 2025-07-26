@@ -218,8 +218,11 @@ namespace ROP {
             // The index of the found sequence, in the sequence vector.
             unsigned index;
             // If any of the instructions in the sequence need extra padding on the stack
-            // (e.g. the last instruction is `ret imm16`), then this is the total amount of needed padding.
-            unsigned numNeededPaddingBytes;
+            // (e.g. a middle instruction is "add rsp, 0x20" or "pop rbx"), then this is the total amount of needed padding.
+            unsigned numMiddlePaddingBytes;
+            // If the last instruction is a "ret imm16" instruction,
+            // then this is the total amount of needed padding in the payload after the current sequence.
+            unsigned numReturnPaddingBytes;
         };
 
         /**
