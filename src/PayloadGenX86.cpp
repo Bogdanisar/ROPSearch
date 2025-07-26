@@ -862,13 +862,14 @@ bool ROP::PayloadGenX86::appendGadgetForAssignValueToRegister(x86_reg destRegKey
     std::string prettyHexValue = IntToHex(cValue, 2 * this->registerByteSize, true);
 
     std::string destRegStr = InstructionConverter::convertCapstoneRegIdToShortStringLowercase(this->regKeyToMainReg[destRegKey]);
-    LogDebug("Trying to do: (%s = %s).", destRegStr.c_str(), prettyHexValue.c_str());
+    std::string docString = destRegStr + " = 0x" + prettyHexValue;
+    LogDebug("Trying to do: (%s)", docString.c_str());
 
     assertMessage(forbiddenRegisterKeys.count(destRegKey) == 0, "The destination register has to be changed...");
     bool success;
 
     success = this->tryAppendOperationsAndRevertOnFailure([&] {
-        this->addLineToPythonScript("# " + destRegStr + " = 0x" + prettyHexValue);
+        this->addLineToPythonScript("# " + docString);
 
         std::string shortHexValue;
         if (this->processArchSize == BitSizeClass::BIT64) {
@@ -923,7 +924,7 @@ bool ROP::PayloadGenX86::appendGadgetForAssignValueToRegister(x86_reg destRegKey
 
             success = this->tryAppendOperationsAndRevertOnFailure([&] {
                 if (isParentCall) {
-                    this->addLineToPythonScript("# " + destRegStr + " = 0x" + prettyHexValue + " (with intermediates)");
+                    this->addLineToPythonScript("# " + docString + " (with intermediates)");
                     this->addLineToPythonScript("if True:");
                     this->currLineIndent++;
                 }
@@ -993,24 +994,28 @@ bool ROP::PayloadGenX86::appendROPChainForShellCodeWithPathNullNull() {
         argWorkClosure.push_back([&](const std::set<x86_reg>& forbiddenRegisterKeys) {
             x86_reg regKey = this->syscallArgNumberToRegKey[0];
             uint64_t syscallId = (this->processArchSize == BitSizeClass::BIT64) ? 59 : 11;
+            this->addLineToPythonScript("# System call number for execve().");
             return this->appendGadgetForAssignValueToRegister(regKey, syscallId, forbiddenRegisterKeys);
         });
 
         // First argument. Reg = "/bin/sh";
         argWorkClosure.push_back([&](const std::set<x86_reg>& forbiddenRegisterKeys) {
             x86_reg regKey = this->syscallArgNumberToRegKey[1];
+            this->addLineToPythonScript("# Address of \"/bin/sh\" in virtual memory.");
             return this->appendGadgetForAssignValueToRegister(regKey, binShAddress, forbiddenRegisterKeys);
         });
 
         // Second argument. Reg = 0 (NULL);
         argWorkClosure.push_back([&](const std::set<x86_reg>& forbiddenRegisterKeys) {
             x86_reg regKey = this->syscallArgNumberToRegKey[2];
+            this->addLineToPythonScript("# Set to NULL.");
             return this->appendGadgetForAssignValueToRegister(regKey, 0, forbiddenRegisterKeys);
         });
 
         // Third argument. Reg = 0 (NULL);
         argWorkClosure.push_back([&](const std::set<x86_reg>& forbiddenRegisterKeys) {
             x86_reg regKey = this->syscallArgNumberToRegKey[3];
+            this->addLineToPythonScript("# Set to NULL.");
             return this->appendGadgetForAssignValueToRegister(regKey, 0, forbiddenRegisterKeys);
         });
 
