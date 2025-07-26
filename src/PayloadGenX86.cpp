@@ -889,6 +889,9 @@ bool ROP::PayloadGenX86::appendGadgetForAssignValueToRegister(x86_reg destRegKey
         }
         else {
             targetFirstInstructionList.push_back("mov " + destRegStr + ", 0x" + shortHexValue);
+
+            // I think Capstone doesn't place a "0x" prefix if the value is the same in both decimal and hex.
+            targetFirstInstructionList.push_back("mov " + destRegStr + ", " + shortHexValue);
         }
 
         bool nullBytesAreAllowed = !this->forbidNullBytesInPayload;
