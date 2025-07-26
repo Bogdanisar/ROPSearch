@@ -573,8 +573,21 @@ int ROP::PayloadGenX86::checkInstructionIsRetAndGetImmediateValue(const std::str
     // Check if this is a "ret imm16" instruction.
     unsigned immediateValue = 0;
     int bytesRead = -1;
+
+    // See if the instruction is something like "ret 0xf" or "ret 0x123";
     sscanf(instruction.c_str(), "ret 0x%x%n", &immediateValue, &bytesRead);
-    return (bytesRead == (int)instruction.size()) ? (int)immediateValue : -1;
+    if (bytesRead == (int)instruction.size()) {
+        return (int)immediateValue;
+    }
+
+    // See if the instruction is something like "ret 4".
+    // I think Capstone doesn't place a "0x" prefix if the value is the same in both decimal and hex.
+    sscanf(instruction.c_str(), "ret %x%n", &immediateValue, &bytesRead);
+    if (bytesRead == (int)instruction.size()) {
+        return (int)immediateValue;
+    }
+
+    return -1;
 }
 
 unsigned ROP::PayloadGenX86::getNumberOfVariantsToOutputForThisStep(unsigned numFoundVariants) {
