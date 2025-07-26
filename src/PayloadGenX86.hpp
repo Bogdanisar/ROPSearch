@@ -138,6 +138,15 @@ namespace ROP {
 
         private:
 
+        unsigned getNumberOfVariantsToOutputForThisStep(unsigned numFoundVariants);
+
+        bool registerSizedValueIsFreeOfForbiddenBytes(uint64_t cValue);
+
+
+        /**
+         * Add the given line to the Python script,
+         * taking into account indentation and comment-status.
+         */
         void addLineToPythonScript(const std::string& line);
 
         /**
@@ -209,9 +218,6 @@ namespace ROP {
          */
         int checkInstructionIsRetAndGetImmediateValue(const std::string& instruction,
                                                       const RegisterInfo& regInfo);
-
-
-        unsigned getNumberOfVariantsToOutputForThisStep(unsigned numFoundVariants);
 
 
         struct SequenceLookupResult {

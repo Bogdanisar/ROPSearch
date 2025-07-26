@@ -223,18 +223,13 @@ void ROP::PayloadGenX86::computeRelevantSequenceIndexes() {
     // Generate relevant indexes;
     std::set<std::string> concatenatedInstrSeqStrings;
     for (unsigned idx = 0; idx < this->instrSeqs.size(); ++idx) {
+        const addressType& addr = this->instrSeqs[idx].first;
 
-        if (this->forbidNullBytesInPayload) {
-            // Check if there are any NULL bytes
-            // in the virtual memory address of this instruction sequence;
-            // If yes, ignore this sequence;
-
-            const addressType& addr = this->instrSeqs[idx].first;
-            bool addressHasNullBytes = (GetNumNullBytesOfRegisterSizedConstant(this->processArchSize, addr) > 0);
-            if (addressHasNullBytes) {
-                // Ignore this sequence
-                continue;
-            }
+        // Check if there are any forbidden bytes
+        // in the virtual memory address of this instruction sequence;
+        // If yes, ignore this sequence;
+        if (!this->registerSizedValueIsFreeOfForbiddenBytes(addr)) {
+            continue;
         }
 
         if (this->ignoreDuplicateInstructionSequenceResults) {
@@ -272,9 +267,7 @@ void ROP::PayloadGenX86::computeRelevantSequenceIndexes() {
     for (unsigned retSeqIndex : this->firstInstrToSequenceIndexes["ret"]) {
         addressType retAddress = this->instrSeqs[retSeqIndex].first;
 
-        bool nullBytesAreAllowed = !this->forbidNullBytesInPayload;
-        bool addressIsNullFree = (GetNumNullBytesOfRegisterSizedConstant(this->processArchSize, retAddress) == 0);
-        if (nullBytesAreAllowed || addressIsNullFree) {
+        if (this->registerSizedValueIsFreeOfForbiddenBytes(retAddress)) {
             // Found a valid index.
             this->indexValidRetInstrSeq = retSeqIndex;
             break;
@@ -341,6 +334,48 @@ void ROP::PayloadGenX86::configureGenerator() {
     this->instrSeqs = this->vmInstructionsObject.getInstructionSequences(&this->regInfoSeqs);
     this->computeRelevantSequenceIndexes();
     this->addPythonScriptPrelude();
+}
+
+
+unsigned ROP::PayloadGenX86::getNumberOfVariantsToOutputForThisStep(unsigned numFoundVariants) {
+    if (this->numVariantsToOutputForEachStep == 0) {
+        return numFoundVariants;
+    }
+
+    return std::min(this->numVariantsToOutputForEachStep, numFoundVariants);
+}
+
+bool ROP::PayloadGenX86::registerSizedValueIsFreeOfForbiddenBytes(uint64_t cValue) {
+    // Compute the set of forbidden bytes.
+    std::set<ROP::byte> forbiddenBytes;
+    if (this->forbidNullBytesInPayload) {
+        forbiddenBytes.insert(0x00);
+    }
+
+    // No forbidden bytes? Then any value is ok.
+    if (forbiddenBytes.size() == 0) {
+        return true;
+    }
+
+    // Get the bytes of the given value.
+    ROP::byteSequence bytes;
+    if (this->processArchSize == ROP::BitSizeClass::BIT64) {
+        bytes = BytesOfInteger((uint64_t)cValue);
+    }
+    else {
+        assert(this->processArchSize == ROP::BitSizeClass::BIT32);
+        bytes = BytesOfInteger((uint32_t)cValue);
+    }
+
+    // Look for forbidden bytes in the value.
+    for (const ROP::byte& currentByte : bytes) {
+        if (forbiddenBytes.count(currentByte) != 0) {
+            return false;
+        }
+    }
+
+    // No forbidden bytes found.
+    return true;
 }
 
 
@@ -437,7 +472,8 @@ void ROP::PayloadGenX86::appendRetSledBytesToPayload(const unsigned minByteSizeT
 
     // Get the virtual memory address of the "ret" instruction sequence.
     assertMessage(this->indexValidRetInstrSeq != this->instrSeqs.size(),
-                  "We need a virtual memory address for a \"ret\" instruction but no valid address found...");
+                  "We need a virtual memory address for a \"ret\" instruction but no valid address found... "
+                  "Either no \"ret\" found at all or they all have forbidden bytes.");
     addressType retAddress = this->instrSeqs[this->indexValidRetInstrSeq].first;
 
     // Get the bytes of the virtual memory address;
@@ -586,14 +622,6 @@ int ROP::PayloadGenX86::checkInstructionIsRetAndGetImmediateValue(const std::str
     }
 
     return -1;
-}
-
-unsigned ROP::PayloadGenX86::getNumberOfVariantsToOutputForThisStep(unsigned numFoundVariants) {
-    if (this->numVariantsToOutputForEachStep == 0) {
-        return numFoundVariants;
-    }
-
-    return std::min(this->numVariantsToOutputForEachStep, numFoundVariants);
 }
 
 
@@ -765,7 +793,8 @@ ROP::PayloadGenX86::appendGadgetStartingWithInstruction(const std::vector<std::s
         if (allSeqResults[idx].numReturnPaddingBytes != 0) {
             // Get an index for a simple "ret" (0xC3) instruction sequence (as a NOP).
             assertMessage(this->indexValidRetInstrSeq != this->instrSeqs.size(),
-                          "We need a virtual memory address for a \"ret\" instruction but no valid address found...");
+                          "We need a virtual memory address for a \"ret\" instruction but no valid address found... "
+                          "Either no \"ret\" found at all or they all have forbidden bytes.");
             this->appendInstructionSequenceToPayload(this->indexValidRetInstrSeq);
             this->appendPaddingBytesToPayload(allSeqResults[idx].numReturnPaddingBytes);
         }
@@ -896,9 +925,7 @@ bool ROP::PayloadGenX86::appendGadgetForAssignValueToRegister(x86_reg destRegKey
             targetFirstInstructionList.push_back("mov " + destRegStr + ", " + shortHexValue);
         }
 
-        bool nullBytesAreAllowed = !this->forbidNullBytesInPayload;
-        bool valueIsNullFree = (GetNumNullBytesOfRegisterSizedConstant(this->processArchSize, cValue) == 0);
-        if (nullBytesAreAllowed || valueIsNullFree) {
+        if (this->registerSizedValueIsFreeOfForbiddenBytes(cValue)) {
             targetFirstInstructionList.push_back("pop " + destRegStr);
         }
 
@@ -963,9 +990,7 @@ bool ROP::PayloadGenX86::appendROPChainForShellCodeWithPathNullNull() {
     std::vector<addressType> matchedAddressList;
     matchedAddressList = this->vmInstructionsObject.getVirtualMemoryBytes().matchStringInVirtualMemory("/bin/sh");
     for (addressType addr : matchedAddressList) {
-        bool nullBytesAreAllowed = !this->forbidNullBytesInPayload;
-        bool valueIsNullFree = (GetNumNullBytesOfRegisterSizedConstant(this->processArchSize, addr) == 0);
-        if (nullBytesAreAllowed || valueIsNullFree) {
+        if (this->registerSizedValueIsFreeOfForbiddenBytes(addr)) {
             foundBinShAddress = true;
             binShAddress = addr;
             break;
