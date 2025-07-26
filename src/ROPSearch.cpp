@@ -982,13 +982,13 @@ void DoROPChainCommand() {
     if (gROPChainCmdSubparser.is_used("--payload-file")) {
         string payloadFile = gROPChainCmdSubparser.get<string>("--payload-file");
         generator.writePayloadToFile(payloadFile);
-        LogInfo("Wrote payload bytes to %s", payloadFile.c_str());
+        LogInfo("Wrote payload bytes to \"%s\"", payloadFile.c_str());
         numOutputOptions++;
     }
     if (gROPChainCmdSubparser.is_used("--script-file")) {
         string scriptFile = gROPChainCmdSubparser.get<string>("--script-file");
         generator.writeScriptToFile(scriptFile);
-        LogInfo("Wrote payload python script to %s", scriptFile.c_str());
+        LogInfo("Wrote payload python script to \"%s\"", scriptFile.c_str());
         numOutputOptions++;
     }
 

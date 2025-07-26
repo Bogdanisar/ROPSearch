@@ -287,8 +287,8 @@ namespace ROP {
          */
         bool appendROPChainForShellCodeWithPathNullNull();
 
-        void writePayloadToFile(const std::string& filename);
-        void writeScriptToFile(const std::string& filename);
+        void writePayloadToFile(const std::string& path);
+        void writeScriptToFile(const std::string& path);
 
         public:
         // Mark these functions as friends so that they can access private members.

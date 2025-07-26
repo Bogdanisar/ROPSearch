@@ -1059,22 +1059,18 @@ static inline std::string GetPathToFileInSameParentDirectory(const std::string& 
     return filePathString;
 }
 
-void ROP::PayloadGenX86::writePayloadToFile(const std::string& filename) {
-    const std::string& filePathString = GetPathToFileInSameParentDirectory(filename);
-
+void ROP::PayloadGenX86::writePayloadToFile(const std::string& path) {
     // Open the file for writing bytes.
-    std::ofstream fout(filePathString, std::ios::binary);
+    std::ofstream fout(path, std::ios::binary);
     if (fout.fail()) {
-        exitError("Can't open file (%s) for writing the payload bytes.", filePathString.c_str());
+        exitError("Can't open file (%s) for writing the payload bytes.", path.c_str());
     }
 
     // Write the payload bytes to the file.
     fout.write((const char *)this->payloadBytes.data(), this->payloadBytes.size());
 }
 
-void ROP::PayloadGenX86::writeScriptToFile(const std::string& filename) {
-    const std::string& filePathString = GetPathToFileInSameParentDirectory(filename);
-
+void ROP::PayloadGenX86::writeScriptToFile(const std::string& path) {
     // Add some code at the end of the python script for changing the CWD.
     this->addLineToPythonScript("# Change the CWD of the script to its own directory.");
     this->addLineToPythonScript("abspath = os.path.abspath(__file__)");
@@ -1092,9 +1088,9 @@ void ROP::PayloadGenX86::writeScriptToFile(const std::string& filename) {
     this->addLineToPythonScript(""); // New line.
 
     // Open the file for writing.
-    std::ofstream fout(filePathString);
+    std::ofstream fout(path);
     if (fout.fail()) {
-        exitError("Can't open file (%s) for writing the script.", filePathString.c_str());
+        exitError("Can't open file (%s) for writing the script.", path.c_str());
     }
 
     for (const std::string& line : this->pythonScript) {
