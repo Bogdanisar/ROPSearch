@@ -296,6 +296,13 @@ namespace ROP {
          */
         bool appendROPChainForShellCodeWithPathNullNull();
 
+        /**
+         * Try to build a ROP-chain that performs `execve("/bin/sh", {NULL}, {NULL})`.
+         * The args and environment registers are assigned values that point to NULL.
+         * In other words, the arguments and environment arrays are empty.
+         */
+        bool appendROPChainForShellCodeWithPathEmptyEmpty();
+
         void writePayloadToFile(const std::string& path);
         void writeScriptToFile(const std::string& path);
 
