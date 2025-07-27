@@ -290,7 +290,7 @@ void ROP::PayloadGenX86::addPythonScriptPrelude() {
 
     ss.str("");
     ss << "# Allow NULL bytes in payload: ";
-    ss << (this->forbidNullBytesInPayload ? "Yes" : "No");
+    ss << (this->forbidNullBytesInPayload ? "No" : "Yes");
     this->addLineToPythonScript(ss.str());
 
     ss.str("");
