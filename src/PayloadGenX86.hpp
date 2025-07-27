@@ -143,6 +143,7 @@ namespace ROP {
         bool registerSizedValueIsFreeOfForbiddenBytes(uint64_t cValue);
 
         addressType findValidVirtualMemoryAddressOfString(const char * const cStr);
+        addressType findValidVirtualMemoryAddressOfBytes(const byteSequence& bytes);
 
 
         /**

@@ -397,6 +397,25 @@ ROP::addressType ROP::PayloadGenX86::findValidVirtualMemoryAddressOfString(const
     return 0;
 }
 
+ROP::addressType ROP::PayloadGenX86::findValidVirtualMemoryAddressOfBytes(const byteSequence& bytes) {
+    // Find the string in memory.
+    std::vector<addressType> matchedAddressList;
+    matchedAddressList = this->vmInstructionsObject.getVirtualMemoryBytes().matchBytesInVirtualMemory(bytes);
+    if (matchedAddressList.size() == 0) {
+        LogWarn("Can't find any address for the given bytes in virtual memory...");
+        return 0;
+    }
+
+    for (addressType addr : matchedAddressList) {
+        if (this->registerSizedValueIsFreeOfForbiddenBytes(addr)) {
+            return addr;
+        }
+    }
+
+    LogWarn("Can't find any address for the given bytes in virtual memory that doesn't have forbidden bytes...");
+    return 0;
+}
+
 
 void ROP::PayloadGenX86::addLineToPythonScript(const std::string& line) {
     std::string prefix = "";
