@@ -35,10 +35,17 @@ namespace ROP {
          * An index into `sequenceIndexList` for a valid "ret" instruction sequence
          * (a sequence with just one "ret" instruction).
          * If an index for a valid sequence is not found
-         * (no "ret" instructions at all or they all have NULL bytes and NULL bytes are forbidden),
+         * (no "ret" instructions at all or they all have forbidden bytes),
          * then the value is `this->instrSeqs.size()`.
          */
         unsigned indexValidRetInstrSeq;
+        /**
+         * An index into `sequenceIndexList` for a valid "int 0x80" / "syscall" instruction sequence.
+         * If an index for a valid sequence is not found
+         * (can't find the instructions at all or they all have forbidden bytes),
+         * then the value is `this->instrSeqs.size()`.
+         */
+        unsigned indexValidSyscallInstrSeq;
 
         BitSizeClass processArchSize;
         // How many bytes a register has for the current architecture size. 4 or 8.
@@ -259,6 +266,8 @@ namespace ROP {
         bool appendGadgetStartingWithInstruction(const std::vector<std::string>& targetFirstInstructionList,
                                                  std::set<x86_reg> forbiddenRegisterKeys,
                                                  const std::function<void(const std::string&)>& appendLinesAfterAddressBytesCb);
+
+        bool appendGadgetForFinalSystemCall();
 
 
         bool appendGadgetForCopyOrExchangeRegisters(x86_reg destRegKey,

