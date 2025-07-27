@@ -64,6 +64,21 @@ copyAndPrintUserMessageWithVulnerableStrcpy() {
     printUppercaseVersionOfCString(inputCopy, sizeof(inputCopy));
 }
 
+void
+__attribute__ ((__optimize__ ("-fno-stack-protector")))
+readAndPrintUserMessageWithVulnerableScanf() {
+    char inputCopy[100];
+    memset(inputCopy, 0x00, sizeof(inputCopy));
+
+    // Make a copy of the input.
+    // No bounds check => Oops.
+    int numCharsReadByScanf;
+    scanf("%s%n", inputCopy, &numCharsReadByScanf);
+    printf("Number of bytes read by scanf() = %i\n", numCharsReadByScanf);
+
+    printUppercaseVersionOfCString(inputCopy, sizeof(inputCopy));
+}
+
 
 int main(int argc, char* argv[]) {
     // printf("argc = %i\n", argc);
@@ -75,20 +90,24 @@ int main(int argc, char* argv[]) {
         printf("Usage: %s function \n", argv[0]);
         printf("Notes:\n");
         printf("- The 'function' argument means which vulnerable code branch to take. \n");
-        printf("  Options: 'safe', 'vulnerable_memcpy', 'vulnerable_strcpy'.\n");
+        printf("  Options: 'safe', 'vulnerable_memcpy', 'vulnerable_strcpy', 'vulnerable_scanf'.\n");
         exit(-1);
     }
 
-    readUserInputSafely();
-
     if (strcmp(argv[1], "safe") == 0) {
+        readUserInputSafely();
         copyAndPrintUserMessageWithSafeMemcpy();
     }
     else if (strcmp(argv[1], "vulnerable_memcpy") == 0) {
+        readUserInputSafely();
         copyAndPrintUserMessageWithVulnerableMemcpy();
     }
     else if (strcmp(argv[1], "vulnerable_strcpy") == 0) {
+        readUserInputSafely();
         copyAndPrintUserMessageWithVulnerableStrcpy();
+    }
+    else if (strcmp(argv[1], "vulnerable_scanf") == 0) {
+        readAndPrintUserMessageWithVulnerableScanf();
     }
     else {
         printf("Got wrong 'function' CLI argument.\n");

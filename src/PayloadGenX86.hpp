@@ -279,6 +279,7 @@ namespace ROP {
 
         public:
         bool forbidNullBytesInPayload = false;
+        bool forbidWhitespaceBytesInPayload = false;
         bool ignoreDuplicateInstructionSequenceResults = true;
         unsigned approximateByteSizeOfStackBuffer = 100; // i.e. the payload overflows something like `char buffer[100]`.
         unsigned numVariantsToOutputForEachStep = 1; // Set to `0` for "All of them".

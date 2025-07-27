@@ -294,6 +294,11 @@ void ROP::PayloadGenX86::addPythonScriptPrelude() {
     this->addLineToPythonScript(ss.str());
 
     ss.str("");
+    ss << "# Allow whitespace bytes in payload: ";
+    ss << (this->forbidWhitespaceBytesInPayload ? "No" : "Yes");
+    this->addLineToPythonScript(ss.str());
+
+    ss.str("");
     ss << "# Ignore duplicate instruction sequence results: ";
     ss << (this->ignoreDuplicateInstructionSequenceResults ? "Yes" : "No");
     this->addLineToPythonScript(ss.str());
@@ -350,6 +355,14 @@ bool ROP::PayloadGenX86::registerSizedValueIsFreeOfForbiddenBytes(uint64_t cValu
     std::set<ROP::byte> forbiddenBytes;
     if (this->forbidNullBytesInPayload) {
         forbiddenBytes.insert(0x00);
+    }
+    if (this->forbidWhitespaceBytesInPayload) {
+        forbiddenBytes.insert((ROP::byte)' ');  // (0x20) space (SPC)
+        forbiddenBytes.insert((ROP::byte)'\t'); // (0x09) horizontal tab (TAB)
+        forbiddenBytes.insert((ROP::byte)'\n'); // (0x0a) newline (LF)
+        forbiddenBytes.insert((ROP::byte)'\v'); // (0x0b) vertical tab (VT)
+        forbiddenBytes.insert((ROP::byte)'\f'); // (0x0c) feed (FF)
+        forbiddenBytes.insert((ROP::byte)'\r'); // (0x0d) carriage return (CR)
     }
 
     // No forbidden bytes? Then any value is ok.

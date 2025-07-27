@@ -320,6 +320,9 @@ void ConfigureROPChainCommandSubparser() {
     gROPChainCmdSubparser.add_argument("--no-null")
         .help("ignore payload results that contain NULL (\"0x00\") bytes. Note: This may print nothing on 64bit arch")
         .flag();
+    gROPChainCmdSubparser.add_argument("--no-whitespace")
+        .help("ignore payload results that contain whitespace bytes: 0x20, 0x09, 0x0A, 0x0B, 0x0C, 0x0D.")
+        .flag();
     gROPChainCmdSubparser.add_argument("--allow-duplicates")
         .help("keep duplicate instruction sequence results when showing multiple variants in the payload script")
         .flag();
@@ -935,6 +938,7 @@ void DoROPChainCommand() {
     const unsigned maxInstrSeqVariants = gROPChainCmdSubparser.get<unsigned>("--max-variants");
     const unsigned maxPaddingBytesForEachInstructionSequence = gROPChainCmdSubparser.get<unsigned>("--max-padding");
     const bool forbidNullBytes = gROPChainCmdSubparser.get<bool>("--no-null");
+    const bool forbidWhitespaceBytes = gROPChainCmdSubparser.get<bool>("--no-whitespace");
     const bool allowDuplicates = gROPChainCmdSubparser.get<bool>("--allow-duplicates");
 
     // Check that the configuration values are sensible.
@@ -959,6 +963,7 @@ void DoROPChainCommand() {
 
     // Configure the generator object.
     generator.forbidNullBytesInPayload = forbidNullBytes;
+    generator.forbidWhitespaceBytesInPayload = forbidWhitespaceBytes;
     generator.ignoreDuplicateInstructionSequenceResults = !allowDuplicates;
     generator.approximateByteSizeOfStackBuffer = approximateStackBufferSize;
     generator.numVariantsToOutputForEachStep = maxInstrSeqVariants;

@@ -1076,6 +1076,7 @@ void testPayloadGeneration() {
 
     PayloadGenX86 generator(targetPid);
     generator.forbidNullBytesInPayload = true;
+    generator.forbidWhitespaceBytesInPayload = true;
     generator.ignoreDuplicateInstructionSequenceResults = true;
     generator.approximateByteSizeOfStackBuffer = 100;
     generator.numVariantsToOutputForEachStep = 0; // all of them.
