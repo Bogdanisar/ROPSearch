@@ -7,9 +7,6 @@
 [submodule "deps/pugixml"]
 	path = deps/pugixml
 	url = https://github.com/zeux/pugixml
-[submodule "deps/cxxopts"]
-	path = deps/cxxopts
-	url = https://github.com/jarro2783/cxxopts
 [submodule "deps/argparse"]
 	path = deps/argparse
 	url = https://github.com/p-ranav/argparse
