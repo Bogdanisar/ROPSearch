@@ -84,9 +84,6 @@ bin/vulnerable32bit.o: src/vulnerable/vulnerable.c
 bin/vulnerable64bit.o: src/vulnerable/vulnerable.c
 	gcc -g $(wFlags) $(OPT_VULN) -c $< -o $@
 
-bin/hardcodedGadgets64bit.o: src/vulnerable/hardcodedGadgets64bit.c
-	gcc -g $(wFlags) $(OPT_VULN) -c $< -o $@
-
 
 bin/vulnerable32bit.exe: bin/vulnerable32bit.o
 	gcc -m32 $(OPT_VULN) $^ -o $@
@@ -94,11 +91,9 @@ bin/vulnerable32bit.exe: bin/vulnerable32bit.o
 bin/vulnerable64bit.exe: bin/vulnerable64bit.o
 	gcc $(OPT_VULN) $^ -o $@
 
-bin/vulnerableHelped64bit.exe: bin/vulnerable64bit.o bin/hardcodedGadgets64bit.o
-	gcc $(OPT_VULN) $^ -o $@
 
 .PHONY: vulnerable
-vulnerable: bin/vulnerable32bit.exe bin/vulnerable64bit.exe bin/vulnerableHelped64bit.exe
+vulnerable: bin/vulnerable32bit.exe bin/vulnerable64bit.exe
 
 
 # Misc
