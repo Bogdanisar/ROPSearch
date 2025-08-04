@@ -29,8 +29,8 @@ namespace ROP {
         std::vector<VirtualMemorySegmentBytes> executableSegments;
 
         void buildVirtualMemorySegments(int processPid);
-        void buildVirtualMemorySegments(const std::vector<std::string> execPaths,
-                                        const std::vector<addressType> baseAddresses);
+        void buildVirtualMemorySegments(const std::vector<std::string>& execPaths,
+                                        const std::vector<addressType>& baseAddresses);
         void sortSegments();
 
         public:

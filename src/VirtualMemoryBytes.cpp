@@ -76,8 +76,8 @@ void ROP::VirtualMemoryBytes::buildVirtualMemorySegments(int processPid) {
     this->processArchSize = *foundArchSizes.begin();
 }
 
-void ROP::VirtualMemoryBytes::buildVirtualMemorySegments(const std::vector<std::string> execPaths,
-                                                         const std::vector<addressType> baseAddresses) {
+void ROP::VirtualMemoryBytes::buildVirtualMemorySegments(const std::vector<std::string>& execPaths,
+                                                         const std::vector<addressType>& baseAddresses) {
     // This is used as an optimization in case we have the same ELF path multiple times.
     // (Otherwise, we would need to create more than one ELFParser for the same path).
     std::map<std::string, ELFParser> elfPathToELFParser;
