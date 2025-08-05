@@ -334,7 +334,7 @@ static inline bool BytesAreRelativeCallInstruction64bit(const ROP::byteSequence&
     return (numBytes == 5 && bSeq[first] == 0xE8);
 }
 
-static inline bool BytesAreRetInstruction(const ROP::byteSequence& bSeq, int first, int last) {
+static inline bool BytesAreNearRetInstruction(const ROP::byteSequence& bSeq, int first, int last) {
     const int numBytes = (last - first + 1);
 
     // "ret" instruction.
@@ -370,7 +370,7 @@ static inline bool BytesAreUsefulInstructionAtSequenceEnd(const ROP::byteSequenc
         return true;
     }
 
-    if (BytesAreRetInstruction(bSeq, first, last)) {
+    if (BytesAreNearRetInstruction(bSeq, first, last)) {
         return true;
     }
 
@@ -406,7 +406,7 @@ static inline bool BytesAreBadInstructionInsideSequence(const ROP::byteSequence&
         }
     }
 
-    if (BytesAreRetInstruction(bSeq, first, last)) {
+    if (BytesAreNearRetInstruction(bSeq, first, last)) {
         return true;
     }
 
