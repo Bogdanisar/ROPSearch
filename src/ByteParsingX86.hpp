@@ -346,6 +346,18 @@ static inline bool BytesAreNearRetInstruction(const ROP::byteSequence& bSeq, int
     return false;
 }
 
+static inline bool BytesAreFarRetInstruction(const ROP::byteSequence& bSeq, int first, int last) {
+    const int numBytes = (last - first + 1);
+
+    // "retf" instruction.
+    if (numBytes == 1 && bSeq[first] == 0xCB) { return true; }
+
+    // "retf imm16" instruction.
+    if (numBytes == 3 && bSeq[first] == 0xCA) { return true; }
+
+    return false;
+}
+
 #pragma endregion Misc
 
 
@@ -407,6 +419,9 @@ static inline bool BytesAreBadInstructionInsideSequence(const ROP::byteSequence&
     }
 
     if (BytesAreNearRetInstruction(bSeq, first, last)) {
+        return true;
+    }
+    if (BytesAreFarRetInstruction(bSeq, first, last)) {
         return true;
     }
 
