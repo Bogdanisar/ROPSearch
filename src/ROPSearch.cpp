@@ -117,6 +117,9 @@ void ConfigureListCommandSubparser() {
     gListCmdSubparser.add_argument("--no-null")
         .help("ignore instruction sequences that have a \"0x00\" byte in their virtual memory address. Note: This may print nothing on 64bit arch.")
         .flag();
+    gListCmdSubparser.add_argument("--no-whitespace")
+        .help("ignore sequence results where the address has whitespace bytes: 0x20, 0x09, 0x0A, 0x0B, 0x0C, 0x0D.")
+        .flag();
     gListCmdSubparser.add_argument("--bad-bytes")
         .help("ignore instruction sequences that have any of the specified bytes in their virtual memory address. "
               "Example: --bad-bytes 0x12 213 0o11. "
@@ -513,6 +516,11 @@ bitset<256> GetBadBytesArguments() {
     const bool ignoreNullBytes = gListCmdSubparser.get<bool>("--no-null");
     if (ignoreNullBytes) {
         badBytes.set(0x00, true);
+    }
+
+    const bool ignoreWhitespaceBytes = gListCmdSubparser.get<bool>("--no-whitespace");
+    if (ignoreWhitespaceBytes) {
+        badBytes |= GetWhitespaceBytesAsBitset();
     }
 
     return badBytes;
