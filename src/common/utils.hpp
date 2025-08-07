@@ -1,6 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <bitset>
 #include <filesystem>
 #include <iostream>
 #include <limits.h>
@@ -160,6 +161,47 @@ static unsigned GetNumNullBytesOfRegisterSizedConstant(ROP::BitSizeClass archSiz
     }
 
     return numNullBytes;
+}
+
+static bool RegisterSizedConstantHasBadBytes(ROP::BitSizeClass archSize,
+                                             const std::bitset<256>& badBytes,
+                                             uint64_t cValue) {
+    ROP::byteSequence bytes;
+    if (archSize == ROP::BitSizeClass::BIT64) {
+        bytes = BytesOfInteger((uint64_t)cValue);
+    }
+    else {
+        assert(archSize == ROP::BitSizeClass::BIT32);
+        bytes = BytesOfInteger((uint32_t)cValue);
+    }
+
+    for (const ROP::byte& currByte : bytes) {
+        if (badBytes[currByte])  {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static std::set<ROP::byte> GetWhitespaceBytesAsSet() {
+    std::set<ROP::byte> bytes;
+
+    bytes.insert((ROP::byte)' ');  // (0x20) space (SPC)
+    bytes.insert((ROP::byte)'\t'); // (0x09) horizontal tab (TAB)
+    bytes.insert((ROP::byte)'\n'); // (0x0a) newline (LF)
+    bytes.insert((ROP::byte)'\v'); // (0x0b) vertical tab (VT)
+    bytes.insert((ROP::byte)'\f'); // (0x0c) feed (FF)
+    bytes.insert((ROP::byte)'\r'); // (0x0d) carriage return (CR)
+
+    return bytes;
+}
+static std::bitset<256> GetWhitespaceBytesAsBitset() {
+    std::bitset<256> ret;
+    for (auto byte : GetWhitespaceBytesAsSet()) {
+        ret.set(byte);
+    }
+    return ret;
 }
 
 #pragma endregion Bytes

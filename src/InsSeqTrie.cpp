@@ -34,13 +34,17 @@ ROP::InsSeqTrie::Node* ROP::InsSeqTrie::addInstruction(
     if (referenceNode->children.count(instruction) == 0) {
         referenceNode->children[instruction] = new Node;
     }
-
     Node *childNode = referenceNode->children[instruction];
-    childNode->matchingVirtualAddresses.push_back(vAddress);
 
-    if (regInfo) {
-        childNode->regInfo = *regInfo;
+    if (this->numBadAddressBytes != 0
+        && RegisterSizedConstantHasBadBytes(this->archBitSize, this->badAddressBytes, vAddress)) {
+        // Don't add this address since it has bad bytes.
+        return childNode;
     }
+
+    // Set the new information on the child node.
+    childNode->matchingVirtualAddresses.push_back(vAddress);
+    if (regInfo) { childNode->regInfo = *regInfo; }
 
     return childNode;
 }
@@ -73,7 +77,10 @@ void ROP::InsSeqTrie::getTrieContent(Node *currentNode,
                                      std::vector< std::pair<addressType, std::vector<std::string>> >& content,
                                      std::vector<std::vector<RegisterInfo>> *outRegInfo) const
 {
-    assert(currentNode == this->root || currentNode->matchingVirtualAddresses.size() != 0);
+    assert(currentNode->matchingVirtualAddresses.size() != 0
+           || currentNode == this->root
+           || this->numBadAddressBytes != 0);
+
     if (currentNode->matchingVirtualAddresses.size() != 0) {
         for (addressType addr : currentNode->matchingVirtualAddresses) {
 

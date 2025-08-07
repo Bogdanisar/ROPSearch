@@ -519,10 +519,10 @@ vector<unsigned>
 FilterInstructionSequencesByListCmdArgs(const VirtualMemoryInstructions& vmInstructions,
                                         const vector< pair<addressType, vector<string>> >& instrSeqs,
                                         vector<vector<RegisterInfo>>& allRegInfoSeqs) {
+    UNUSED(vmInstructions);
     const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
     const bool hasRegisterQueryArg = gListCmdSubparser.is_used("--query");
     const bool packPartialRegistersInQuery = gListCmdSubparser.get<bool>("--pack");
-    BitSizeClass bsc = vmInstructions.getVirtualMemoryBytes().getProcessArchSize();
 
     vector<unsigned> validIndexes;
     for (unsigned idx = 0; idx < instrSeqs.size(); ++idx) {
@@ -536,33 +536,6 @@ FilterInstructionSequencesByListCmdArgs(const VirtualMemoryInstructions& vmInstr
 
         return (int)instructionSequence.size() < minInstructions;
     }), validIndexes.end());
-
-    // Apply the "--bad-bytes", "--no-null" filters.
-    bitset<256> badBytes = GetBadBytesArguments();
-    if (badBytes.size() > 0) {
-        validIndexes.erase(remove_if(validIndexes.begin(), validIndexes.end(), [&](unsigned idx) {
-            const auto& p = instrSeqs[idx];
-            const addressType& addr = p.first;
-
-            byteSequence addressBytes;
-            if (bsc == BitSizeClass::BIT64) {
-                addressBytes = BytesOfInteger((uint64_t)addr);
-            }
-            else {
-                addressBytes = BytesOfInteger((uint32_t)addr);
-            }
-
-            for (const ROP::byte& currentAddressByte : addressBytes) {
-                if (badBytes.test(currentAddressByte) == true) {
-                    // Remove this instruction sequence from the list of results;
-                    return true;
-                }
-            }
-
-            // Keep this instruction sequence in the list of results;
-            return false;
-        }), validIndexes.end());
-    }
 
     // Apply the "--query" filter.
     if (hasRegisterQueryArg) {
@@ -591,7 +564,6 @@ void DoListCommand() {
 
     const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
     const int maxInstructions = gListCmdSubparser.get<int>("--max-instructions");
-    const bool hasBadBytesArg = gListCmdSubparser.is_used("--bad-bytes");
     const bool ignoreRelativeJumps = gListCmdSubparser.is_used("--no-reljumps");
     const bool includeRelativeJumpStarts = gListCmdSubparser.is_used("--include-reljump-starts");
     const bool hasRegisterQueryArg = gListCmdSubparser.is_used("--query");
@@ -623,14 +595,10 @@ void DoListCommand() {
 
     // Apply the configuration values.
     vmInstructions.maxInstructionsInInstructionSequence = maxInstructions;
+    vmInstructions.badAddressBytes = GetBadBytesArguments();
     vmInstructions.searchForSequencesWithDirectRelativeJumpsInTheMiddle = !ignoreRelativeJumps;
     vmInstructions.ignoreOutputSequencesThatStartWithDirectRelativeJumps = !includeRelativeJumpStarts;
     vmInstructions.innerAssemblySyntax = desiredSyntax;
-
-    if (hasBadBytesArg) {
-        // Check if the input byte strings are formatted correctly.
-        GetBadBytesArguments();
-    }
 
     if (hasRegisterQueryArg) {
         // Check if the query string is valid.
@@ -959,9 +927,18 @@ void DoROPChainCommand() {
         }
     }();
 
-    // Configure the generator object.
-    generator.forbidNullBytesInPayload = forbidNullBytes;
-    generator.forbidWhitespaceBytesInPayload = forbidWhitespaceBytes;
+    // Configure the forbidden bytes.
+    if (forbidNullBytes) {
+        generator.forbiddenBytes.set(0x00);
+    }
+    if (forbidWhitespaceBytes) {
+        for (auto byte : GetWhitespaceBytesAsSet()) {
+            generator.forbiddenBytes.set(byte);
+        }
+    }
+    generator.numForbiddenBytes = generator.forbiddenBytes.count();
+
+    // Configure the other settings.
     generator.ignoreDuplicateInstructionSequenceResults = !allowDuplicates;
     generator.maxInstructionsInSequence = maxInstructions;
     generator.approximateByteSizeOfStackBuffer = approximateStackBufferSize;

@@ -296,14 +296,18 @@ void ROP::PayloadGenX86::addPythonScriptPrelude() {
     ss << this->maxInstructionsInSequence;
     this->addLineToPythonScript(ss.str());
 
+    bool forbidNullBytesInPayload = this->forbiddenBytes[0x00];
+    std::bitset<256> whitespaceBytes = GetWhitespaceBytesAsBitset();
+    bool forbidWhitespaceBytesInPayload = (this->forbiddenBytes & whitespaceBytes) == whitespaceBytes;
+
     ss.str("");
     ss << "# Allow NULL bytes in payload: ";
-    ss << (this->forbidNullBytesInPayload ? "No" : "Yes");
+    ss << (forbidNullBytesInPayload ? "No" : "Yes");
     this->addLineToPythonScript(ss.str());
 
     ss.str("");
     ss << "# Allow whitespace bytes in payload: ";
-    ss << (this->forbidWhitespaceBytesInPayload ? "No" : "Yes");
+    ss << (forbidWhitespaceBytesInPayload ? "No" : "Yes");
     this->addLineToPythonScript(ss.str());
 
     ss.str("");
@@ -367,44 +371,12 @@ unsigned ROP::PayloadGenX86::getNumberOfVariantsToOutputForThisStep(unsigned num
 }
 
 bool ROP::PayloadGenX86::registerSizedValueIsFreeOfForbiddenBytes(uint64_t cValue) {
-    // Compute the set of forbidden bytes.
-    std::set<ROP::byte> forbiddenBytes;
-    if (this->forbidNullBytesInPayload) {
-        forbiddenBytes.insert(0x00);
-    }
-    if (this->forbidWhitespaceBytesInPayload) {
-        forbiddenBytes.insert((ROP::byte)' ');  // (0x20) space (SPC)
-        forbiddenBytes.insert((ROP::byte)'\t'); // (0x09) horizontal tab (TAB)
-        forbiddenBytes.insert((ROP::byte)'\n'); // (0x0a) newline (LF)
-        forbiddenBytes.insert((ROP::byte)'\v'); // (0x0b) vertical tab (VT)
-        forbiddenBytes.insert((ROP::byte)'\f'); // (0x0c) feed (FF)
-        forbiddenBytes.insert((ROP::byte)'\r'); // (0x0d) carriage return (CR)
-    }
-
     // No forbidden bytes? Then any value is ok.
-    if (forbiddenBytes.size() == 0) {
+    if (this->numForbiddenBytes == 0) {
         return true;
     }
 
-    // Get the bytes of the given value.
-    ROP::byteSequence bytes;
-    if (this->processArchSize == ROP::BitSizeClass::BIT64) {
-        bytes = BytesOfInteger((uint64_t)cValue);
-    }
-    else {
-        assert(this->processArchSize == ROP::BitSizeClass::BIT32);
-        bytes = BytesOfInteger((uint32_t)cValue);
-    }
-
-    // Look for forbidden bytes in the value.
-    for (const ROP::byte& currentByte : bytes) {
-        if (forbiddenBytes.count(currentByte) != 0) {
-            return false;
-        }
-    }
-
-    // No forbidden bytes found.
-    return true;
+    return !RegisterSizedConstantHasBadBytes(this->processArchSize, this->forbiddenBytes, cValue);
 }
 
 ROP::addressType ROP::PayloadGenX86::findValidVirtualMemoryAddressOfString(const char * const cStr) {

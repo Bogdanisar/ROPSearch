@@ -282,6 +282,14 @@ void ROP::VirtualMemoryInstructions::extendInstructionSequenceAndAddToTrie(
 void ROP::VirtualMemoryInstructions::buildInstructionTrie() {
     assertMessage(!this->didBuildInstructionTrie, "You already called .buildInstructionTrie()");
 
+    bool ignRelJmps = this->ignoreOutputSequencesThatStartWithDirectRelativeJumps;
+
+    // Pass these options to the trie.
+    this->instructionTrie.archBitSize = this->archBitSize;
+    this->instructionTrie.badAddressBytes = this->badAddressBytes;
+    this->instructionTrie.numBadAddressBytes = this->badAddressBytes.count();
+    this->instructionTrie.ignoreOutputSequencesThatStartWithDirectRelativeJumps = ignRelJmps;
+
     for (const VirtualMemorySegmentBytes& segm : this->vmBytes.getExecutableSegments()) {
         if (this->searchForSequencesWithDirectRelativeJumpsInTheMiddle) {
             this->buildRelativeJmpMap(segm);
@@ -304,10 +312,6 @@ void ROP::VirtualMemoryInstructions::buildInstructionTrie() {
         this->regInfoForSegment.clear();
         this->jmpIndexesForAddress.clear();
     }
-
-    // Pass this output filter to the trie.
-    bool ign = this->ignoreOutputSequencesThatStartWithDirectRelativeJumps;
-    this->instructionTrie.ignoreOutputSequencesThatStartWithDirectRelativeJumps = ign;
 
     this->didBuildInstructionTrie = true;
 }

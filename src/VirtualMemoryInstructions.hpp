@@ -23,7 +23,7 @@ namespace ROP {
         BitSizeClass archBitSize; // 32bit or 64bit;
         std::vector<RegisterInfo> auxRegInfoVector;
 
-        bool didBuildInstructionTrie;
+        bool didBuildInstructionTrie = false;
         InsSeqTrie instructionTrie;
 
         /*
@@ -111,6 +111,8 @@ namespace ROP {
         //////////////////////// Config values ////////////////////////
 
         int maxInstructionsInInstructionSequence = 10;
+
+        std::bitset<256> badAddressBytes;
 
         // Include instruction sequences like "xor eax, eax; jmp 0xee877518 --> pop edi; pop esi; ret".
         bool searchForSequencesWithDirectRelativeJumpsInTheMiddle = true;

@@ -288,8 +288,9 @@ namespace ROP {
 
         //////////////////////// Config values ////////////////////////
 
-        bool forbidNullBytesInPayload = false;
-        bool forbidWhitespaceBytesInPayload = false;
+        std::bitset<256> forbiddenBytes;
+        unsigned numForbiddenBytes; // optimization since bitset::count() is not constant.
+
         bool ignoreDuplicateInstructionSequenceResults = true;
         unsigned maxInstructionsInSequence = 10;
         unsigned approximateByteSizeOfStackBuffer = 100; // i.e. the payload overflows something like `char buffer[100]`.

@@ -1,6 +1,7 @@
 #ifndef INS_SEQ_TRIE_H
 #define INS_SEQ_TRIE_H
 
+#include <bitset>
 #include <map>
 #include <string>
 #include <vector>
@@ -38,6 +39,11 @@ namespace ROP {
         public:
         // The root node, corresponding to the empty instruction sequence.
         Node *root;
+
+        // Config values.
+        BitSizeClass archBitSize;
+        std::bitset<256> badAddressBytes;
+        unsigned numBadAddressBytes; // optimization since bitset::count() is not constant.
         bool ignoreOutputSequencesThatStartWithDirectRelativeJumps;
 
         InsSeqTrie();

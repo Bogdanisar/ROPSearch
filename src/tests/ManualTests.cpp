@@ -1076,8 +1076,15 @@ void testPayloadGeneration() {
     pv(targetPid); pn;
 
     PayloadGenX86 generator(targetPid);
-    generator.forbidNullBytesInPayload = true;
-    generator.forbidWhitespaceBytesInPayload = true;
+
+    // Forbid the NULL byte.
+    generator.forbiddenBytes.set(0x00);
+
+    // Forbid whitespace bytes.
+    for (auto byte : GetWhitespaceBytesAsSet()) {
+        generator.forbiddenBytes.set(byte);
+    }
+
     generator.ignoreDuplicateInstructionSequenceResults = true;
     generator.maxInstructionsInSequence = 10;
     generator.approximateByteSizeOfStackBuffer = 100;
