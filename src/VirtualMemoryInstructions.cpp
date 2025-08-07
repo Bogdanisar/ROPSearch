@@ -287,6 +287,7 @@ void ROP::VirtualMemoryInstructions::buildInstructionTrie() {
 
     // Pass these options to the trie.
     this->instructionTrie.archBitSize = this->archBitSize;
+    this->instructionTrie.minInstructionsInInstructionSequence = this->minInstructionsInInstructionSequence;
     this->instructionTrie.badAddressBytes = this->badAddressBytes;
     this->instructionTrie.numBadAddressBytes = this->badAddressBytes.count();
     this->instructionTrie.ignoreDuplicateInstructionSequenceResults = ignDupes;

@@ -42,6 +42,7 @@ namespace ROP {
 
         // Config values.
         BitSizeClass archBitSize;
+        int minInstructionsInInstructionSequence = 1;
         std::bitset<256> badAddressBytes;
         unsigned numBadAddressBytes = 0; // optimization since bitset::count() might not be O(1).
         bool ignoreDuplicateInstructionSequenceResults = true;

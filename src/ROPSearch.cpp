@@ -531,7 +531,6 @@ FilterInstructionSequencesByListCmdArgs(const VirtualMemoryInstructions& vmInstr
                                         const vector< pair<addressType, vector<string>> >& instrSeqs,
                                         vector<vector<RegisterInfo>>& allRegInfoSeqs) {
     UNUSED(vmInstructions);
-    const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
     const bool hasRegisterQueryArg = gListCmdSubparser.is_used("--query");
     const bool packPartialRegistersInQuery = gListCmdSubparser.get<bool>("--pack");
 
@@ -539,14 +538,6 @@ FilterInstructionSequencesByListCmdArgs(const VirtualMemoryInstructions& vmInstr
     for (unsigned idx = 0; idx < instrSeqs.size(); ++idx) {
         validIndexes.push_back(idx);
     }
-
-    // Apply the "--min-instructions" filter.
-    validIndexes.erase(remove_if(validIndexes.begin(), validIndexes.end(), [&](unsigned idx) {
-        const auto& p = instrSeqs[idx];
-        const vector<string>& instructionSequence = p.second;
-
-        return (int)instructionSequence.size() < minInstructions;
-    }), validIndexes.end());
 
     // Apply the "--query" filter.
     if (hasRegisterQueryArg) {
@@ -606,6 +597,7 @@ void DoListCommand() {
     }();
 
     // Apply the configuration values.
+    vmInstructions.minInstructionsInInstructionSequence = minInstructions;
     vmInstructions.maxInstructionsInInstructionSequence = maxInstructions;
     vmInstructions.badAddressBytes = GetBadBytesArguments();
     vmInstructions.ignoreDuplicateInstructionSequenceResults = !allowDuplicates;

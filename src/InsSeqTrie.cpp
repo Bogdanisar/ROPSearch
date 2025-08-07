@@ -89,6 +89,12 @@ void ROP::InsSeqTrie::getTrieContent(Node *currentNode,
     if (currentNode->matchingVirtualAddresses.size() != 0) {
         for (addressType addr : currentNode->matchingVirtualAddresses) {
 
+            if ((int)currInstrSeq.size() < this->minInstructionsInInstructionSequence) {
+                // The current sequence is too short.
+                // Don't add it to the output list.
+                continue;
+            }
+
             if (this->ignoreOutputSequencesThatStartWithDirectRelativeJumps) {
                 const std::string& startInstruction = currInstrSeq.back();
                 bool startInstructionIsRelativeJump = (startInstruction.find("-->") != std::string::npos);

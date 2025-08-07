@@ -343,6 +343,7 @@ void ROP::PayloadGenX86::addPythonScriptPrelude() {
 
 void ROP::PayloadGenX86::configureGenerator() {
     // Configure the object and build the instruction sequence trie.
+    this->vmInstructionsObject.minInstructionsInInstructionSequence = 1;
     this->vmInstructionsObject.maxInstructionsInInstructionSequence = this->maxInstructionsInSequence;
     this->vmInstructionsObject.badAddressBytes = this->forbiddenBytes;
     this->vmInstructionsObject.ignoreDuplicateInstructionSequenceResults = this->ignoreDuplicateInstructionSequenceResults;

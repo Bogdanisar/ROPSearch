@@ -110,6 +110,7 @@ namespace ROP {
 
         //////////////////////// Config values ////////////////////////
 
+        int minInstructionsInInstructionSequence = 1;
         int maxInstructionsInInstructionSequence = 10;
 
         // Ignore results where the virtual address contains any of these bytes.
