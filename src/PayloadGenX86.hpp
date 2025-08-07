@@ -112,19 +112,17 @@ namespace ROP {
         std::map<std::string, unsigned> stackPointerIncreaseInstructionToOffset;
 
 
-        byteSequence payloadBytes = {};
-        std::vector<std::string> pythonScript = {};
-        unsigned int currLineIndent = 0;
-        bool currScriptLineIsComment = false;
-
-
-        void preconfigureSettings();
-
         void loadTheSyscallArgNumberMap();
         void loadTheRegisterMaps();
         void loadTheStackPointerInstructionToOffsetMap();
         void computeRelevantSequenceIndexes();
         void addPythonScriptPrelude();
+
+
+        byteSequence payloadBytes = {};
+        std::vector<std::string> pythonScript = {};
+        unsigned int currLineIndent = 0;
+        bool currScriptLineIsComment = false;
 
         public:
         /**
@@ -287,18 +285,26 @@ namespace ROP {
                                                   bool isParentCall = true);
 
         public:
+
+        //////////////////////// Config values ////////////////////////
+
         bool forbidNullBytesInPayload = false;
         bool forbidWhitespaceBytesInPayload = false;
         bool ignoreDuplicateInstructionSequenceResults = true;
+        unsigned maxInstructionsInSequence = 10;
         unsigned approximateByteSizeOfStackBuffer = 100; // i.e. the payload overflows something like `char buffer[100]`.
         unsigned numVariantsToOutputForEachStep = 1; // Set to `0` for "All of them".
         unsigned numAcceptablePaddingBytesForOneInstrSequence = 100;
+
+        //////////////////////// Config values ////////////////////////
+
         /**
          * Call this after setting the configuration fields above.
          * You must not change the configuration fields after calling this method.
          * You must call this method before trying to get any payloads.
          */
         void configureGenerator();
+
 
         /**
          * Try to build a ROP-chain that performs `execve("/bin/sh", NULL, NULL)`.

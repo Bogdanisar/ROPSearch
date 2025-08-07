@@ -21,8 +21,10 @@ namespace ROP {
         VirtualMemoryBytes vmBytes;
         InstructionConverter ic;
         BitSizeClass archBitSize; // 32bit or 64bit;
-        InsSeqTrie instructionTrie;
         std::vector<RegisterInfo> auxRegInfoVector;
+
+        bool didBuildInstructionTrie;
+        InsSeqTrie instructionTrie;
 
         /*
         This data structure is used for optimizing (through memoization) the construction of the inner trie.
@@ -81,9 +83,6 @@ namespace ROP {
             const int prevInstrSeqLength
         );
 
-        void buildInstructionTrie();
-
-
         public:
 
         /**
@@ -107,6 +106,33 @@ namespace ROP {
          */
         VirtualMemoryInstructions(const std::vector<std::string> execPaths,
                                   const std::vector<addressType> baseAddresses);
+
+
+        //////////////////////// Config values ////////////////////////
+
+        int maxInstructionsInInstructionSequence = 10;
+
+        // Include instruction sequences like "xor eax, eax; jmp 0xee877518 --> pop edi; pop esi; ret".
+        bool searchForSequencesWithDirectRelativeJumpsInTheMiddle = true;
+
+        // Ignore instruction sequences like "jmp 0xee877518 --> pop edi; pop esi; ret"
+        // (since the starting `jmp` instruction doesn't add value by itself).
+        bool ignoreOutputSequencesThatStartWithDirectRelativeJumps = true;
+
+        // The assembly syntax that will be output by Capstone when disassembling.
+        AssemblySyntax innerAssemblySyntax = AssemblySyntax::Intel;
+
+        // Tell Capstone to compute the extra detail information when building the ins seq trie.
+        // Default value: false (details aren't always needed).
+        bool computeRegisterInfo = false;
+
+        //////////////////////// Config values ////////////////////////
+
+
+        // If you want to change the default configuration, change it before calling this method.
+        // You must not change the configuration after calling this method.
+        // You must call this method before getting the instruction sequences.
+        void buildInstructionTrie();
 
 
         // Copy constructor and copy assignment operator don't make sense

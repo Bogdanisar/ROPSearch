@@ -7,7 +7,6 @@
 #include "../deps/argparse/include/argparse/argparse.hpp"
 
 #include "common/utils.hpp"
-#include "Config.hpp"
 #include "InstructionConverter.hpp"
 #include "PayloadGenX86.hpp"
 #include "RegisterQueryX86.hpp"
@@ -599,26 +598,34 @@ void DoListCommand() {
     const bool packPartialRegistersInQuery = gListCmdSubparser.get<bool>("--pack");
     const bool showAddressBase = gListCmdSubparser.get<bool>("--show-address-base");
     const string asmSyntaxString = gListCmdSubparser.get<string>("--assembly-syntax");
+    ROP::AssemblySyntax desiredSyntax = (asmSyntaxString == "intel") ? ROP::AssemblySyntax::Intel : ROP::AssemblySyntax::ATT;
 
+    // Check that the values are reasonable.
     assertMessage(1 <= minInstructions && minInstructions <= 100, "Please input a different number of min instructions...");
     assertMessage(1 <= maxInstructions && maxInstructions <= 100, "Please input a different number of max instructions...");
     assertMessage(minInstructions <= maxInstructions,
                   "Please input a different number for min instructions (%i) or for max instructions (%i)...",
                   minInstructions, maxInstructions);
-
-    // Apply "--max-instructions" filter. Specifically, instructions will be filtered in the object constructor.
-    Config::MaxInstructionsInInstructionSequence = maxInstructions;
-
-    // Apply "--no-reljumps" filter and "--include-reljump-starts" filters.
-    // Specifically, instructions will be filtered in the object constructor.
     assertMessage(!(ignoreRelativeJumps && includeRelativeJumpStarts),
                   "The '--include-reljump-starts' option doesn't make sense with '--no-reljumps'.");
-    Config::SearchForSequencesWithDirectRelativeJumpsInTheMiddle = !ignoreRelativeJumps;
-    Config::IgnoreOutputSequencesThatStartWithDirectRelativeJumps = !includeRelativeJumpStarts;
 
-    // Apply "--assembly-syntax" output option.
-    ROP::AssemblySyntax desiredSyntax = (asmSyntaxString == "intel") ? ROP::AssemblySyntax::Intel : ROP::AssemblySyntax::ATT;
-    Config::innerAssemblySyntax = desiredSyntax;
+    // Load the bytes from the given source.
+    VirtualMemoryInstructions vmInstructions = [&]() {
+        if (auto pid = gListCmdSubparser.present<int>("--process-id")) {
+            return VirtualMemoryInstructions(*pid);
+        }
+        else {
+            vector<string> execs = gListCmdSubparser.get<vector<string>>("--executable-path");
+            vector<addressType> addrs = gListCmdSubparser.get<vector<addressType>>("--base-address");
+            return VirtualMemoryInstructions(execs, addrs);
+        }
+    }();
+
+    // Apply the configuration values.
+    vmInstructions.maxInstructionsInInstructionSequence = maxInstructions;
+    vmInstructions.searchForSequencesWithDirectRelativeJumpsInTheMiddle = !ignoreRelativeJumps;
+    vmInstructions.ignoreOutputSequencesThatStartWithDirectRelativeJumps = !includeRelativeJumpStarts;
+    vmInstructions.innerAssemblySyntax = desiredSyntax;
 
     if (hasBadBytesArg) {
         // Check if the input byte strings are formatted correctly.
@@ -632,23 +639,16 @@ void DoListCommand() {
         assertMessage(rq.isValidQuery(), "Got invalid register query: %s", queryString.c_str());
 
         // If we have a "--query" argument, then we will have to compute the register info for each instruction.
-        Config::computeRegisterInfo = true;
+        vmInstructions.computeRegisterInfo = true;
     }
     else {
         assertMessage(!packPartialRegistersInQuery,
                       "The '--pack' argument makes sense only when passed alongside the '--query' argument.");
     }
 
-    VirtualMemoryInstructions vmInstructions = [&]() {
-        if (auto pid = gListCmdSubparser.present<int>("--process-id")) {
-            return VirtualMemoryInstructions(*pid);
-        }
-        else {
-            vector<string> execs = gListCmdSubparser.get<vector<string>>("--executable-path");
-            vector<addressType> addrs = gListCmdSubparser.get<vector<addressType>>("--base-address");
-            return VirtualMemoryInstructions(execs, addrs);
-        }
-    }();
+
+    // Build the instruction sequence trie.
+    vmInstructions.buildInstructionTrie();
 
     // Get the instruction sequences found in the target.
     vector< pair<addressType, vector<string>> > instrSeqs;
@@ -947,9 +947,6 @@ void DoROPChainCommand() {
     assertMessage(1 <= maxInstructions && maxInstructions <= 100, "Please input a different number of max instructions...");
     assertMessage(maxPaddingBytesForEachInstructionSequence <= 1000, "Too big");
 
-    // Set the preconfiguration variables.
-    Config::MaxInstructionsInInstructionSequence = maxInstructions;
-
     // Load the generator object with the information of the given source.
     PayloadGenX86 generator = [&]() {
         if (auto pid = gROPChainCmdSubparser.present<int>("--process-id")) {
@@ -966,6 +963,7 @@ void DoROPChainCommand() {
     generator.forbidNullBytesInPayload = forbidNullBytes;
     generator.forbidWhitespaceBytesInPayload = forbidWhitespaceBytes;
     generator.ignoreDuplicateInstructionSequenceResults = !allowDuplicates;
+    generator.maxInstructionsInSequence = maxInstructions;
     generator.approximateByteSizeOfStackBuffer = approximateStackBufferSize;
     generator.numVariantsToOutputForEachStep = maxInstrSeqVariants;
     generator.numAcceptablePaddingBytesForOneInstrSequence = maxPaddingBytesForEachInstructionSequence;

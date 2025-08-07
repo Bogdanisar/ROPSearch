@@ -6,25 +6,17 @@
 #include <sstream>
 
 #include "common/utils.hpp"
-#include "Config.hpp"
 
 
-void ROP::PayloadGenX86::preconfigureSettings() {
-    Config::SearchForSequencesWithDirectRelativeJumpsInTheMiddle = true;
-    Config::IgnoreOutputSequencesThatStartWithDirectRelativeJumps = true;
-    Config::innerAssemblySyntax = ROP::AssemblySyntax::Intel;
-    Config::computeRegisterInfo = true;
-}
+ROP::PayloadGenX86::PayloadGenX86(int processPid)
+: vmInstructionsObject(processPid) {
 
-ROP::PayloadGenX86::PayloadGenX86(int processPid) {
-    this->preconfigureSettings();
-    this->vmInstructionsObject = VirtualMemoryInstructions(processPid);
 }
 
 ROP::PayloadGenX86::PayloadGenX86(const std::vector<std::string> execPaths,
-                                  const std::vector<addressType> baseAddresses) {
-    this->preconfigureSettings();
-    this->vmInstructionsObject = VirtualMemoryInstructions(execPaths, baseAddresses);
+                                  const std::vector<addressType> baseAddresses)
+: vmInstructionsObject(execPaths, baseAddresses) {
+
 }
 
 
@@ -301,7 +293,7 @@ void ROP::PayloadGenX86::addPythonScriptPrelude() {
     this->addLineToPythonScript("# Configuration options:");
     ss.str("");
     ss << "# Max length of each instruction sequence: ";
-    ss << Config::MaxInstructionsInInstructionSequence;
+    ss << this->maxInstructionsInSequence;
     this->addLineToPythonScript(ss.str());
 
     ss.str("");
@@ -346,6 +338,14 @@ void ROP::PayloadGenX86::addPythonScriptPrelude() {
 }
 
 void ROP::PayloadGenX86::configureGenerator() {
+    // Configure the object and build the instruction sequence trie.
+    this->vmInstructionsObject.maxInstructionsInInstructionSequence = this->maxInstructionsInSequence;
+    this->vmInstructionsObject.searchForSequencesWithDirectRelativeJumpsInTheMiddle = true;
+    this->vmInstructionsObject.ignoreOutputSequencesThatStartWithDirectRelativeJumps = true;
+    this->vmInstructionsObject.innerAssemblySyntax = ROP::AssemblySyntax::Intel;
+    this->vmInstructionsObject.computeRegisterInfo = true;
+    this->vmInstructionsObject.buildInstructionTrie();
+
     this->processArchSize = this->vmInstructionsObject.getVirtualMemoryBytes().getProcessArchSize();
     this->registerByteSize = (this->processArchSize == BitSizeClass::BIT64) ? 8 : 4;
     this->loadTheSyscallArgNumberMap();

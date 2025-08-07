@@ -9,7 +9,6 @@
 #include "../../deps/pugixml/src/pugixml.hpp"
 
 #include "../common/utils.hpp"
-#include "../Config.hpp"
 #include "../ELFParser.hpp"
 #include "../InstructionConverter.hpp"
 #include "../PayloadGenX86.hpp"
@@ -743,7 +742,8 @@ void testFindingInstructionSequenceInMemory(string targetExecutable) {
 
     VirtualMemoryInstructions vmInfo;
     vmInfo = VirtualMemoryInstructions(targetPid); // Test the move assignment operator.
-    printf("Finished initializing vmInfo object!\n\n");
+    vmInfo.buildInstructionTrie();
+    printf("Finished building vmInfo object!\n\n");
 
     // These are some sample instruction sequences found in libc.so.6
     // Note: Using Intel syntax here.
@@ -792,7 +792,8 @@ void printVMInstructionSequences(string targetExecutable) {
     testVirtualMemoryMapping(targetPid); pn;
 
     VirtualMemoryInstructions vmInfo(targetPid);
-    printf("Finished initializing vmInfo object!\n\n");
+    vmInfo.buildInstructionTrie();
+    printf("Finished building vmInfo object!\n\n");
 
     InstructionConverter ic(BitSizeClass::BIT64);
 
@@ -810,9 +811,10 @@ void testFilterVMInstructionSequencesByRegisterInfo(string targetExecutable) {
     int targetPid = getPidOfExecutable(targetExecutable);
     pv(targetPid); pn;
 
-    Config::computeRegisterInfo = true;
     VirtualMemoryInstructions vmInfo(targetPid);
-    printf("Finished initializing vmInfo object!\n\n");
+    vmInfo.computeRegisterInfo = true;
+    vmInfo.buildInstructionTrie();
+    printf("Finished building vmInfo object!\n\n");
 
     InstructionConverter ic(BitSizeClass::BIT64);
 
@@ -931,6 +933,7 @@ void testLoadVirtualMemoryOfExecutablePaths() {
         // 0x7ffff7fc6000,
     };
     VirtualMemoryInstructions vmInfo(execPaths, baseAddresses);
+    vmInfo.buildInstructionTrie();
 
     // These are some sample instruction sequences found in libc.so.6
     // Note: Using Intel syntax here.
@@ -1072,13 +1075,11 @@ void testPayloadGeneration() {
     int targetPid = getPidOfExecutable(targetExecutable);
     pv(targetPid); pn;
 
-    // Preconfiguration.
-    Config::MaxInstructionsInInstructionSequence = 10;
-
     PayloadGenX86 generator(targetPid);
     generator.forbidNullBytesInPayload = true;
     generator.forbidWhitespaceBytesInPayload = true;
     generator.ignoreDuplicateInstructionSequenceResults = true;
+    generator.maxInstructionsInSequence = 10;
     generator.approximateByteSizeOfStackBuffer = 100;
     generator.numVariantsToOutputForEachStep = 0; // all of them.
     generator.numAcceptablePaddingBytesForOneInstrSequence = 400;
