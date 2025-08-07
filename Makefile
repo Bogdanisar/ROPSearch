@@ -18,6 +18,9 @@ OPT_VULN = -O0
 
 # Classes
 
+bin/Config.o: src/Config.cpp $(shell find ./src -name "*.hpp")
+	g++ $(wFlags) $(OPT_MAIN) -c src/Config.cpp -o $@
+
 bin/VirtualMemoryMapping.o: src/VirtualMemoryMapping.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) $(OPT_MAIN) -c src/VirtualMemoryMapping.cpp -o $@
 
@@ -45,7 +48,7 @@ bin/RegisterQueryX86.o: src/RegisterQueryX86.cpp $(shell find ./src -name "*.hpp
 bin/PayloadGenX86.o: src/PayloadGenX86.cpp $(shell find ./src -name "*.hpp")
 	g++ $(wFlags) $(OPT_MAIN) -c src/PayloadGenX86.cpp -o $@
 
-classObjectFiles := bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryBytes.o \
+classObjectFiles := bin/Config.o bin/VirtualMemoryMapping.o bin/ELFParser.o bin/VirtualMemoryBytes.o \
 				    bin/InstructionConverter.o bin/InsSeqTrie.o bin/VirtualMemoryInstructions.o \
 					bin/Log.o bin/RegisterQueryX86.o bin/PayloadGenX86.o
 

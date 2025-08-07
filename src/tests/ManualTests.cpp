@@ -9,6 +9,7 @@
 #include "../../deps/pugixml/src/pugixml.hpp"
 
 #include "../common/utils.hpp"
+#include "../Config.hpp"
 #include "../ELFParser.hpp"
 #include "../InstructionConverter.hpp"
 #include "../PayloadGenX86.hpp"
@@ -809,7 +810,7 @@ void testFilterVMInstructionSequencesByRegisterInfo(string targetExecutable) {
     int targetPid = getPidOfExecutable(targetExecutable);
     pv(targetPid); pn;
 
-    VirtualMemoryInstructions::computeRegisterInfo = true;
+    Config::computeRegisterInfo = true;
     VirtualMemoryInstructions vmInfo(targetPid);
     printf("Finished initializing vmInfo object!\n\n");
 
@@ -1072,7 +1073,7 @@ void testPayloadGeneration() {
     pv(targetPid); pn;
 
     // Preconfiguration.
-    VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = 10;
+    Config::MaxInstructionsInInstructionSequence = 10;
 
     PayloadGenX86 generator(targetPid);
     generator.forbidNullBytesInPayload = true;

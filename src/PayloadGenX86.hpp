@@ -118,7 +118,7 @@ namespace ROP {
         bool currScriptLineIsComment = false;
 
 
-        void preconfigureVMInstructionsObject();
+        void preconfigureSettings();
 
         void loadTheSyscallArgNumberMap();
         void loadTheRegisterMaps();

@@ -3,15 +3,7 @@
 #include <algorithm>
 
 #include "ByteParsingX86.hpp"
-
-
-// Declarations for static members, with default values.
-
-int ROP::VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = 10;
-bool ROP::VirtualMemoryInstructions::SearchForSequencesWithDirectRelativeJumpsInTheMiddle = true;
-bool ROP::VirtualMemoryInstructions::IgnoreOutputSequencesThatStartWithDirectRelativeJumps = true;
-ROP::AssemblySyntax ROP::VirtualMemoryInstructions::innerAssemblySyntax = ROP::AssemblySyntax::Intel;
-bool ROP::VirtualMemoryInstructions::computeRegisterInfo = false;
+#include "Config.hpp"
 
 
 #pragma region Methods
@@ -70,7 +62,7 @@ void ROP::VirtualMemoryInstructions::disassembleSegmentBytes(const VirtualMemory
         return;
     }
 
-    AssemblySyntax syntax = VirtualMemoryInstructions::innerAssemblySyntax;
+    AssemblySyntax syntax = Config::innerAssemblySyntax;
     const int maxInstructionSize = ROPConsts::MaxInstructionBytesCount;
 
     const byte *firstPtr = segm.bytes.data() + first;
@@ -81,7 +73,7 @@ void ROP::VirtualMemoryInstructions::disassembleSegmentBytes(const VirtualMemory
     unsigned totalDisassembledBytes;
 
     std::vector<RegisterInfo> *regInfoVectorPtr = NULL;
-    if (VirtualMemoryInstructions::computeRegisterInfo) {
+    if (Config::computeRegisterInfo) {
         regInfoVectorPtr = &(this->auxRegInfoVector);
     }
 
@@ -100,7 +92,7 @@ void ROP::VirtualMemoryInstructions::disassembleSegmentBytes(const VirtualMemory
         // The segment disassembles into the "instructions[0]" instruction.
         this->disassembledSegment[first] = {last, instructions[0]};
 
-        if (VirtualMemoryInstructions::computeRegisterInfo) {
+        if (Config::computeRegisterInfo) {
             this->regInfoForSegment[first] = this->auxRegInfoVector[0];
             this->auxRegInfoVector.clear();
         }
@@ -130,7 +122,7 @@ void ROP::VirtualMemoryInstructions::extendInstructionSequenceThroughDirectlyPre
         return;
     }
 
-    if (prevInstrSeqLength >= VirtualMemoryInstructions::MaxInstructionsInInstructionSequence) {
+    if (prevInstrSeqLength >= Config::MaxInstructionsInInstructionSequence) {
         // The sequence is too long.
         return;
     }
@@ -170,7 +162,7 @@ void ROP::VirtualMemoryInstructions::extendInstructionSequenceThroughDirectlyPre
         // Grab the disassembled information for the instruction at the current segment.
         const std::string& currInstruction = p.second;
         RegisterInfo *currRegInfoPtr = NULL;
-        if (VirtualMemoryInstructions::computeRegisterInfo) {
+        if (Config::computeRegisterInfo) {
             currRegInfoPtr = &this->regInfoForSegment[first];
         }
 
@@ -200,7 +192,7 @@ void ROP::VirtualMemoryInstructions::extendInstructionSequenceThroughRelativeJmp
         return;
     }
 
-    if (prevInstrSeqLength >= VirtualMemoryInstructions::MaxInstructionsInInstructionSequence) {
+    if (prevInstrSeqLength >= Config::MaxInstructionsInInstructionSequence) {
         // The sequence is too long.
         return;
     }
@@ -234,7 +226,7 @@ void ROP::VirtualMemoryInstructions::extendInstructionSequenceThroughRelativeJmp
         }
 
         RegisterInfo *jmpRegInfoPtr = NULL;
-        if (VirtualMemoryInstructions::computeRegisterInfo) {
+        if (Config::computeRegisterInfo) {
             jmpRegInfoPtr = &this->regInfoForSegment[jmpFirstIndex];
         }
 
@@ -267,7 +259,7 @@ void ROP::VirtualMemoryInstructions::extendInstructionSequenceAndAddToTrie(
                                                                         prevVMAddress,
                                                                         prevInstrSeqLength);
 
-    if (VirtualMemoryInstructions::SearchForSequencesWithDirectRelativeJumpsInTheMiddle) {
+    if (Config::SearchForSequencesWithDirectRelativeJumpsInTheMiddle) {
         this->extendInstructionSequenceThroughRelativeJmpInstructions(segm,
                                                                       prevNode,
                                                                       prevFirstIndex,
@@ -278,7 +270,7 @@ void ROP::VirtualMemoryInstructions::extendInstructionSequenceAndAddToTrie(
 
 void ROP::VirtualMemoryInstructions::buildInstructionTrie() {
     for (const VirtualMemorySegmentBytes& segm : this->vmBytes.getExecutableSegments()) {
-        if (VirtualMemoryInstructions::SearchForSequencesWithDirectRelativeJumpsInTheMiddle) {
+        if (Config::SearchForSequencesWithDirectRelativeJumpsInTheMiddle) {
             this->buildRelativeJmpMap(segm);
         }
 
@@ -301,7 +293,7 @@ void ROP::VirtualMemoryInstructions::buildInstructionTrie() {
     }
 
     // Pass this output filter to the trie.
-    bool ign = VirtualMemoryInstructions::IgnoreOutputSequencesThatStartWithDirectRelativeJumps;
+    bool ign = Config::IgnoreOutputSequencesThatStartWithDirectRelativeJumps;
     this->instructionTrie.ignoreOutputSequencesThatStartWithDirectRelativeJumps = ign;
 }
 
@@ -330,14 +322,14 @@ ROP::VirtualMemoryInstructions::matchInstructionSequenceInVirtualMemory(std::str
     // so that we are sure it looks exactly like what we have in the internal Trie.
     std::vector<std::string> instructions = this->ic.normalizeInstructionAsm(origInstructionSequenceAsm,
                                                                              origSyntax,
-                                                                             VirtualMemoryInstructions::innerAssemblySyntax);
+                                                                             Config::innerAssemblySyntax);
 
     return this->instructionTrie.hasInstructionSequence(instructions);
 }
 
 std::vector< std::pair<ROP::addressType, std::vector<std::string>> >
 ROP::VirtualMemoryInstructions::getInstructionSequences(std::vector<std::vector<RegisterInfo>> *outRegInfo) const {
-    assertMessage(outRegInfo == NULL || VirtualMemoryInstructions::computeRegisterInfo,
+    assertMessage(outRegInfo == NULL || Config::computeRegisterInfo,
                   "Can't get the instruction sequences with added register info since "
                   "the instruction trie wasn't built with that extra information.");
     return this->instructionTrie.getTrieContent(outRegInfo);

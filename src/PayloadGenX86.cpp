@@ -6,23 +6,24 @@
 #include <sstream>
 
 #include "common/utils.hpp"
+#include "Config.hpp"
 
 
-void ROP::PayloadGenX86::preconfigureVMInstructionsObject() {
-    VirtualMemoryInstructions::SearchForSequencesWithDirectRelativeJumpsInTheMiddle = true;
-    VirtualMemoryInstructions::IgnoreOutputSequencesThatStartWithDirectRelativeJumps = true;
-    VirtualMemoryInstructions::innerAssemblySyntax = ROP::AssemblySyntax::Intel;
-    VirtualMemoryInstructions::computeRegisterInfo = true;
+void ROP::PayloadGenX86::preconfigureSettings() {
+    Config::SearchForSequencesWithDirectRelativeJumpsInTheMiddle = true;
+    Config::IgnoreOutputSequencesThatStartWithDirectRelativeJumps = true;
+    Config::innerAssemblySyntax = ROP::AssemblySyntax::Intel;
+    Config::computeRegisterInfo = true;
 }
 
 ROP::PayloadGenX86::PayloadGenX86(int processPid) {
-    this->preconfigureVMInstructionsObject();
+    this->preconfigureSettings();
     this->vmInstructionsObject = VirtualMemoryInstructions(processPid);
 }
 
 ROP::PayloadGenX86::PayloadGenX86(const std::vector<std::string> execPaths,
                                   const std::vector<addressType> baseAddresses) {
-    this->preconfigureVMInstructionsObject();
+    this->preconfigureSettings();
     this->vmInstructionsObject = VirtualMemoryInstructions(execPaths, baseAddresses);
 }
 
@@ -300,7 +301,7 @@ void ROP::PayloadGenX86::addPythonScriptPrelude() {
     this->addLineToPythonScript("# Configuration options:");
     ss.str("");
     ss << "# Max length of each instruction sequence: ";
-    ss << VirtualMemoryInstructions::MaxInstructionsInInstructionSequence;
+    ss << Config::MaxInstructionsInInstructionSequence;
     this->addLineToPythonScript(ss.str());
 
     ss.str("");

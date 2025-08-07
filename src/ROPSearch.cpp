@@ -7,6 +7,7 @@
 #include "../deps/argparse/include/argparse/argparse.hpp"
 
 #include "common/utils.hpp"
+#include "Config.hpp"
 #include "InstructionConverter.hpp"
 #include "PayloadGenX86.hpp"
 #include "RegisterQueryX86.hpp"
@@ -606,18 +607,18 @@ void DoListCommand() {
                   minInstructions, maxInstructions);
 
     // Apply "--max-instructions" filter. Specifically, instructions will be filtered in the object constructor.
-    VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = maxInstructions;
+    Config::MaxInstructionsInInstructionSequence = maxInstructions;
 
     // Apply "--no-reljumps" filter and "--include-reljump-starts" filters.
     // Specifically, instructions will be filtered in the object constructor.
     assertMessage(!(ignoreRelativeJumps && includeRelativeJumpStarts),
                   "The '--include-reljump-starts' option doesn't make sense with '--no-reljumps'.");
-    VirtualMemoryInstructions::SearchForSequencesWithDirectRelativeJumpsInTheMiddle = !ignoreRelativeJumps;
-    VirtualMemoryInstructions::IgnoreOutputSequencesThatStartWithDirectRelativeJumps = !includeRelativeJumpStarts;
+    Config::SearchForSequencesWithDirectRelativeJumpsInTheMiddle = !ignoreRelativeJumps;
+    Config::IgnoreOutputSequencesThatStartWithDirectRelativeJumps = !includeRelativeJumpStarts;
 
     // Apply "--assembly-syntax" output option.
     ROP::AssemblySyntax desiredSyntax = (asmSyntaxString == "intel") ? ROP::AssemblySyntax::Intel : ROP::AssemblySyntax::ATT;
-    VirtualMemoryInstructions::innerAssemblySyntax = desiredSyntax;
+    Config::innerAssemblySyntax = desiredSyntax;
 
     if (hasBadBytesArg) {
         // Check if the input byte strings are formatted correctly.
@@ -631,7 +632,7 @@ void DoListCommand() {
         assertMessage(rq.isValidQuery(), "Got invalid register query: %s", queryString.c_str());
 
         // If we have a "--query" argument, then we will have to compute the register info for each instruction.
-        VirtualMemoryInstructions::computeRegisterInfo = true;
+        Config::computeRegisterInfo = true;
     }
     else {
         assertMessage(!packPartialRegistersInQuery,
@@ -947,7 +948,7 @@ void DoROPChainCommand() {
     assertMessage(maxPaddingBytesForEachInstructionSequence <= 1000, "Too big");
 
     // Set the preconfiguration variables.
-    VirtualMemoryInstructions::MaxInstructionsInInstructionSequence = maxInstructions;
+    Config::MaxInstructionsInInstructionSequence = maxInstructions;
 
     // Load the generator object with the information of the given source.
     PayloadGenX86 generator = [&]() {
