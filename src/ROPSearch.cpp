@@ -945,9 +945,7 @@ void DoROPChainCommand() {
         generator.forbiddenBytes.set(0x00);
     }
     if (forbidWhitespaceBytes) {
-        for (auto byte : GetWhitespaceBytesAsSet()) {
-            generator.forbiddenBytes.set(byte);
-        }
+        generator.forbiddenBytes |= GetWhitespaceBytesAsBitset();
     }
     generator.numForbiddenBytes = generator.forbiddenBytes.count();
 
