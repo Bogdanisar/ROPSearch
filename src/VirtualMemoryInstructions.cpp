@@ -282,12 +282,14 @@ void ROP::VirtualMemoryInstructions::extendInstructionSequenceAndAddToTrie(
 void ROP::VirtualMemoryInstructions::buildInstructionTrie() {
     assertMessage(!this->didBuildInstructionTrie, "You already called .buildInstructionTrie()");
 
+    bool ignDupes = this->ignoreDuplicateInstructionSequenceResults;
     bool ignRelJmps = this->ignoreOutputSequencesThatStartWithDirectRelativeJumps;
 
     // Pass these options to the trie.
     this->instructionTrie.archBitSize = this->archBitSize;
     this->instructionTrie.badAddressBytes = this->badAddressBytes;
     this->instructionTrie.numBadAddressBytes = this->badAddressBytes.count();
+    this->instructionTrie.ignoreDuplicateInstructionSequenceResults = ignDupes;
     this->instructionTrie.ignoreOutputSequencesThatStartWithDirectRelativeJumps = ignRelJmps;
 
     for (const VirtualMemorySegmentBytes& segm : this->vmBytes.getExecutableSegments()) {

@@ -112,7 +112,11 @@ namespace ROP {
 
         int maxInstructionsInInstructionSequence = 10;
 
+        // Ignore results where the virtual address contains any of these bytes.
         std::bitset<256> badAddressBytes;
+
+        // Keep just the first virtual address that we find for a given sequence.
+        bool ignoreDuplicateInstructionSequenceResults = true;
 
         // Include instruction sequences like "xor eax, eax; jmp 0xee877518 --> pop edi; pop esi; ret".
         bool searchForSequencesWithDirectRelativeJumpsInTheMiddle = true;

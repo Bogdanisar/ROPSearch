@@ -42,6 +42,11 @@ ROP::InsSeqTrie::Node* ROP::InsSeqTrie::addInstruction(
         return childNode;
     }
 
+    if (this->ignoreDuplicateInstructionSequenceResults && childNode->matchingVirtualAddresses.size() != 0) {
+        // Don't add this address since it's a duplicate.
+        return childNode;
+    }
+
     // Set the new information on the child node.
     childNode->matchingVirtualAddresses.push_back(vAddress);
     if (regInfo) { childNode->regInfo = *regInfo; }

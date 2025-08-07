@@ -43,8 +43,9 @@ namespace ROP {
         // Config values.
         BitSizeClass archBitSize;
         std::bitset<256> badAddressBytes;
-        unsigned numBadAddressBytes; // optimization since bitset::count() is not constant.
-        bool ignoreOutputSequencesThatStartWithDirectRelativeJumps;
+        unsigned numBadAddressBytes = 0; // optimization since bitset::count() is not constant.
+        bool ignoreDuplicateInstructionSequenceResults = true;
+        bool ignoreOutputSequencesThatStartWithDirectRelativeJumps = true;
 
         InsSeqTrie();
 

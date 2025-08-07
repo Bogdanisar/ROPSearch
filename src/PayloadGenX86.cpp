@@ -344,6 +344,7 @@ void ROP::PayloadGenX86::addPythonScriptPrelude() {
 void ROP::PayloadGenX86::configureGenerator() {
     // Configure the object and build the instruction sequence trie.
     this->vmInstructionsObject.maxInstructionsInInstructionSequence = this->maxInstructionsInSequence;
+    this->vmInstructionsObject.ignoreDuplicateInstructionSequenceResults = this->ignoreDuplicateInstructionSequenceResults;
     this->vmInstructionsObject.searchForSequencesWithDirectRelativeJumpsInTheMiddle = true;
     this->vmInstructionsObject.ignoreOutputSequencesThatStartWithDirectRelativeJumps = true;
     this->vmInstructionsObject.innerAssemblySyntax = ROP::AssemblySyntax::Intel;
