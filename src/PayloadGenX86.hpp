@@ -289,7 +289,7 @@ namespace ROP {
         //////////////////////// Config values ////////////////////////
 
         std::bitset<256> forbiddenBytes;
-        unsigned numForbiddenBytes; // optimization since bitset::count() is not constant.
+        unsigned numForbiddenBytes; // optimization since bitset::count() might not be O(1).
 
         bool ignoreDuplicateInstructionSequenceResults = true;
         unsigned maxInstructionsInSequence = 10;
