@@ -44,6 +44,8 @@ ROP::InsSeqTrie::Node* ROP::InsSeqTrie::addInstruction(
 
     if (this->ignoreDuplicateInstructionSequenceResults && childNode->matchingVirtualAddresses.size() != 0) {
         // Don't add this address since it's a duplicate.
+        // But check if it's smaller than the one we already know.
+        childNode->matchingVirtualAddresses[0] = std::min(childNode->matchingVirtualAddresses[0], vAddress);
         return childNode;
     }
 
