@@ -163,10 +163,7 @@ void ConfigureListCommandSubparser() {
                                "'" SORT_CRIT_NUM_INSTRUCTIONS_ASC "', '" SORT_CRIT_NUM_INSTRUCTIONS_DESC "'. "
               "Default value: '" SORT_CRIT_ADDRESS_ASC "', '" SORT_CRIT_NUM_INSTRUCTIONS_ASC "'")
         .metavar("STR")
-        .nargs(1, 3)
-        .choices(SORT_CRIT_ADDRESS_ASC, SORT_CRIT_ADDRESS_DESC,
-                 SORT_CRIT_STRING_ASC, SORT_CRIT_STRING_DESC,
-                 SORT_CRIT_NUM_INSTRUCTIONS_ASC, SORT_CRIT_NUM_INSTRUCTIONS_DESC);
+        .nargs(1, 3);
 
     gProgramParser.add_subparser(gListCmdSubparser);
 }
@@ -379,6 +376,18 @@ void SortListOutput(const vector< pair<addressType, vector<string>> >& instrSeqs
     if (sortCriteria.size() == 0) {
         // Set default value.
         sortCriteria = {SORT_CRIT_ADDRESS_ASC, SORT_CRIT_NUM_INSTRUCTIONS_ASC};
+    }
+
+    // Check if all the given values are valid criteria.
+    // We do this manually here instead of using ".choices()" in argparse since it seems bugged (see commit message).
+    set<string> validCriteria = {
+        SORT_CRIT_ADDRESS_ASC, SORT_CRIT_ADDRESS_DESC,
+        SORT_CRIT_STRING_ASC, SORT_CRIT_STRING_DESC,
+        SORT_CRIT_NUM_INSTRUCTIONS_ASC, SORT_CRIT_NUM_INSTRUCTIONS_DESC
+    };
+    for (const string& criteria : sortCriteria) {
+        bool sortCriteriaIsValid = (validCriteria.count(criteria) != 0);
+        assertMessage(sortCriteriaIsValid, "Sorting criteria is not valid: %s", criteria.c_str());
     }
 
     for (int i = 0; i < (int)sortCriteria.size(); ++i) {
