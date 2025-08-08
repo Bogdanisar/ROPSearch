@@ -111,8 +111,8 @@ void ConfigureListCommandSubparser() {
         .default_value(10)
         .scan<'i', int>()
         .nargs(1);
-    gListCmdSubparser.add_argument("--allow-duplicates")
-        .help("keep duplicate instruction sequence results (keep multiple virtual addresses for the found sequences)")
+    gListCmdSubparser.add_argument("--unique")
+        .help("discard duplicate instruction sequence results (keep just one virtual address for the found sequences)")
         .flag();
     gListCmdSubparser.add_argument("--no-null")
         .help("ignore instruction sequences that have a \"0x00\" byte in their virtual memory address. Note: This may print nothing on 64bit arch.")
@@ -566,7 +566,7 @@ void DoListCommand() {
 
     const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
     const int maxInstructions = gListCmdSubparser.get<int>("--max-instructions");
-    const bool allowDuplicates = gListCmdSubparser.get<bool>("--allow-duplicates");
+    const bool ignoreDuplicates = gListCmdSubparser.get<bool>("--unique");
     const bool ignoreRelativeJumps = gListCmdSubparser.is_used("--no-reljumps");
     const bool includeRelativeJumpStarts = gListCmdSubparser.is_used("--include-reljump-starts");
     const bool hasRegisterQueryArg = gListCmdSubparser.is_used("--query");
@@ -600,7 +600,7 @@ void DoListCommand() {
     vmInstructions.minInstructionsInInstructionSequence = minInstructions;
     vmInstructions.maxInstructionsInInstructionSequence = maxInstructions;
     vmInstructions.badAddressBytes = GetBadBytesArguments();
-    vmInstructions.ignoreDuplicateInstructionSequenceResults = !allowDuplicates;
+    vmInstructions.ignoreDuplicateInstructionSequenceResults = ignoreDuplicates;
     vmInstructions.searchForSequencesWithDirectRelativeJumpsInTheMiddle = !ignoreRelativeJumps;
     vmInstructions.ignoreOutputSequencesThatStartWithDirectRelativeJumps = !includeRelativeJumpStarts;
     vmInstructions.innerAssemblySyntax = desiredSyntax;
