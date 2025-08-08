@@ -108,7 +108,7 @@ void ConfigureListCommandSubparser() {
     gListCmdSubparser.add_argument("-maxi", "--max-instructions")
         .help("the maximum number of assembly instructions contained in the same instruction sequence")
         .metavar("INT")
-        .default_value(10)
+        .default_value(4)
         .scan<'i', int>()
         .nargs(1);
     gListCmdSubparser.add_argument("--unique")
