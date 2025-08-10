@@ -896,13 +896,13 @@ void DoFindDataCommand() {
 
     // Print results summary.
     LogInfo(""); // new line
-    if (Log::Level::Verbose <= Log::ProgramLogLevel) {
-        LogVerbose("Found %u bytes results and %u string results.",
-                   (unsigned)byteSequenceResults.size(),
-                   (unsigned)stringResults.size());
+    if (gFindDataCmdSubparser.is_used("--string")) {
+        LogInfo("Found %u string results.",
+                (unsigned)stringResults.size());
     }
-    else {
-        LogInfo("Found %u total data results.", (unsigned)(byteSequenceResults.size() + stringResults.size()));
+    if (gFindDataCmdSubparser.is_used("--bytes")) {
+        LogInfo("Found %u bytes results.",
+                (unsigned)byteSequenceResults.size());
     }
 }
 
