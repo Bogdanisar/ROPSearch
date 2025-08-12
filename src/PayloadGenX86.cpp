@@ -316,7 +316,8 @@ void ROP::PayloadGenX86::addPythonScriptPrelude() {
     this->addLineToPythonScript(ss.str());
 
     ss.str("");
-    ss << "# Approximate total byte size of the stack variables/buffers that need to be overflowed: ";
+    // ss << "# Approximate byte count of stack content that needs to be overflowed: ";
+    ss << "# Approximate byte count of stack content before saved return: ";
     ss << this->approximateByteSizeOfStackBuffer;
     this->addLineToPythonScript(ss.str());
 
@@ -1066,28 +1067,28 @@ bool ROP::PayloadGenX86::appendROPChainForShellCodeWithPathNullNull() {
         argWorkClosure.push_back([&](const std::set<x86_reg>& forbiddenRegisterKeys) {
             x86_reg regKey = this->syscallArgNumberToRegKey[0];
             uint64_t syscallId = (this->processArchSize == BitSizeClass::BIT64) ? 59 : 11;
-            this->addLineToPythonScript("# System call number for execve().");
+            this->addLineToPythonScript("# Set register to system call number of execve().");
             return this->appendGadgetForAssignValueToRegister(regKey, syscallId, forbiddenRegisterKeys);
         });
 
         // First argument. Reg = "/bin/sh";
         argWorkClosure.push_back([&](const std::set<x86_reg>& forbiddenRegisterKeys) {
             x86_reg regKey = this->syscallArgNumberToRegKey[1];
-            this->addLineToPythonScript("# Address of \"/bin/sh\" in virtual memory.");
+            this->addLineToPythonScript("# Set register to the address of \"/bin/sh\" in virtual memory.");
             return this->appendGadgetForAssignValueToRegister(regKey, binShAddress, forbiddenRegisterKeys);
         });
 
         // Second argument. Reg = 0 (NULL);
         argWorkClosure.push_back([&](const std::set<x86_reg>& forbiddenRegisterKeys) {
             x86_reg regKey = this->syscallArgNumberToRegKey[2];
-            this->addLineToPythonScript("# Set to NULL.");
+            this->addLineToPythonScript("# Set register to NULL.");
             return this->appendGadgetForAssignValueToRegister(regKey, 0, forbiddenRegisterKeys);
         });
 
         // Third argument. Reg = 0 (NULL);
         argWorkClosure.push_back([&](const std::set<x86_reg>& forbiddenRegisterKeys) {
             x86_reg regKey = this->syscallArgNumberToRegKey[3];
-            this->addLineToPythonScript("# Set to NULL.");
+            this->addLineToPythonScript("# Set register to NULL.");
             return this->appendGadgetForAssignValueToRegister(regKey, 0, forbiddenRegisterKeys);
         });
 
@@ -1158,28 +1159,28 @@ bool ROP::PayloadGenX86::appendROPChainForShellCodeWithPathEmptyEmpty() {
         argWorkClosure.push_back([&](const std::set<x86_reg>& forbiddenRegisterKeys) {
             x86_reg regKey = this->syscallArgNumberToRegKey[0];
             uint64_t syscallId = (this->processArchSize == BitSizeClass::BIT64) ? 59 : 11;
-            this->addLineToPythonScript("# System call number for execve().");
+            this->addLineToPythonScript("# Set register to system call number of execve().");
             return this->appendGadgetForAssignValueToRegister(regKey, syscallId, forbiddenRegisterKeys);
         });
 
         // First argument. Reg = "/bin/sh";
         argWorkClosure.push_back([&](const std::set<x86_reg>& forbiddenRegisterKeys) {
             x86_reg regKey = this->syscallArgNumberToRegKey[1];
-            this->addLineToPythonScript("# Address of \"/bin/sh\" in virtual memory.");
+            this->addLineToPythonScript("# Set register to the address of \"/bin/sh\" in virtual memory.");
             return this->appendGadgetForAssignValueToRegister(regKey, binShAddress, forbiddenRegisterKeys);
         });
 
         // Second argument. Reg = Address of {NULL};
         argWorkClosure.push_back([&](const std::set<x86_reg>& forbiddenRegisterKeys) {
             x86_reg regKey = this->syscallArgNumberToRegKey[2];
-            this->addLineToPythonScript("# Assign to REG the address of an arbitrary NULL pointer in memory.");
+            this->addLineToPythonScript("# Set register to the address of an arbitrary NULL pointer in memory.");
             return this->appendGadgetForAssignValueToRegister(regKey, nullAddress, forbiddenRegisterKeys);
         });
 
         // Third argument. Reg = Address of {NULL};
         argWorkClosure.push_back([&](const std::set<x86_reg>& forbiddenRegisterKeys) {
             x86_reg regKey = this->syscallArgNumberToRegKey[3];
-            this->addLineToPythonScript("# Assign to REG the address of an arbitrary NULL pointer in memory.");
+            this->addLineToPythonScript("# Set register to the address of an arbitrary NULL pointer in memory.");
             return this->appendGadgetForAssignValueToRegister(regKey, nullAddress, forbiddenRegisterKeys);
         });
 
