@@ -35,15 +35,18 @@ Automatically build a payload for a chain of Return-Oriented-Programming gadgets
 
 !["ropChain" help](resources/ropChainHelp.png)
 
-See [this example Python script](resources/sampleRopChain.py) for a sample output of the automatic ROP-chain finder.
+See [this example Python script](resources/sampleRopChain32bit.py) for a sample output of the automatic ROP-chain finder, for **32bit libc**. It was obtained with this command:
 
-It can be obtained running a command similar to the following, assuming that a suitable "vulnerable32bit.exe" process is running:
+`bin/ROPSearch.exe ropChain --executable-path /usr/lib32/libc.so.6 --base-address 0xeb3b0000 --buffer-length 100 --type shellEmptyEmpty --no-null --no-whitespace --max-instructions 5 --max-variants 4 --script-file resources/sampleRopChain32bit.py`
 
-`bin/ROPSearch.exe ropChain -pid $(pidof vulnerable32bit.exe) --buffer-length 100 -t shellNullNull --max-variants 5 --script-file resources/sampleRopChain.py --no-null`
+See [this example Python script](resources/sampleRopChain64bit.py) for a sample output of the automatic ROP-chain finder, for **64bit libc**. It was obtained with this command:
 
-Otherwise, you can obtain it directly from an executable file:
+`bin/ROPSearch.exe ropChain --executable-path /usr/lib/x86_64-linux-gnu/libc.so.6 --base-address 0x7af6b7400000 --buffer-length 100 --type shellNullNull --no-whitespace --max-instructions 8 --max-variants 5 --script-file resources/sampleRopChain64bit.py`
 
-`bin/ROPSearch.exe ropChain -exec /usr/lib32/libc.so.6 --base-address eb3b0000 --buffer-length 100 -t shellNullNull --max-variants 5 --script-file resources/sampleRopChain.py --no-null`
+Otherwise, such a script can be obtained by running a command similar to the following, assuming that a suitable `vulnerable32bit.exe` process is running:
+
+`bin/ROPSearch.exe ropChain --process-id $(pidof vulnerable32bit.exe) --buffer-length 100 --type shellEmptyEmpty --no-null --no-whitespace --max-instructions 5 --max-variants 4 --script-file resources/sampleRopChain32bit.py`
+
 
 ## ROP-chain for spawning a shell
 
