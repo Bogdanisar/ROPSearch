@@ -558,7 +558,11 @@ FilterInstructionSequencesByListCmdArgs(const VirtualMemoryInstructions& vmInstr
             rq.transformInstrSeqsToEnablePartialRegisterPacking(allRegInfoSeqs);
         }
 
+        LogVerbose(""); // New line.
         LogVerbose("Query representation: %s", rq.getStringRepresentationOfQuery().c_str());
+        auto graphvizCode = rq.getGraphVizRepresentationOfQuery();
+        LogVerbose(""); // New line.
+        LogVerbose("Graphviz code: \n%s", graphvizCode.c_str());
         LogVerbose(""); // New line.
 
         validIndexes.erase(remove_if(validIndexes.begin(), validIndexes.end(), [&](unsigned idx) {

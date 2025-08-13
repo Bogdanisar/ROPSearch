@@ -497,7 +497,7 @@ bool ROP::RegisterQueryX86::matchesRegisterInfoOfInstructionSequence(const std::
 }
 
 
-void ROP::RegisterQueryX86::getStringRepresentationOfQuery(const QueryNode *currentNode, std::string& repr) {
+void ROP::RegisterQueryX86::getStringRepresentationOfQuery(const QueryNode *currentNode, std::string& repr) const {
     switch (currentNode->nodeType) {
         case QueryNodeType::VALUE_TRUE: {
             repr += "true";
@@ -600,7 +600,7 @@ void ROP::RegisterQueryX86::getStringRepresentationOfQuery(const QueryNode *curr
     }
 }
 
-std::string ROP::RegisterQueryX86::getStringRepresentationOfQuery() {
+std::string ROP::RegisterQueryX86::getStringRepresentationOfQuery() const {
     if (this->queryTreeRoot == NULL) {
         return "Bad query";
     }
@@ -608,6 +608,123 @@ std::string ROP::RegisterQueryX86::getStringRepresentationOfQuery() {
     std::string repr;
     this->getStringRepresentationOfQuery(this->queryTreeRoot, repr);
     return repr;
+}
+
+
+void ROP::RegisterQueryX86::getGraphVizRepresentationOfQuery(
+    const QueryNode *currentNode, std::string nameParent, std::string nameNode, std::ostringstream& repr
+) const {
+    std::string nameLeft = nameNode + "_L";
+    std::string nameRight = nameNode + "_R";
+    std::string nameDown = nameNode + "_D";
+    std::string currLabel = "";
+
+    switch (currentNode->nodeType) {
+        case QueryNodeType::VALUE_TRUE: {
+            currLabel = "true";
+            break;
+        }
+        case QueryNodeType::VALUE_FALSE: {
+            currLabel = "false";
+            break;
+        }
+        case QueryNodeType::ANY_READ_REGISTER: {
+            currLabel += "anyread(";
+            currLabel += InstructionConverter::convertCapstoneRegIdToShortString(currentNode->registerID);
+            currLabel += ")";
+            break;
+        }
+        case QueryNodeType::ALL_READ_REGISTER: {
+            currLabel += "allread(";
+            currLabel += InstructionConverter::convertCapstoneRegIdToShortString(currentNode->registerID);
+            currLabel += ")";
+            break;
+        }
+        case QueryNodeType::ANY_WRITE_REGISTER: {
+            currLabel += "anywrite(";
+            currLabel += InstructionConverter::convertCapstoneRegIdToShortString(currentNode->registerID);
+            currLabel += ")";
+            break;
+        }
+        case QueryNodeType::ALL_WRITE_REGISTER: {
+            currLabel += "allwrite(";
+            currLabel += InstructionConverter::convertCapstoneRegIdToShortString(currentNode->registerID);
+            currLabel += ")";
+            break;
+        }
+        case QueryNodeType::ANY_READ_MEMORY_OPERAND: {
+            currLabel = "anyread(memop)";
+            break;
+        }
+        case QueryNodeType::ALL_READ_MEMORY_OPERAND: {
+            currLabel = "allread(memop)";
+            break;
+        }
+        case QueryNodeType::ANY_WRITE_MEMORY_OPERAND: {
+            currLabel = "anywrite(memop)";
+            break;
+        }
+        case QueryNodeType::ALL_WRITE_MEMORY_OPERAND: {
+            currLabel = "allwrite(memop)";
+            break;
+        }
+        case QueryNodeType::ANY_HAVE_IMMEDIATE_VALUE: {
+            currLabel = "anyhave(imm)";
+            break;
+        }
+        case QueryNodeType::ALL_HAVE_IMMEDIATE_VALUE: {
+            currLabel = "allhave(imm)";
+            break;
+        }
+        case QueryNodeType::NOT_OPERATOR: {
+            currLabel = "!";
+            this->getGraphVizRepresentationOfQuery(currentNode->unary.child, nameNode, nameDown, repr);
+            break;
+        }
+        case QueryNodeType::EQUALS_OPERATOR: {
+            currLabel = "==";
+            this->getGraphVizRepresentationOfQuery(currentNode->binary.leftChild, nameNode, nameLeft, repr);
+            this->getGraphVizRepresentationOfQuery(currentNode->binary.rightChild, nameNode, nameRight, repr);
+            break;
+        }
+        case QueryNodeType::NOT_EQUALS_OPERATOR: {
+            currLabel = "!=";
+            this->getGraphVizRepresentationOfQuery(currentNode->binary.leftChild, nameNode, nameLeft, repr);
+            this->getGraphVizRepresentationOfQuery(currentNode->binary.rightChild, nameNode, nameRight, repr);
+            break;
+        }
+        case QueryNodeType::AND_OPERATOR: {
+            currLabel = "&&";
+            this->getGraphVizRepresentationOfQuery(currentNode->binary.leftChild, nameNode, nameLeft, repr);
+            this->getGraphVizRepresentationOfQuery(currentNode->binary.rightChild, nameNode, nameRight, repr);
+            break;
+        }
+        case QueryNodeType::OR_OPERATOR: {
+            currLabel = "| |";
+            this->getGraphVizRepresentationOfQuery(currentNode->binary.leftChild, nameNode, nameLeft, repr);
+            this->getGraphVizRepresentationOfQuery(currentNode->binary.rightChild, nameNode, nameRight, repr);
+            break;
+        }
+        default: {
+            exitError("Got invalid operator type for current node when getting GraphViz representation. Type: %i",
+                      (int)currentNode->nodeType);
+        }
+    }
+
+    if (currentNode != this->queryTreeRoot) {
+        repr << nameParent << " -> " << nameNode << "; ";
+    }
+    repr << nameNode << " [label = \"" << currLabel << "\"];\n";
+}
+
+std::string ROP::RegisterQueryX86::getGraphVizRepresentationOfQuery() const {
+    if (this->queryTreeRoot == NULL) {
+        return "Bad query";
+    }
+
+    std::ostringstream repr;
+    this->getGraphVizRepresentationOfQuery(this->queryTreeRoot, "", "root", repr);
+    return repr.str();
 }
 
 

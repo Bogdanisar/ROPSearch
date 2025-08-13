@@ -118,10 +118,11 @@ namespace ROP {
                                  const RegisterInfo& regInfoAny,
                                  const RegisterInfo& regInfoAll);
 
-        /**
-         * Get a string representing the query of the tree rooted at `currentNode` and place it in `repr`.
-         */
-        void getStringRepresentationOfQuery(const QueryNode *currentNode, std::string& repr);
+        // Get a string representing the query of the tree rooted at `currentNode` and place it in `repr`.
+        void getStringRepresentationOfQuery(const QueryNode *currentNode, std::string& repr) const;
+
+        // Get GraphViz code representing the query of the tree rooted at `currentNode` and place it in `repr`.
+        void getGraphVizRepresentationOfQuery(const QueryNode *currentNode, std::string parentName, std::string currName, std::ostringstream& repr) const;
 
         public:
         RegisterQueryX86(const std::string queryString);
@@ -142,7 +143,8 @@ namespace ROP {
          */
         bool matchesRegisterInfoOfInstructionSequence(const std::vector<RegisterInfo>& regInfoSequence);
 
-        std::string getStringRepresentationOfQuery();
+        std::string getStringRepresentationOfQuery() const;
+        std::string getGraphVizRepresentationOfQuery() const;
 
         void freeTree(QueryNode *currentNode);
         ~RegisterQueryX86();
