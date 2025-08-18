@@ -32,7 +32,7 @@ namespace ROP {
          */
         std::vector<unsigned> sequenceIndexList;
         /**
-         * An index into `sequenceIndexList` for a valid "ret" instruction sequence
+         * An index into `instrSeqs` for a valid "ret" instruction sequence
          * (a sequence with just one "ret" instruction).
          * If an index for a valid sequence is not found
          * (no "ret" instructions at all or they all have forbidden bytes),
@@ -40,7 +40,7 @@ namespace ROP {
          */
         unsigned indexValidRetInstrSeq;
         /**
-         * An index into `sequenceIndexList` for a valid "int 0x80" / "syscall" instruction sequence.
+         * An index into `instrSeqs` for a valid "int 0x80" / "syscall" instruction sequence.
          * If an index for a valid sequence is not found
          * (can't find the instructions at all or they all have forbidden bytes),
          * then the value is `this->instrSeqs.size()`.
