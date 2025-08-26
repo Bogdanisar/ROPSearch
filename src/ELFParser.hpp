@@ -3,6 +3,7 @@
 
 #include <elf.h>
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -34,10 +35,10 @@ namespace ROP {
         std::vector<byteSequence> codeSegmentBytes;
 
         void readEntireBinaryIntoMemory(std::ifstream& fin);
-        void readAndValidateFileHeader(std::ifstream& fin);
         void readSegments(std::ifstream& fin);
 
         public:
+        static std::optional<Elf64_Ehdr> getELFFileHeader(const std::string& elfPath);
         static bool elfPathIsAcceptable(const std::string& elfPath);
 
         // Empty parser. Don't use this.

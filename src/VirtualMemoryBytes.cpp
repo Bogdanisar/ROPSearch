@@ -32,6 +32,7 @@ void ROP::VirtualMemoryBytes::buildVirtualMemorySegments(int processPid) {
         }
 
         if (elfPathToELFParser.count(segmentMap.path) == 0) {
+            LogVerbose("Loading executable file: %s", segmentMap.path.c_str());
             elfPathToELFParser[segmentMap.path] = ELFParser(segmentMap.path);
         }
 

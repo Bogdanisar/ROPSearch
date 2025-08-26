@@ -57,9 +57,70 @@ static Elf64_Phdr Convert32bitSegmentHeaderTo64Bit(Elf32_Phdr segmentHeader32) {
 int ________Class_implementation________;
 #endif
 
+
+// (static method)
+std::optional<Elf64_Ehdr> ROP::ELFParser::getELFFileHeader(const std::string& elfPath) {
+    std::ifstream fin(elfPath, std::ifstream::binary);
+    if (!fin) {
+        LogWarn("Can't open the binay input stream for file: %s", elfPath.c_str());
+        return {};
+    }
+
+    unsigned char e_ident[EI_NIDENT];
+    fin.read((char*)e_ident, sizeof(e_ident));
+    if (!fin) {
+        LogWarn("Can't read e_ident[EI_NIDENT] from binary file: %s", elfPath.c_str());
+        return {};
+    }
+
+    bool validMagic = e_ident[EI_MAG0] == ELFMAG0 &&
+                      e_ident[EI_MAG1] == ELFMAG1 &&
+                      e_ident[EI_MAG2] == ELFMAG2 &&
+                      e_ident[EI_MAG3] == ELFMAG3;
+    if (!validMagic) {
+        LogWarn("File is not valid ELF file (magic number): %s", elfPath.c_str());
+        return {};
+    }
+
+    // Prepare to read the file header.
+    fin.seekg(0, std::ios_base::beg);
+    if (!fin) {
+        LogWarn("Can't reposition the stream object to the start for file: %s", elfPath.c_str());
+        return {};
+    }
+
+    // Read the file header.
+    if (e_ident[EI_CLASS] == ELFCLASS64) {
+        Elf64_Ehdr fileHeader64;
+        fin.read((char*)&fileHeader64, sizeof(fileHeader64));
+        if (!fin) {
+            LogWarn("Can't read the Elf64_Ehdr header from the ELF file: %s", elfPath.c_str());
+            return {};
+        }
+
+        return fileHeader64;
+    }
+    else if (e_ident[EI_CLASS] == ELFCLASS32) {
+        Elf32_Ehdr fileHeader32;
+        fin.read((char*)&fileHeader32, sizeof(fileHeader32));
+        if (!fin) {
+            LogWarn("Can't read the Elf32_Ehdr header from the ELF file: %s", elfPath.c_str());
+            return {};
+        }
+
+        return Convert32bitFileHeaderTo64Bit(fileHeader32);
+    }
+    else {
+        LogWarn("Expected 32bit or 64bit ELF file but found invalid EI_CLASS (%hhu) for file: %s",
+                e_ident[EI_CLASS], elfPath.c_str());
+        return {};
+    }
+}
+
 // (static method)
 bool ROP::ELFParser::elfPathIsAcceptable(const std::string& elfPath) {
-    return (elfPath.size() != 0) && std::filesystem::exists(elfPath);
+    return elfPath.size() != 0 && std::filesystem::exists(elfPath) &&
+           ELFParser::getELFFileHeader(elfPath).has_value();
 }
 
 
@@ -75,67 +136,6 @@ void ROP::ELFParser::readEntireBinaryIntoMemory(std::ifstream& fin) {
     if (!fin) {
         pv(this->elfPath); pn;
         exitError("Can't read binary file...");
-    }
-}
-
-void ROP::ELFParser::readAndValidateFileHeader(std::ifstream& fin) {
-    fin.seekg(0, std::ios_base::beg);
-    if (!fin) {
-        pv(this->elfPath); pn;
-        exitError("Can't move the stream object to the start of the file...");
-    }
-
-    unsigned char e_ident[EI_NIDENT];
-    fin.read((char*)e_ident, sizeof(e_ident));
-    if (!fin) {
-        pv(this->elfPath); pn;
-        exitError("Can't read e_ident[EI_NIDENT] from binary file...");
-    }
-
-    bool validMagic = e_ident[EI_MAG0] == ELFMAG0 &&
-                      e_ident[EI_MAG1] == ELFMAG1 &&
-                      e_ident[EI_MAG2] == ELFMAG2 &&
-                      e_ident[EI_MAG3] == ELFMAG3;
-    if (!validMagic) {
-        pv(this->elfPath); pn;
-        exitError("File is not valid ELF file (magic number)");
-    }
-
-    // Prepare to read the file header.
-    fin.seekg(0, std::ios_base::beg);
-    if (!fin) {
-        pv(this->elfPath); pn;
-        exitError("Can't move the stream object to the start of the file...");
-    }
-
-    // Read the file header.
-    if (e_ident[EI_CLASS] == ELFCLASS64) {
-        this->fileBitType = BitSizeClass::BIT64;
-
-        Elf64_Ehdr fileHeader64;
-        fin.read((char*)&fileHeader64, sizeof(fileHeader64));
-        if (!fin) {
-            pv(this->elfPath); pn;
-            exitError("Can't read the Elf64_Ehdr header from the ELF file...");
-        }
-
-        this->fileHeader = fileHeader64;
-    }
-    else if (e_ident[EI_CLASS] == ELFCLASS32) {
-        this->fileBitType = BitSizeClass::BIT32;
-
-        Elf32_Ehdr fileHeader32;
-        fin.read((char*)&fileHeader32, sizeof(fileHeader32));
-        if (!fin) {
-            pv(this->elfPath); pn;
-            exitError("Can't read the Elf32_Ehdr header from the ELF file...");
-        }
-
-        this->fileHeader = Convert32bitFileHeaderTo64Bit(fileHeader32);
-    }
-    else {
-        pv(this->elfPath); pn;
-        exitError("Expected 32bit or 64bit ELF file but found invalid EI_CLASS: %hhu", e_ident[EI_CLASS]);
     }
 }
 
@@ -229,17 +229,16 @@ void ROP::ELFParser::readSegments(std::ifstream& fin) {
 ROP::ELFParser::ELFParser() {}
 
 ROP::ELFParser::ELFParser(const std::string& elfPath): elfPath(elfPath) {
-    if (!ELFParser::elfPathIsAcceptable(this->elfPath)) {
-        pv(this->elfPath); pn;
-        exitError("ELF file path should point to valid ELF file");
-    }
+    assertMessage(ELFParser::elfPathIsAcceptable(this->elfPath),
+                  "ELF file path should point to valid ELF file: %s", elfPath.c_str());
+
+    std::optional<Elf64_Ehdr> elfHeader = ELFParser::getELFFileHeader(elfPath);
+    assertMessage(elfHeader, "ELF file path should point to valid ELF file: %s", elfPath.c_str());
+    this->fileHeader = *elfHeader;
+    this->fileBitType = (elfHeader->e_ident[EI_CLASS] == ELFCLASS64) ? BitSizeClass::BIT64 : BitSizeClass::BIT32;
 
     std::ifstream fin(elfPath, std::ifstream::binary);
-
-    // Not needed;
-    // this->readEntireBinaryIntoMemory(fin);
-
-    this->readAndValidateFileHeader(fin);
+    // this->readEntireBinaryIntoMemory(fin); // Not needed;
     this->readSegments(fin);
 }
 
