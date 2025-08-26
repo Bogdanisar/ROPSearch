@@ -134,8 +134,7 @@ void ROP::ELFParser::readEntireBinaryIntoMemory(std::ifstream& fin) {
     fin.seekg(0, std::ios_base::beg);
     fin.read((char*)this->elfBytes.data(), bytesCount);
     if (!fin) {
-        pv(this->elfPath); pn;
-        exitError("Can't read binary file...");
+        exitError("Can't read entire binary file: %s", this->elfPath.c_str());
     }
 }
 
@@ -146,8 +145,7 @@ void ROP::ELFParser::readSegments(std::ifstream& fin) {
 
     fin.seekg(programHeaderTableOffset, std::ios_base::beg);
     if (!fin) {
-        pv(this->elfPath); pn;
-        exitError("Can't seek to the begining of the program header table in the ELF file...");
+        exitError("Can't seek to the beginning of the program header table in the ELF file: %s", this->elfPath.c_str());
     }
 
     // Load the program/segment headers.
@@ -159,8 +157,7 @@ void ROP::ELFParser::readSegments(std::ifstream& fin) {
 
         fin.read((char*)&currProgramHeaderBytes, programHeaderSize);
         if (!fin) {
-            pv(this->elfPath); pn;
-            exitError("Can't read the current program header in the ELF file...");
+            exitError("Can't read the current program header in the ELF file: %s", this->elfPath.c_str());
         }
 
         Elf64_Phdr currentProgHeader;
@@ -198,8 +195,7 @@ void ROP::ELFParser::readSegments(std::ifstream& fin) {
             fin.seekg(segmHeader.p_offset, std::ios_base::beg);
             fin.read((char*)segmBytes.data(), segmentSizeInFile);
             if (!fin) {
-                pv(this->elfPath); pn;
-                exitError("Can't read the bytes of the current code segment in the ELF file...");
+                exitError("Can't read the bytes of the current code segment in the ELF file: %s", this->elfPath.c_str());
             }
         }
 

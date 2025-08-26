@@ -1118,7 +1118,7 @@ int main(int argc, char* argv[]) {
     normalizeCWD(); pn;
 
     // testVirtualMemoryMapping(getpid()); pn;
-    // testPrintCodeSegmentsOfLoadedELFs(getpid()); pn;
+    testPrintCodeSegmentsOfLoadedELFs(getpid()); pn;
     // testVirtualMemoryBytes("vulnerable64bit.exe"); pn;
     // testVirtualMemoryBytesFindMatchingBytes("vulnerable64bit.exe"); pn;
     // testGetExecutableBytesInteractive("vulnerable64bit.exe"); pn;
@@ -1141,7 +1141,7 @@ int main(int argc, char* argv[]) {
     // testShowCapstoneInstructionInfo(); pn;
     // testEndianness(); pn;
     // testConvertBytesToIntFunction(); pn;
-    testPayloadGeneration(); pn;
+    // testPayloadGeneration(); pn;
 
     return 0;
 }
