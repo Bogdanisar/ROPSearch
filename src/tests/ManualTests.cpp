@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -9,6 +10,7 @@
 #include "../../deps/pugixml/src/pugixml.hpp"
 
 #include "../common/utils.hpp"
+#include "../ByteParsingX86.hpp"
 #include "../ELFParser.hpp"
 #include "../InstructionConverter.hpp"
 #include "../PayloadGenX86.hpp"
@@ -1107,6 +1109,44 @@ void testPayloadGeneration() {
     generator.writeScriptToFile("_payloadScript.py");
 }
 
+void compareTimeManualBytesParsingVsCapstone() {
+    byteSequence bseq = {0xC2, 0x13, 0x09}; // "ret 0x913"
+    const int numRuns = 1000000;
+
+    {
+        auto start = std::chrono::system_clock::now();
+        for (int r = 0; r < numRuns; ++r) {
+            assert(BytesAreNearRetInstruction(bseq, 0, bseq.size() - 1) == true);
+            assert(BytesAreFarRetInstruction(bseq, 0, bseq.size() - 1) == false);
+            assert(BytesAreBadInstructionInsideSequence(bseq, 0, bseq.size() - 1, 0, BitSizeClass::BIT64) == true);
+        }
+        auto end = std::chrono::system_clock::now();
+
+        auto elapsed = end - start;
+        std::cout << "Manual parsing, time elapsed in microseconds: " << elapsed.count() / 1000 << '\n';
+    }
+
+    {
+        InstructionConverter ic;
+        auto start = std::chrono::system_clock::now();
+        for (int r = 0; r < numRuns; ++r) {
+            vector<string> instrOutput;
+            unsigned disassembledBytes = ic.convertInstructionSequenceToString(bseq.data(), bseq.size(), AssemblySyntax::Intel, 0x0, 1, &instrOutput);
+            assert(disassembledBytes == bseq.size());
+            assert(instrOutput.size() == 1);
+
+            const string& instr = instrOutput[0];
+            // pv(instr); pn;
+            assert(instr.compare(0, 4, "ret ") == 0);
+            assert(instr.compare(0, 5, "retf ") != 0);
+        }
+        auto end = std::chrono::system_clock::now();
+
+        auto elapsed = end - start;
+        std::cout << "Capstone parsing, time elapsed in microseconds: " << elapsed.count() / 1000 << '\n';
+    }
+}
+
 
 int main(int argc, char* argv[]) {
     UNUSED(argc); UNUSED(argv);
@@ -1118,7 +1158,7 @@ int main(int argc, char* argv[]) {
     normalizeCWD(); pn;
 
     // testVirtualMemoryMapping(getpid()); pn;
-    testPrintCodeSegmentsOfLoadedELFs(getpid()); pn;
+    // testPrintCodeSegmentsOfLoadedELFs(getpid()); pn;
     // testVirtualMemoryBytes("vulnerable64bit.exe"); pn;
     // testVirtualMemoryBytesFindMatchingBytes("vulnerable64bit.exe"); pn;
     // testGetExecutableBytesInteractive("vulnerable64bit.exe"); pn;
@@ -1142,6 +1182,7 @@ int main(int argc, char* argv[]) {
     // testEndianness(); pn;
     // testConvertBytesToIntFunction(); pn;
     // testPayloadGeneration(); pn;
+    compareTimeManualBytesParsingVsCapstone(); pn;
 
     return 0;
 }
