@@ -1147,6 +1147,58 @@ void compareTimeManualBytesParsingVsCapstone() {
     }
 }
 
+void timeDisassembleEntireSegmentsWithCapstone() {
+    string targetExecutable = "vulnerable32bit.exe";
+    // string targetExecutable = "vulnerable64bit.exe";
+    pv(targetExecutable); pn;
+
+    int targetPid = getPidOfExecutable(targetExecutable);
+    pv(targetPid); pn;
+
+    VirtualMemoryBytes vmBytes(targetPid);
+    const vector<VirtualMemorySegmentBytes>& segments = vmBytes.getExecutableSegments();
+    InstructionConverter ic(vmBytes.getProcessArchSize());
+    const unsigned maxInstructionSize = ROPConsts::MaxInstructionBytesCount;
+
+    {
+        auto start = std::chrono::system_clock::now();
+        int numSimpleNearReturn = 0;
+        for (const VirtualMemorySegmentBytes& segm : segments) {
+            for (unsigned first = 0; first < segm.bytes.size(); ++first) {
+                const ROP::byte *firstPtr = segm.bytes.data() + first;
+                const addressType firstAddr = segm.startVirtualAddress + first;
+                int segmentSize = std::min(maxInstructionSize, (unsigned)segm.bytes.size() - first);
+
+                vector<string> instrOutput;
+                vector<ROP::RegisterInfo> regInfoOutput;
+                unsigned disassembledBytes = ic.convertInstructionSequenceToString(
+                    firstPtr, segmentSize, AssemblySyntax::Intel, firstAddr, 1, &instrOutput
+                    , &regInfoOutput
+                );
+                UNUSED(disassembledBytes);
+                assert(instrOutput.size() <= 1);
+
+                if (instrOutput.size() > 0) {
+                    const string& instr = instrOutput[0];
+                    // pv(instr); pn;
+                    if (instr == "ret") {
+                        numSimpleNearReturn += 1;
+                        if (false) {
+                            int addressWidth = vmBytes.getProcessArchSize() == BitSizeClass::BIT64 ? 16 : 8;
+                            printf("0x%0*llx: ret\n", addressWidth, (unsigned long long)firstAddr);
+                        }
+                    }
+                }
+            }
+        }
+        auto end = std::chrono::system_clock::now();
+
+        auto elapsed = end - start;
+        pv(numSimpleNearReturn); pn;
+        std::cout << "Manual parsing, time elapsed in microseconds: " << elapsed.count() / 1000 << '\n';
+    }
+}
+
 
 int main(int argc, char* argv[]) {
     UNUSED(argc); UNUSED(argv);
@@ -1182,7 +1234,8 @@ int main(int argc, char* argv[]) {
     // testEndianness(); pn;
     // testConvertBytesToIntFunction(); pn;
     // testPayloadGeneration(); pn;
-    compareTimeManualBytesParsingVsCapstone(); pn;
+    // compareTimeManualBytesParsingVsCapstone(); pn;
+    timeDisassembleEntireSegmentsWithCapstone(); pn;
 
     return 0;
 }
