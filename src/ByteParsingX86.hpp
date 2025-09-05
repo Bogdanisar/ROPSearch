@@ -334,7 +334,9 @@ static inline bool BytesAreRelativeCallInstruction64bit(const ROP::byteSequence&
     return (numBytes == 5 && bSeq[first] == 0xE8);
 }
 
-static inline bool BytesAreNearRetInstruction(const ROP::byteSequence& bSeq, int first, int last) {
+static inline bool BytesAreNearRetInstruction(const ROP::byteSequence& bSeq,
+                                              int first, int last,
+                                              ROP::BitSizeClass bsc) {
     const int numBytes = (last - first + 1);
 
     // "ret" instruction.
@@ -342,6 +344,14 @@ static inline bool BytesAreNearRetInstruction(const ROP::byteSequence& bSeq, int
 
     // "ret imm16" instruction.
     if (numBytes == 3 && bSeq[first] == 0xC2) { return true; }
+
+    if (bsc == ROP::BitSizeClass::BIT64) {
+        // Check if preceded by REX byte.
+        if (numBytes >= 2 && ByteIsValidRexByte(bSeq[first])
+            && BytesAreNearRetInstruction(bSeq, first + 1, last, bsc)) {
+            return true;
+        }
+    }
 
     return false;
 }
@@ -371,18 +381,19 @@ int ________High_level________;
  * that is useful as the ending instruction of an instruction sequence.
  */
 static inline bool BytesAreUsefulInstructionAtSequenceEnd(const ROP::byteSequence& bSeq,
-                                                          int first, int last) {
+                                                          int first, int last,
+                                                          ROP::BitSizeClass bsc) {
     assert(0 <= first && first < (int)bSeq.size());
     assert(0 <= last && last < (int)bSeq.size());
     assert(first <= last);
 
     if (first < last // at least 2 bytes
         && ByteIsInstructionPrefix(bSeq[first]) != ROP::PrefixByteX86::NONE
-        && BytesAreUsefulInstructionAtSequenceEnd(bSeq, first + 1, last)) {
+        && BytesAreUsefulInstructionAtSequenceEnd(bSeq, first + 1, last, bsc)) {
         return true;
     }
 
-    if (BytesAreNearRetInstruction(bSeq, first, last)) {
+    if (BytesAreNearRetInstruction(bSeq, first, last, bsc)) {
         return true;
     }
 
@@ -418,7 +429,7 @@ static inline bool BytesAreBadInstructionInsideSequence(const ROP::byteSequence&
         }
     }
 
-    if (BytesAreNearRetInstruction(bSeq, first, last)) {
+    if (BytesAreNearRetInstruction(bSeq, first, last, bsc)) {
         return true;
     }
     if (BytesAreFarRetInstruction(bSeq, first, last)) {
