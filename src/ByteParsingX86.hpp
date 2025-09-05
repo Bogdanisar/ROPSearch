@@ -356,7 +356,9 @@ static inline bool BytesAreNearRetInstruction(const ROP::byteSequence& bSeq,
     return false;
 }
 
-static inline bool BytesAreFarRetInstruction(const ROP::byteSequence& bSeq, int first, int last) {
+static inline bool BytesAreFarRetInstruction(const ROP::byteSequence& bSeq,
+                                             int first, int last,
+                                             ROP::BitSizeClass bsc) {
     const int numBytes = (last - first + 1);
 
     // "retf" instruction.
@@ -364,6 +366,14 @@ static inline bool BytesAreFarRetInstruction(const ROP::byteSequence& bSeq, int 
 
     // "retf imm16" instruction.
     if (numBytes == 3 && bSeq[first] == 0xCA) { return true; }
+
+    if (bsc == ROP::BitSizeClass::BIT64) {
+        // Check if preceded by REX byte.
+        if (numBytes >= 2 && ByteIsValidRexByte(bSeq[first])
+            && BytesAreFarRetInstruction(bSeq, first + 1, last, bsc)) {
+            return true;
+        }
+    }
 
     return false;
 }
@@ -432,7 +442,7 @@ static inline bool BytesAreBadInstructionInsideSequence(const ROP::byteSequence&
     if (BytesAreNearRetInstruction(bSeq, first, last, bsc)) {
         return true;
     }
-    if (BytesAreFarRetInstruction(bSeq, first, last)) {
+    if (BytesAreFarRetInstruction(bSeq, first, last, bsc)) {
         return true;
     }
 
