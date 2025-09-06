@@ -137,9 +137,9 @@ void ConfigureListCommandSubparser() {
               "Example: 'jmp 0xee73845b --> mov eax, ebx; pop ebx; ret'")
         .flag();
     gListCmdSubparser.add_argument("--query")
-        .help("a register query for filtering the instruction sequences. E.g. \"read(rax) & write(bx)\".")
+        .help("a register query (or several) for filtering the instruction sequences. E.g. \"read(rax) & write(bx)\".")
         .metavar("STR")
-        .nargs(1);
+        .nargs(argparse::nargs_pattern::at_least_one);
     gListCmdSubparser.add_argument("--pack", "--pack-partial-registers")
         .help("Treat partial registers as being the same register when used in the '--query' argument.")
         .flag();
@@ -551,28 +551,30 @@ FilterInstructionSequencesByListCmdArgs(const VirtualMemoryInstructions& vmInstr
     // Apply the "--query" filter.
     if (hasRegisterQueryArg) {
         assert(instrSeqs.size() == allRegInfoSeqs.size());
-        string queryString = gListCmdSubparser.get<string>("--query");
+        vector<string> queryStringList = gListCmdSubparser.get<vector<string>>("--query");
 
-        // Create the query object.
-        int leftIndex, rightIndex;
-        RegisterQueryX86::ParseIndexesFromQueryString(queryString, leftIndex, rightIndex);
-        RegisterQueryX86 rq(queryString, leftIndex, rightIndex);
+        for (string& queryString : queryStringList) {
+            // Create the query object.
+            int leftIndex, rightIndex;
+            RegisterQueryX86::ParseIndexesFromQueryString(queryString, leftIndex, rightIndex);
+            RegisterQueryX86 rq(queryString, leftIndex, rightIndex);
 
-        if (packPartialRegistersInQuery) {
-            rq.transformInstrSeqsToEnablePartialRegisterPacking(allRegInfoSeqs);
+            if (packPartialRegistersInQuery) {
+                rq.transformInstrSeqsToEnablePartialRegisterPacking(allRegInfoSeqs);
+            }
+
+            LogVerbose(""); // New line.
+            LogVerbose("Query representation: %s", rq.getStringRepresentationOfQuery().c_str());
+            auto graphvizCode = rq.getGraphVizRepresentationOfQuery();
+            LogVerbose(""); // New line.
+            LogVerbose("Graphviz code: \n%s", graphvizCode.c_str());
+            LogVerbose(""); // New line.
+
+            validIndexes.erase(remove_if(validIndexes.begin(), validIndexes.end(), [&](unsigned idx) {
+                const vector<RegisterInfo>& regInfoList = allRegInfoSeqs[idx];
+                return rq.matchesRegisterInfoOfInstructionSequence(regInfoList) == false;
+            }), validIndexes.end());
         }
-
-        LogVerbose(""); // New line.
-        LogVerbose("Query representation: %s", rq.getStringRepresentationOfQuery().c_str());
-        auto graphvizCode = rq.getGraphVizRepresentationOfQuery();
-        LogVerbose(""); // New line.
-        LogVerbose("Graphviz code: \n%s", graphvizCode.c_str());
-        LogVerbose(""); // New line.
-
-        validIndexes.erase(remove_if(validIndexes.begin(), validIndexes.end(), [&](unsigned idx) {
-            const vector<RegisterInfo>& regInfoList = allRegInfoSeqs[idx];
-            return rq.matchesRegisterInfoOfInstructionSequence(regInfoList) == false;
-        }), validIndexes.end());
     }
 
     return validIndexes;
@@ -623,13 +625,14 @@ void DoListCommand() {
     vmInstructions.innerAssemblySyntax = desiredSyntax;
 
     if (hasRegisterQueryArg) {
-        // Check if the query string is valid.
-        string queryString = gListCmdSubparser.get<string>("--query");
-
-        int leftIndex, rightIndex;
-        RegisterQueryX86::ParseIndexesFromQueryString(queryString, leftIndex, rightIndex);
-        RegisterQueryX86 rq(queryString, leftIndex, rightIndex);
-        assertMessage(rq.isValidQuery(), "Got invalid register query: %s", queryString.c_str());
+        vector<string> queryStringList = gListCmdSubparser.get<vector<string>>("--query");
+        for (string& queryString : queryStringList) {
+            // Check if the query string is valid.
+            int leftIndex, rightIndex;
+            RegisterQueryX86::ParseIndexesFromQueryString(queryString, leftIndex, rightIndex);
+            RegisterQueryX86 rq(queryString, leftIndex, rightIndex);
+            assertMessage(rq.isValidQuery(), "Got invalid register query: %s", queryString.c_str());
+        }
 
         // If we have a "--query" argument, then we will have to compute the register info for each instruction.
         vmInstructions.computeRegisterInfo = true;
