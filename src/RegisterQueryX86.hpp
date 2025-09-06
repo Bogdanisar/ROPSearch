@@ -105,7 +105,19 @@ namespace ROP {
         unsigned queryIdx;
         QueryNode *queryTreeRoot;
 
+        // These are used to configure the instruction interval for testing the query predicates.
+        // Index interval is inclusive. Indexing starts at 0 and ends at -1.
+        // Set these before calling `matchesRegisterInfoOfInstructionSequence()`.
+        // For example:
+        // - [0, -2] means that all instructions in the sequence are tested, except the last one;
+        // - [-3, -1] means the last three instructions in the sequence are tested;
+        // - [2, 4] means the third (index 2), fourth (index 3) and fifth (index 4) instructions are tested;
+        int intervalLeft, intervalRight;
+
+        void checkInstructionIntervalIsCoherent();
         void precomputeTermStrings();
+
+
         QueryNode* parseQueryLeaf();
         bool nextQueryCharacterIsValid(unsigned currentPrecedence);
         QueryNode* parseQuery(unsigned currentPrecedence);
@@ -125,16 +137,9 @@ namespace ROP {
         void getGraphVizRepresentationOfQuery(const QueryNode *currentNode, std::string parentName, std::string currName, std::ostringstream& repr) const;
 
         public:
-        RegisterQueryX86(const std::string queryString);
+        RegisterQueryX86(const std::string queryString, int left = 0, int right = -2);
+        static void ParseIndexesFromQueryString(std::string& queryString, int& left, int& right);
 
-        // These are used to configure the instruction interval for testing the query predicates.
-        // Index interval is inclusive. Indexing starts at 0 and ends at -1.
-        // Set these before calling `matchesRegisterInfoOfInstructionSequence()`.
-        // For example:
-        // - [0, -2] means that all instructions in the sequence are tested, except the last one;
-        // - [-3, -1] means the last three instructions in the sequence are tested;
-        // - [2, 4] means the third (index 2), fourth (index 3) and fifth (index 4) instructions are tested;
-        int intervalLeft = 0, intervalRight = -2;
 
         bool isValidQuery() const;
 

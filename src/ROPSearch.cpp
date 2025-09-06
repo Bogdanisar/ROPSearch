@@ -552,7 +552,11 @@ FilterInstructionSequencesByListCmdArgs(const VirtualMemoryInstructions& vmInstr
     if (hasRegisterQueryArg) {
         assert(instrSeqs.size() == allRegInfoSeqs.size());
         string queryString = gListCmdSubparser.get<string>("--query");
-        RegisterQueryX86 rq(queryString);
+
+        // Create the query object.
+        int leftIndex, rightIndex;
+        RegisterQueryX86::ParseIndexesFromQueryString(queryString, leftIndex, rightIndex);
+        RegisterQueryX86 rq(queryString, leftIndex, rightIndex);
 
         if (packPartialRegistersInQuery) {
             rq.transformInstrSeqsToEnablePartialRegisterPacking(allRegInfoSeqs);
@@ -621,7 +625,10 @@ void DoListCommand() {
     if (hasRegisterQueryArg) {
         // Check if the query string is valid.
         string queryString = gListCmdSubparser.get<string>("--query");
-        RegisterQueryX86 rq(queryString);
+
+        int leftIndex, rightIndex;
+        RegisterQueryX86::ParseIndexesFromQueryString(queryString, leftIndex, rightIndex);
+        RegisterQueryX86 rq(queryString, leftIndex, rightIndex);
         assertMessage(rq.isValidQuery(), "Got invalid register query: %s", queryString.c_str());
 
         // If we have a "--query" argument, then we will have to compute the register info for each instruction.

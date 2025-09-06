@@ -38,6 +38,14 @@ static std::string GetStringNoWhitespace(const std::string& str) {
 }
 
 
+void ROP::RegisterQueryX86::checkInstructionIntervalIsCoherent() {
+    // Check if [this->intervalLeft, this->intervalRight] seems to be a coherent interval.
+    bool differentSign = ((this->intervalLeft < 0) != (this->intervalRight < 0));
+    assertMessage(differentSign ||
+                  this->intervalLeft <= this->intervalRight,
+                  "Query index interval isn't coherent: [%i, %i]", this->intervalLeft, this->intervalRight);
+}
+
 void ROP::RegisterQueryX86::precomputeTermStrings() {
     // Precompute this->registerTermStrings.
     for (unsigned regIndex = X86_REG_INVALID + 1; regIndex < (unsigned)X86_REG_ENDING; ++regIndex) {
@@ -338,10 +346,12 @@ ROP::RegisterQueryX86::parseQuery(unsigned currentPrecedence) {
     }
 }
 
-ROP::RegisterQueryX86::RegisterQueryX86(const std::string queryString):
+ROP::RegisterQueryX86::RegisterQueryX86(const std::string queryString, int left, int right):
     queryString(GetLowercaseString(GetStringNoWhitespace(queryString))),
-    queryCString(this->queryString.c_str())
+    queryCString(this->queryString.c_str()),
+    intervalLeft(left), intervalRight(right)
 {
+    this->checkInstructionIntervalIsCoherent();
     this->precomputeTermStrings();
 
     this->queryIdx = 0;
@@ -355,6 +365,31 @@ ROP::RegisterQueryX86::RegisterQueryX86(const std::string queryString):
         this->freeTree(this->queryTreeRoot);
         this->queryTreeRoot = NULL;
     }
+}
+
+// static
+void ROP::RegisterQueryX86::ParseIndexesFromQueryString(std::string& queryString, int& left, int& right) {
+    queryString = GetStringNoWhitespace(queryString);
+
+    if (queryString[0] != '[') {
+        // This query string doesn't seem to start with the instruction-interval indexes.
+        // In other words, it's not something like "[2, 3]: read(rax) && !write(memop)".
+        // So, return the default index values;
+        left = 0;
+        right = -2;
+        return;
+    }
+
+    int readBytes;
+    char colon;
+    int numScannedItems = sscanf(queryString.c_str(), " [ %i , %i ] %1[:] %n", &left, &right, &colon, &readBytes);
+    if (numScannedItems != 3) {
+        exitError("Invalid format for index interval in query string: \"%s\"", queryString.c_str());
+    }
+    assert(colon == ':');
+
+    // Skip over the query prefix in which the index interval is configured.
+    queryString = queryString.substr(readBytes);
 }
 
 
@@ -497,12 +532,6 @@ bool ROP::RegisterQueryX86::matchesRegisterInfoOfInstructionSequence(const std::
     if (this->queryTreeRoot == NULL) {
         return true;
     }
-
-    // Check if [this->intervalLeft, this->intervalRight] seems to be a coherent interval.
-    bool differentSign = ((this->intervalLeft < 0) != (this->intervalRight < 0));
-    assertMessage(differentSign ||
-                  this->intervalLeft <= this->intervalRight,
-                  "Query index interval isn't coherent: [%i, %i]", this->intervalLeft, this->intervalRight);
 
     // Compute concrete [left, right] indexes for this specific sequence;
     int left = ComputeActualIndex(this->intervalLeft, (int)regInfoSequence.size());
