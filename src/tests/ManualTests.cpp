@@ -989,10 +989,10 @@ void testRegisterQueryTransformation() {
     LogLine();
 
     vector<string> queryList = {
-        "TRUE | false & READ(edi)",
-        "!!!(read(RAX) | read(dh))   &  (write(ebX) ^ write(ecx)) ",
-        "!!!read(RAX) ^ !!write(RBX) ^ !write(RCX)",
-        "!(((( write(ah) & write(bh) & WRITE(ch) & (write(DH)) ))))",
+        "TRUE || false && READ(edi)",
+        "!!!(read(RAX) || read(dh))   &&  (write(ebX) != write(ecx)) ",
+        "!!!read(RAX) != !!write(RBX) != !write(RCX)",
+        "!(((( write(ah) && write(bh) && WRITE(ch) && (write(DH)) ))))",
         "read(RAX)  ((((",
         "read(RAX)  ))))",
     };
@@ -1227,7 +1227,7 @@ int main(int argc, char* argv[]) {
     // testLoggingFunctionality(); pn;
     // testBytesOfInteger(); pn;
     // testLoadVirtualMemoryOfExecutablePaths(); pn;
-    // testRegisterQueryTransformation(); pn;
+    testRegisterQueryTransformation(); pn;
     // testBinaryRepresentationOfInteger(); pn;
     // testMinimumNumberOfBytesToStoreInteger(); pn;
     // testShowCapstoneInstructionInfo(); pn;
@@ -1235,7 +1235,7 @@ int main(int argc, char* argv[]) {
     // testConvertBytesToIntFunction(); pn;
     // testPayloadGeneration(); pn;
     // compareTimeManualBytesParsingVsCapstone(); pn;
-    timeDisassembleEntireSegmentsWithCapstone(); pn;
+    // timeDisassembleEntireSegmentsWithCapstone(); pn;
 
     return 0;
 }
