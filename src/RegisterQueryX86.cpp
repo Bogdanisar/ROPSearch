@@ -481,18 +481,44 @@ bool ROP::RegisterQueryX86::matchesRegisterInfo(QueryNode *currentNode,
     }
 }
 
+// Check if a positive or negative index fits inside a sequence with a given size
+// and return the corresponding positive index;
+static inline int ComputeActualIndex(const int idx, const int seqSize) {
+    if (0 <= idx && idx < seqSize) {
+        return idx;
+    }
+    else if (-seqSize <= idx && idx < 0) {
+        return seqSize + idx;
+    }
+    return -1;
+}
+
 bool ROP::RegisterQueryX86::matchesRegisterInfoOfInstructionSequence(const std::vector<RegisterInfo>& regInfoSequence) {
     if (this->queryTreeRoot == NULL) {
         return true;
     }
 
-    auto regInfoSeqCopy = regInfoSequence;
+    // Check if [this->intervalLeft, this->intervalRight] seems to be a coherent interval.
+    bool differentSign = ((this->intervalLeft < 0) != (this->intervalRight < 0));
+    assertMessage(differentSign ||
+                  this->intervalLeft <= this->intervalRight,
+                  "Query index interval isn't coherent: [%i, %i]", this->intervalLeft, this->intervalRight);
+
+    // Compute concrete [left, right] indexes for this specific sequence;
+    int left = ComputeActualIndex(this->intervalLeft, (int)regInfoSequence.size());
+    int right = ComputeActualIndex(this->intervalRight, (int)regInfoSequence.size());
+    if (left == -1 || right == -1 || left > right) {
+        return false;
+    }
+    assert(left <= right &&
+           (0 <= left && left < (int)regInfoSequence.size()) &&
+           (0 <= right && right < (int)regInfoSequence.size()));
+
+    std::vector<RegisterInfo> regInfoSeqCopy(regInfoSequence.begin() + left, regInfoSequence.begin() + right + 1);
     assert(regInfoSeqCopy.size() > 0);
-    regInfoSeqCopy.pop_back();
 
     RegisterInfo regInfoAny = RegisterInfo::reduceRegInfoListWithOrOperator(regInfoSeqCopy);
     RegisterInfo regInfoAll = RegisterInfo::reduceRegInfoListWithAndOperator(regInfoSeqCopy);
-
     return this->matchesRegisterInfo(this->queryTreeRoot, regInfoAny, regInfoAll);
 }
 
