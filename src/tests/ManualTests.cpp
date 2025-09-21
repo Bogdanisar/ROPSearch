@@ -20,6 +20,9 @@
 #include "../VirtualMemoryMapping.hpp"
 
 
+#define pv(x) std::cout<<#x<<" = "<<(x)<<"; ";std::cout.flush()
+#define pn std::cout<<std::endl
+
 using namespace std;
 using namespace ROP;
 
@@ -1209,7 +1212,7 @@ int main(int argc, char* argv[]) {
     printProcessInformation(argc, argv); pn;
     normalizeCWD(); pn;
 
-    // testVirtualMemoryMapping(getpid()); pn;
+    testVirtualMemoryMapping(getpid()); pn;
     // testPrintCodeSegmentsOfLoadedELFs(getpid()); pn;
     // testVirtualMemoryBytes("vulnerable64bit.exe"); pn;
     // testVirtualMemoryBytesFindMatchingBytes("vulnerable64bit.exe"); pn;
@@ -1227,7 +1230,7 @@ int main(int argc, char* argv[]) {
     // testLoggingFunctionality(); pn;
     // testBytesOfInteger(); pn;
     // testLoadVirtualMemoryOfExecutablePaths(); pn;
-    testRegisterQueryTransformation(); pn;
+    // testRegisterQueryTransformation(); pn;
     // testBinaryRepresentationOfInteger(); pn;
     // testMinimumNumberOfBytesToStoreInteger(); pn;
     // testShowCapstoneInstructionInfo(); pn;

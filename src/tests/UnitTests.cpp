@@ -10,6 +10,9 @@
 #include "../RegisterQueryX86.hpp"
 
 
+#define pv(x) std::cout<<#x<<" = "<<(x)<<"; ";std::cout.flush()
+#define pn std::cout<<std::endl
+
 using namespace std;
 using namespace ROP;
 

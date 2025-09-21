@@ -9,21 +9,17 @@ void ROP::VirtualMemorySegmentMapping::printSegment() const {
     LogInfo("%llx-%llx %s %08llx %02llu:%02llu %-7llu %18c %s;",
             this->startAddress, this->endAddress, this->rights, this->offset,
             this->deviceMajor, this->deviceMinor, this->inodeNumber, ' ', this->path.c_str());
-
-    // pv(this->rightsMask); pn;
 }
 
 
 ROP::VirtualMemoryMapping::VirtualMemoryMapping(int processPid) {
-
     std::ostringstream ss;
     ss << "/proc/" << processPid << "/maps";
     std::string mapsPath = ss.str();
 
     std::ifstream fin(mapsPath);
     if (!fin) {
-        pv(processPid); pv(mapsPath); pn;
-        exitError("Got error when opening /proc/PID/maps file");
+        exitError("Got error when opening \"%s\" file", mapsPath.c_str());
     }
 
     std::string line;
@@ -36,8 +32,7 @@ ROP::VirtualMemoryMapping::VirtualMemoryMapping(int processPid) {
                              &vmsm.deviceMajor, &vmsm.deviceMinor, &vmsm.inodeNumber, &readCharacters);
 
         if (matched != 7) {
-            pv(line); pn;
-            exitError("Got error when parsing /maps segment line");
+            exitError("Got error when parsing segment in \"%s\" file. Line:\n   %s", mapsPath.c_str(), line.c_str());
         }
 
         vmsm.rights[4] = '\0';

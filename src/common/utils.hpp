@@ -18,9 +18,6 @@
 #include "../Log.hpp"
 
 
-#define pv(x) std::cout<<#x<<" = "<<(x)<<"; ";std::cout.flush()
-#define pn std::cout<<std::endl
-
 #define exitError(format, ...) \
     do { \
         LogError(""); \
