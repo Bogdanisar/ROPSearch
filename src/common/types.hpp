@@ -33,42 +33,42 @@ namespace ROP {
         NONE = 0,
 
         // LOCK prefix
-        LOCK = 1<<1,
+        LOCK = 0xF0,
 
         // REPNE/REPNZ prefix
-        REPNE = 1<<2,
-        REPNZ = 1<<2,
+        REPNE = 0xF2,
+        REPNZ = 0xF2,
 
         // REP or REPE/REPZ prefix
-        REP = 1<<3,
-        REPE = 1<<3,
-        REPZ = 1<<3,
+        REP = 0xF3,
+        REPE = 0xF3,
+        REPZ = 0xF3,
 
         // CS segment override / Branch not taken
-        CS_SEGMENT_OVERRIDE = 1<<4,
-        BRANCH_NOT_TAKEN = 1<<4,
+        CS_SEGMENT_OVERRIDE = 0x2E,
+        BRANCH_NOT_TAKEN = 0x2E,
 
         // SS segment override
-        SS_SEGMENT_OVERRIDE = 1<<5,
+        SS_SEGMENT_OVERRIDE = 0x36,
 
         // DS segment override / Branch taken
-        DS_SEGMENT_OVERRIDE = 1<<6,
-        BRANCH_TAKEN = 1<<6,
+        DS_SEGMENT_OVERRIDE = 0x3E,
+        BRANCH_TAKEN = 0x3E,
 
         // ES segment override
-        ES_SEGMENT_OVERRIDE = 1<<7,
+        ES_SEGMENT_OVERRIDE = 0x26,
 
         // FS segment override
-        FS_SEGMENT_OVERRIDE = 1<<8,
+        FS_SEGMENT_OVERRIDE = 0x64,
 
         // GS segment override
-        GS_SEGMENT_OVERRIDE = 1<<9,
+        GS_SEGMENT_OVERRIDE = 0x65,
 
         // Operand-size override prefix
-        OPERAND_SIZE_OVERRIDE = 1<<10,
+        OPERAND_SIZE_OVERRIDE = 0x66,
 
         // Address-size override prefix
-        ADDRESS_SIZE_OVERRIDE = 1<<11,
+        ADDRESS_SIZE_OVERRIDE = 0x67,
     };
 }
 

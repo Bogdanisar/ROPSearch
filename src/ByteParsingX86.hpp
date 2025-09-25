@@ -2,15 +2,16 @@
 #define BYTE_PARSING_X86_H
 
 #include <cassert>
+#include <optional>
 #include <vector>
 
 #include "common/types.hpp"
 #include "common/utils.hpp"
 
 
-#pragma region Prefix, REX, ModRM bytes
+#pragma region Prefix, REX bytes
 #if false
-int ________Prefix_REX_ModRM_bytes________;
+int ________Prefix_REX_bytes________;
 #endif
 
 /** Check if this byte represents an instruction prefix byte in x86. */
@@ -61,6 +62,84 @@ static inline bool ByteIsValidRexByte(ROP::byte b) {
     // return (0x40 <= b && b <= 0x4F);
 }
 
+struct PrefixBytesInfo {
+    // The last parsed byte from legacy prefix group 1 (0xF0, 0xF2, 0xF3)
+    // or 0 if not present.
+    ROP::byte group1Byte = 0;
+
+    // The last parsed byte from legacy prefix group 2 (0x26, 0x2E, 0x36, 0x3E, 0x64, 0x65)
+    // or 0 if not present.
+    ROP::byte group2Byte = 0;
+
+    // The last parsed byte from legacy prefix group 3 (0x66)
+    // or 0 if not present.
+    ROP::byte group3Byte = 0;
+
+    // The last parsed byte from legacy prefix group 4 (0x67)
+    // or 0 if not present.
+    ROP::byte group4Byte = 0;
+
+    // The last REX byte that was parsed, that is not followed by other prefix bytes or another REX byte.
+    // Or 0 if not present.
+    ROP::byte rexByte = 0;
+};
+
+// Update the given prefix bytes info with a new prefix byte.
+static inline std::optional<PrefixBytesInfo> ParsePrefixByte(
+    PrefixBytesInfo info, ROP::byte byte, ROP::BitSizeClass archSize
+) {
+    switch (byte) {
+        // - Legacy prefix bytes belong to different prefix groups;
+        // - At most one byte from the each group can be used for an instruction.
+        // - Only the last-parsed prefix byte in each group is used;
+        // https://wiki.osdev.org/X86-64_Instruction_Encoding#Legacy_Prefixes
+        case 0xF0: case 0xF2: case 0xF3: {
+            info.group1Byte = byte;
+            info.rexByte = 0;
+            return info;
+        }
+        case 0x26: case 0x2E: case 0x36: case 0x3E: case 0x64: case 0x65:  {
+            info.group2Byte = byte;
+            info.rexByte = 0;
+            return info;
+        }
+        case 0x66: {
+            info.group3Byte = 0x66;
+            info.rexByte = 0;
+            return info;
+        }
+        case 0x67: {
+            info.group4Byte = 0x67;
+            info.rexByte = 0;
+            return info;
+        }
+
+        // On x64, REX prefix bytes are always parsed but only the last REX byte is active
+        // and only if it isn't followed by prefix legacy bytes;
+        // https://intelxed.github.io/ref-manual/
+        case 0x40: case 0x41: case 0x42: case 0x43:
+        case 0x44: case 0x45: case 0x46: case 0x47:
+        case 0x48: case 0x49: case 0x4a: case 0x4b:
+        case 0x4c: case 0x4d: case 0x4e: case 0x4f: {
+            if (archSize == ROP::BitSizeClass::BIT64) {
+                info.rexByte = byte;
+                return info;
+            }
+            break;
+        }
+    }
+
+    return std::nullopt;
+}
+
+#pragma endregion Prefix, REX bytes
+
+
+#pragma region ModRM bytes
+#if false
+int ________ModRM_bytes________;
+#endif
+
 static inline unsigned GetModBitsOfModRMByte(ROP::byte b) {
     // Most significant 2 bits.
     return (b >> 6) & 0b11;
@@ -74,7 +153,7 @@ static inline unsigned GetRMBitsOfModRMByte(ROP::byte b) {
     return b & 0b111;
 }
 
-#pragma endregion Prefix, REX, ModRM bytes
+#pragma endregion ModRM bytes
 
 
 #pragma region Unconditional direct JMPs
@@ -94,7 +173,7 @@ int ________Unconditional_direct_JMPs________;
  */
 static inline bool BytesAreDirectRelativeJmpInstruction32bit(const ROP::byteSequence& bSeq,
                                                              int first, int last,
-                                                             int prefixBytesMask,
+                                                             const PrefixBytesInfo& prefixes,
                                                              int32_t *offset = NULL) {
     const int numBytes = (last - first + 1);
 
@@ -106,8 +185,7 @@ static inline bool BytesAreDirectRelativeJmpInstruction32bit(const ROP::byteSequ
         return true;
     }
 
-    int sizeOverrideVal = (int)ROP::PrefixByteX86::OPERAND_SIZE_OVERRIDE;
-    bool hasSizeOverridePrefix = ((prefixBytesMask & sizeOverrideVal) != 0);
+    bool hasSizeOverridePrefix = (prefixes.group3Byte == (ROP::byte)ROP::PrefixByteX86::OPERAND_SIZE_OVERRIDE);
     if (!hasSizeOverridePrefix && numBytes == (1 + 4) && bSeq[first] == 0xE9) {
         // Is "JMP rel32" instruction.
         if (offset) {
@@ -133,7 +211,7 @@ static inline bool BytesAreDirectRelativeJmpInstruction32bit(const ROP::byteSequ
  */
 static inline bool BytesAreDirectRelativeJmpInstruction32bitWithPrefixParse(const ROP::byteSequence& bSeq,
                                                                             int first, int last,
-                                                                            int prefixBytesMask,
+                                                                            const PrefixBytesInfo& prefixes,
                                                                             int32_t *offset = NULL) {
     assert(0 <= first && first < (int)bSeq.size());
     assert(0 <= last && last < (int)bSeq.size());
@@ -141,19 +219,16 @@ static inline bool BytesAreDirectRelativeJmpInstruction32bitWithPrefixParse(cons
 
     // Try to parse a prefix byte.
     if (first < last) { // at least 2 bytes.
-        ROP::PrefixByteX86 currPrefixByte = ByteIsInstructionPrefix(bSeq[first]);
-        if (currPrefixByte != ROP::PrefixByteX86::NONE) {
-            int newPrefixBytesMask = prefixBytesMask | (int)currPrefixByte;
-            if (BytesAreDirectRelativeJmpInstruction32bitWithPrefixParse(bSeq,
-                                                                         first + 1, last,
-                                                                         newPrefixBytesMask,
-                                                                         offset)) {
-                return true;
-            }
+        std::optional<PrefixBytesInfo> newPref = ParsePrefixByte(prefixes, bSeq[first], ROP::BitSizeClass::BIT32);
+        if (newPref && BytesAreDirectRelativeJmpInstruction32bitWithPrefixParse(bSeq,
+                                                                                first + 1, last,
+                                                                                *newPref,
+                                                                                offset)) {
+            return true;
         }
     }
 
-    if (BytesAreDirectRelativeJmpInstruction32bit(bSeq, first, last, prefixBytesMask, offset)) {
+    if (BytesAreDirectRelativeJmpInstruction32bit(bSeq, first, last, prefixes, offset)) {
         return true;
     }
 
@@ -169,9 +244,9 @@ static inline bool BytesAreDirectRelativeJmpInstruction32bitWithPrefixParse(cons
  */
 static inline bool BytesAreDirectRelativeJmpInstruction64bit(const ROP::byteSequence& bSeq,
                                                              int first, int last,
-                                                             int prefixBytesMask,
+                                                             const PrefixBytesInfo& prefixes,
                                                              int32_t *offset = NULL) {
-    UNUSED(prefixBytesMask);
+    UNUSED(prefixes);
     const int numBytes = (last - first + 1);
 
     if (numBytes == (1 + 1) && bSeq[first] == 0xEB) {
@@ -193,12 +268,6 @@ static inline bool BytesAreDirectRelativeJmpInstruction64bit(const ROP::byteSequ
         return true;
     }
 
-    if (first < last && ByteIsValidRexByte(bSeq[first])
-        && BytesAreDirectRelativeJmpInstruction64bit(bSeq, first + 1, last, prefixBytesMask, offset)) {
-        // Check if the instruction opcode is preceded by "REX" bytes.
-        return true;
-    }
-
     return false;
 }
 
@@ -208,7 +277,7 @@ static inline bool BytesAreDirectRelativeJmpInstruction64bit(const ROP::byteSequ
  */
 static inline bool BytesAreDirectRelativeJmpInstruction64bitWithPrefixParse(const ROP::byteSequence& bSeq,
                                                                             int first, int last,
-                                                                            int prefixBytesMask,
+                                                                            const PrefixBytesInfo& prefixes,
                                                                             int32_t *offset = NULL) {
     assert(0 <= first && first < (int)bSeq.size());
     assert(0 <= last && last < (int)bSeq.size());
@@ -216,19 +285,16 @@ static inline bool BytesAreDirectRelativeJmpInstruction64bitWithPrefixParse(cons
 
     // Try to parse a prefix byte.
     if (first < last) { // at least 2 bytes.
-        ROP::PrefixByteX86 currPrefixByte = ByteIsInstructionPrefix(bSeq[first]);
-        if (currPrefixByte != ROP::PrefixByteX86::NONE) {
-            int newPrefixBytesMask = prefixBytesMask | (int)currPrefixByte;
-            if (BytesAreDirectRelativeJmpInstruction64bitWithPrefixParse(bSeq,
-                                                                         first + 1, last,
-                                                                         newPrefixBytesMask,
-                                                                         offset)) {
-                return true;
-            }
+        std::optional<PrefixBytesInfo> newPref = ParsePrefixByte(prefixes, bSeq[first], ROP::BitSizeClass::BIT64);
+        if (newPref && BytesAreDirectRelativeJmpInstruction64bitWithPrefixParse(bSeq,
+                                                                                first + 1, last,
+                                                                                *newPref,
+                                                                                offset)) {
+            return true;
         }
     }
 
-    if (BytesAreDirectRelativeJmpInstruction64bit(bSeq, first, last, prefixBytesMask, offset)) {
+    if (BytesAreDirectRelativeJmpInstruction64bit(bSeq, first, last, prefixes, offset)) {
         return true;
     }
 
@@ -242,10 +308,9 @@ static inline bool BytesAreDirectRelativeJmpInstruction64bitWithPrefixParse(cons
  */
 static inline bool BytesAreDirectAbsoluteJmpInstruction32bit(const ROP::byteSequence& bSeq,
                                                              int first, int last,
-                                                             int prefixBytesMask) {
+                                                             const PrefixBytesInfo& prefixes) {
     const int numBytes = (last - first + 1);
-    int sizeOverrideVal = (int)ROP::PrefixByteX86::OPERAND_SIZE_OVERRIDE;
-    bool hasSizeOverridePrefix = ((prefixBytesMask & sizeOverrideVal) != 0);
+    bool hasSizeOverridePrefix = (prefixes.group3Byte == (ROP::byte)ROP::PrefixByteX86::OPERAND_SIZE_OVERRIDE);
 
     if (!hasSizeOverridePrefix && numBytes == (1 + 2 + 4) && bSeq[first] == 0xEA) {
         // Is "JMP ptr16:32" instruction.
@@ -275,17 +340,13 @@ int ________Unconditional_indirect_JMPs________;
  *         `true`, if the bytes match this instruction type or are invalid.
  */
 static inline bool BytesAreNearAbsoluteIndirectJmpInstructionOrInvalid(const ROP::byteSequence& bSeq,
-                                                                       int first, int last) {
+                                                                       int first, int last,
+                                                                       const PrefixBytesInfo& prefixes) {
+    UNUSED(prefixes);
     const int numBytes = (last - first + 1);
 
     // Opcode: 0xFF /4.
     if (numBytes >= 2 && bSeq[first] == 0xFF && GetRegBitsOfModRMByte(bSeq[first + 1]) == 4) {
-        return true;
-    }
-
-    // Preceded by REX byte.
-    if (numBytes >= 3 && ByteIsValidRexByte(bSeq[first])
-        && BytesAreNearAbsoluteIndirectJmpInstructionOrInvalid(bSeq, first + 1, last)) {
         return true;
     }
 
@@ -299,17 +360,13 @@ static inline bool BytesAreNearAbsoluteIndirectJmpInstructionOrInvalid(const ROP
  *         `true`, if the bytes match this instruction type or are invalid.
  */
 static inline bool BytesAreFarAbsoluteIndirectJmpInstructionOrInvalid(const ROP::byteSequence& bSeq,
-                                                                      int first, int last) {
+                                                                      int first, int last,
+                                                                      const PrefixBytesInfo& prefixes) {
+    UNUSED(prefixes);
     const int numBytes = (last - first + 1);
 
     // Opcode: 0xFF /5.
     if (numBytes >= 2 && bSeq[first] == 0xFF && GetRegBitsOfModRMByte(bSeq[first + 1]) == 5) {
-        return true;
-    }
-
-    // Preceded by REX byte.
-    if (numBytes >= 3 && ByteIsValidRexByte(bSeq[first])
-        && BytesAreFarAbsoluteIndirectJmpInstructionOrInvalid(bSeq, first + 1, last)) {
         return true;
     }
 
@@ -329,14 +386,18 @@ int ________Misc________;
  * @note As an asm string, this is represented as "call finalAddress",
  *       even though only the offset is encoded.
  */
-static inline bool BytesAreRelativeCallInstruction64bit(const ROP::byteSequence& bSeq, int first, int last) {
+static inline bool BytesAreRelativeCallInstruction64bit(const ROP::byteSequence& bSeq,
+                                                        int first, int last,
+                                                        const PrefixBytesInfo& prefixes) {
+    UNUSED(prefixes);
     const int numBytes = (last - first + 1);
     return (numBytes == 5 && bSeq[first] == 0xE8);
 }
 
 static inline bool BytesAreNearRetInstruction(const ROP::byteSequence& bSeq,
                                               int first, int last,
-                                              ROP::BitSizeClass bsc) {
+                                              const PrefixBytesInfo& prefixes) {
+    UNUSED(prefixes);
     const int numBytes = (last - first + 1);
 
     // "ret" instruction.
@@ -345,20 +406,13 @@ static inline bool BytesAreNearRetInstruction(const ROP::byteSequence& bSeq,
     // "ret imm16" instruction.
     if (numBytes == 3 && bSeq[first] == 0xC2) { return true; }
 
-    if (bsc == ROP::BitSizeClass::BIT64) {
-        // Check if preceded by REX byte.
-        if (numBytes >= 2 && ByteIsValidRexByte(bSeq[first])
-            && BytesAreNearRetInstruction(bSeq, first + 1, last, bsc)) {
-            return true;
-        }
-    }
-
     return false;
 }
 
 static inline bool BytesAreFarRetInstruction(const ROP::byteSequence& bSeq,
                                              int first, int last,
-                                             ROP::BitSizeClass bsc) {
+                                             const PrefixBytesInfo& prefixes) {
+    UNUSED(prefixes);
     const int numBytes = (last - first + 1);
 
     // "retf" instruction.
@@ -366,14 +420,6 @@ static inline bool BytesAreFarRetInstruction(const ROP::byteSequence& bSeq,
 
     // "retf imm16" instruction.
     if (numBytes == 3 && bSeq[first] == 0xCA) { return true; }
-
-    if (bsc == ROP::BitSizeClass::BIT64) {
-        // Check if preceded by REX byte.
-        if (numBytes >= 2 && ByteIsValidRexByte(bSeq[first])
-            && BytesAreFarRetInstruction(bSeq, first + 1, last, bsc)) {
-            return true;
-        }
-    }
 
     return false;
 }
@@ -392,18 +438,20 @@ int ________High_level________;
  */
 static inline bool BytesAreUsefulInstructionAtSequenceEnd(const ROP::byteSequence& bSeq,
                                                           int first, int last,
-                                                          ROP::BitSizeClass bsc) {
+                                                          const PrefixBytesInfo& prefixes,
+                                                          ROP::BitSizeClass archSize) {
     assert(0 <= first && first < (int)bSeq.size());
     assert(0 <= last && last < (int)bSeq.size());
     assert(first <= last);
 
-    if (first < last // at least 2 bytes
-        && ByteIsInstructionPrefix(bSeq[first]) != ROP::PrefixByteX86::NONE
-        && BytesAreUsefulInstructionAtSequenceEnd(bSeq, first + 1, last, bsc)) {
-        return true;
+    if (first < last) { // at least 2 bytes
+        std::optional<PrefixBytesInfo> newPref = ParsePrefixByte(prefixes, bSeq[first], archSize);
+        if (newPref && BytesAreUsefulInstructionAtSequenceEnd(bSeq, first + 1, last, *newPref, archSize)) {
+            return true;
+        }
     }
 
-    if (BytesAreNearRetInstruction(bSeq, first, last, bsc)) {
+    if (BytesAreNearRetInstruction(bSeq, first, last, prefixes)) {
         return true;
     }
 
@@ -419,54 +467,49 @@ static inline bool BytesAreUsefulInstructionAtSequenceEnd(const ROP::byteSequenc
  */
 static inline bool BytesAreBadInstructionInsideSequence(const ROP::byteSequence& bSeq,
                                                         int first, int last,
-                                                        int prefixBytesMask,
-                                                        ROP::BitSizeClass bsc) {
+                                                        const PrefixBytesInfo& prefixes,
+                                                        ROP::BitSizeClass archSize) {
     assert(0 <= first && first < (int)bSeq.size());
     assert(0 <= last && last < (int)bSeq.size());
     assert(first <= last);
 
     // Try to parse a prefix byte.
     if (first < last) { // at least 2 bytes.
-        ROP::PrefixByteX86 currPrefixByte = ByteIsInstructionPrefix(bSeq[first]);
-        if (currPrefixByte != ROP::PrefixByteX86::NONE) {
-            int newPrefixBytesMask = prefixBytesMask | (int)currPrefixByte;
-            if (BytesAreBadInstructionInsideSequence(bSeq,
-                                                     first + 1, last,
-                                                     newPrefixBytesMask,
-                                                     bsc)) {
-                return true;
-            }
+        std::optional<PrefixBytesInfo> newPref = ParsePrefixByte(prefixes, bSeq[first], archSize);
+        if (newPref && BytesAreBadInstructionInsideSequence(bSeq, first + 1, last, *newPref, archSize)) {
+            return true;
         }
     }
 
-    if (BytesAreNearRetInstruction(bSeq, first, last, bsc)) {
+    if (BytesAreNearRetInstruction(bSeq, first, last, prefixes)) {
         return true;
     }
-    if (BytesAreFarRetInstruction(bSeq, first, last, bsc)) {
-        return true;
-    }
-
-    if (BytesAreRelativeCallInstruction64bit(bSeq, first, last)) {
+    if (BytesAreFarRetInstruction(bSeq, first, last, prefixes)) {
         return true;
     }
 
-    if (bsc == ROP::BitSizeClass::BIT32
-        && BytesAreDirectRelativeJmpInstruction32bit(bSeq, first, last, prefixBytesMask)) {
-        return true;
-    }
-    if (bsc == ROP::BitSizeClass::BIT64
-        && BytesAreDirectRelativeJmpInstruction64bit(bSeq, first, last, prefixBytesMask)) {
-        return true;
-    }
-    if (bsc == ROP::BitSizeClass::BIT32
-        && BytesAreDirectAbsoluteJmpInstruction32bit(bSeq, first, last, prefixBytesMask)) {
+    if (BytesAreRelativeCallInstruction64bit(bSeq, first, last, prefixes)) {
         return true;
     }
 
-    if (BytesAreNearAbsoluteIndirectJmpInstructionOrInvalid(bSeq, first, last)) {
+    if (archSize == ROP::BitSizeClass::BIT32
+        && BytesAreDirectRelativeJmpInstruction32bit(bSeq, first, last, prefixes)) {
         return true;
     }
-    if (BytesAreFarAbsoluteIndirectJmpInstructionOrInvalid(bSeq, first, last)) {
+    if (archSize == ROP::BitSizeClass::BIT64
+        && BytesAreDirectRelativeJmpInstruction64bit(bSeq, first, last, prefixes)) {
+        return true;
+    }
+
+    if (archSize == ROP::BitSizeClass::BIT32
+        && BytesAreDirectAbsoluteJmpInstruction32bit(bSeq, first, last, prefixes)) {
+        return true;
+    }
+
+    if (BytesAreNearAbsoluteIndirectJmpInstructionOrInvalid(bSeq, first, last, prefixes)) {
+        return true;
+    }
+    if (BytesAreFarAbsoluteIndirectJmpInstructionOrInvalid(bSeq, first, last, prefixes)) {
         return true;
     }
 

@@ -1119,9 +1119,9 @@ void compareTimeManualBytesParsingVsCapstone() {
     {
         auto start = std::chrono::system_clock::now();
         for (int r = 0; r < numRuns; ++r) {
-            assert(BytesAreNearRetInstruction(bseq, 0, bseq.size() - 1, BitSizeClass::BIT64) == true);
-            assert(BytesAreFarRetInstruction(bseq, 0, bseq.size() - 1, BitSizeClass::BIT64) == false);
-            assert(BytesAreBadInstructionInsideSequence(bseq, 0, bseq.size() - 1, 0, BitSizeClass::BIT64) == true);
+            assert(BytesAreNearRetInstruction(bseq, 0, bseq.size() - 1, {}) == true);
+            assert(BytesAreFarRetInstruction(bseq, 0, bseq.size() - 1, {}) == false);
+            assert(BytesAreBadInstructionInsideSequence(bseq, 0, bseq.size() - 1, {}, BitSizeClass::BIT64) == true);
         }
         auto end = std::chrono::system_clock::now();
 
@@ -1212,7 +1212,7 @@ int main(int argc, char* argv[]) {
     printProcessInformation(argc, argv); pn;
     normalizeCWD(); pn;
 
-    testVirtualMemoryMapping(getpid()); pn;
+    // testVirtualMemoryMapping(getpid()); pn;
     // testPrintCodeSegmentsOfLoadedELFs(getpid()); pn;
     // testVirtualMemoryBytes("vulnerable64bit.exe"); pn;
     // testVirtualMemoryBytesFindMatchingBytes("vulnerable64bit.exe"); pn;
@@ -1237,7 +1237,7 @@ int main(int argc, char* argv[]) {
     // testEndianness(); pn;
     // testConvertBytesToIntFunction(); pn;
     // testPayloadGeneration(); pn;
-    // compareTimeManualBytesParsingVsCapstone(); pn;
+    compareTimeManualBytesParsingVsCapstone(); pn;
     // timeDisassembleEntireSegmentsWithCapstone(); pn;
 
     return 0;

@@ -47,7 +47,7 @@ void ROP::VirtualMemoryInstructions::buildRelativeJmpMap(const VirtualMemorySegm
                     int32_t offset;
                     if (BytesAreDirectRelativeJmpInstructionWithPrefixParse(segm.bytes,
                                                                             first, last,
-                                                                            0,
+                                                                            {},
                                                                             &offset)) {
                         addressType currVMAddress = segm.startVirtualAddress + first;
                         int currInstructionSize = (last - first + 1);
@@ -143,7 +143,7 @@ void ROP::VirtualMemoryInstructions::extendInstructionSequenceThroughDirectlyPre
     const int last = currRightSegmentIdx;
 
     for (; first >= 0 && (last - first + 1) <= maxInstructionSize; --first) {
-        if (prevInstrSeqLength == 0 && !BytesAreUsefulInstructionAtSequenceEnd(segm.bytes, first, last, this->archBitSize)) {
+        if (prevInstrSeqLength == 0 && !BytesAreUsefulInstructionAtSequenceEnd(segm.bytes, first, last, {}, this->archBitSize)) {
             // This index interval might represent a valid instruction but we don't consider it
             // to be useful as the ending instruction of an instruction sequence.
             continue;
@@ -151,7 +151,7 @@ void ROP::VirtualMemoryInstructions::extendInstructionSequenceThroughDirectlyPre
 
         if (prevInstrSeqLength > 0 && BytesAreBadInstructionInsideSequence(segm.bytes,
                                                                            first, last,
-                                                                           0,
+                                                                           {},
                                                                            this->archBitSize)) {
             // This index interval might represent a valid instruction but we don't consider it
             // to be a useful instruction inside of an instruction sequence.
