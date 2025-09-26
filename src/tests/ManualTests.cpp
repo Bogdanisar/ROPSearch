@@ -1119,9 +1119,9 @@ void compareTimeManualBytesParsingVsCapstone() {
     {
         auto start = std::chrono::system_clock::now();
         for (int r = 0; r < numRuns; ++r) {
-            assert(BytesAreNearRetInstruction(bseq, 0, bseq.size() - 1, {}) == true);
-            assert(BytesAreFarRetInstruction(bseq, 0, bseq.size() - 1, {}) == false);
-            assert(BytesAreBadInstructionInsideSequence(bseq, 0, bseq.size() - 1, {}, BitSizeClass::BIT64) == true);
+            assert(BytesAreNearRetInstruction(bseq.data(), bseq.size(), {}) == true);
+            assert(BytesAreFarRetInstruction(bseq.data(), bseq.size(), {}) == false);
+            assert(BytesAreBadInstructionInsideSequence(bseq.data(), bseq.size(), {}, BitSizeClass::BIT64) == true);
         }
         auto end = std::chrono::system_clock::now();
 

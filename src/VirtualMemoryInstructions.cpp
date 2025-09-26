@@ -44,11 +44,9 @@ void ROP::VirtualMemoryInstructions::buildRelativeJmpMap(const VirtualMemorySegm
 
             for (int first = smallestFirstIndex; first <= opcodeIdx; ++first) {
                 for (int last = opcodeIdx + 1; last <= biggestLastIndex; ++last) {
+                    const unsigned numBytes = (last - first + 1);
                     int32_t offset;
-                    if (BytesAreDirectRelativeJmpInstructionWithPrefixParse(segm.bytes,
-                                                                            first, last,
-                                                                            {},
-                                                                            &offset)) {
+                    if (BytesAreDirectRelativeJmpInstructionWithPrefixParse(segm.bytes.data() + first, numBytes, {}, &offset)) {
                         addressType currVMAddress = segm.startVirtualAddress + first;
                         int currInstructionSize = (last - first + 1);
                         addressType newVMAddress = currVMAddress + currInstructionSize + offset;
@@ -143,16 +141,14 @@ void ROP::VirtualMemoryInstructions::extendInstructionSequenceThroughDirectlyPre
     const int last = currRightSegmentIdx;
 
     for (; first >= 0 && (last - first + 1) <= maxInstructionSize; --first) {
-        if (prevInstrSeqLength == 0 && !BytesAreUsefulInstructionAtSequenceEnd(segm.bytes, first, last, {}, this->archBitSize)) {
+        const unsigned numBytes = (last - first + 1);
+        if (prevInstrSeqLength == 0 && !BytesAreUsefulInstructionAtSequenceEnd(segm.bytes.data() + first, numBytes, {}, this->archBitSize)) {
             // This index interval might represent a valid instruction but we don't consider it
             // to be useful as the ending instruction of an instruction sequence.
             continue;
         }
 
-        if (prevInstrSeqLength > 0 && BytesAreBadInstructionInsideSequence(segm.bytes,
-                                                                           first, last,
-                                                                           {},
-                                                                           this->archBitSize)) {
+        if (prevInstrSeqLength > 0 && BytesAreBadInstructionInsideSequence(segm.bytes.data() + first, numBytes, {}, this->archBitSize)) {
             // This index interval might represent a valid instruction but we don't consider it
             // to be a useful instruction inside of an instruction sequence.
             continue;

@@ -171,33 +171,33 @@ int ________Unconditional_direct_JMPs________;
  * @note As an asm string, this is represented as "jmp finalAddress",
  *       even though only the offset is encoded.
  */
-static inline bool BytesAreDirectRelativeJmpInstruction32bit(const ROP::byteSequence& bSeq,
-                                                             int first, int last,
+static inline bool BytesAreDirectRelativeJmpInstruction32bit(const ROP::byte *bytes,
+                                                             const unsigned numBytes,
                                                              const PrefixBytesInfo& prefixes,
                                                              int32_t *offset = NULL) {
-    const int numBytes = (last - first + 1);
+    assert(numBytes > 0);
 
-    if (numBytes == (1 + 1) && bSeq[first] == 0xEB) {
+    if (numBytes == (1 + 1) && bytes[0] == 0xEB) {
         // Is "JMP rel8" instruction.
         if (offset) {
-            *offset = ConvertLittleEndianBytesToInteger<int8_t>(bSeq.data() + first + 1);
+            *offset = ConvertLittleEndianBytesToInteger<int8_t>(bytes + 1);
         }
         return true;
     }
 
     bool hasSizeOverridePrefix = (prefixes.group3Byte == (ROP::byte)ROP::PrefixByteX86::OPERAND_SIZE_OVERRIDE);
-    if (!hasSizeOverridePrefix && numBytes == (1 + 4) && bSeq[first] == 0xE9) {
+    if (!hasSizeOverridePrefix && numBytes == (1 + 4) && bytes[0] == 0xE9) {
         // Is "JMP rel32" instruction.
         if (offset) {
-            *offset = ConvertLittleEndianBytesToInteger<int32_t>(bSeq.data() + first + 1);
+            *offset = ConvertLittleEndianBytesToInteger<int32_t>(bytes + 1);
         }
         return true;
     }
 
-    if (hasSizeOverridePrefix && numBytes == (1 + 2) && bSeq[first] == 0xE9) {
+    if (hasSizeOverridePrefix && numBytes == (1 + 2) && bytes[0] == 0xE9) {
         // Is "JMP rel16" instruction.
         if (offset) {
-            *offset = ConvertLittleEndianBytesToInteger<int16_t>(bSeq.data() + first + 1);
+            *offset = ConvertLittleEndianBytesToInteger<int16_t>(bytes + 1);
         }
         return true;
     }
@@ -209,26 +209,24 @@ static inline bool BytesAreDirectRelativeJmpInstruction32bit(const ROP::byteSequ
  * The same as `BytesAreDirectRelativeJmpInstruction32bit()`,
  * but try parsing the prefix bytes as well.
  */
-static inline bool BytesAreDirectRelativeJmpInstruction32bitWithPrefixParse(const ROP::byteSequence& bSeq,
-                                                                            int first, int last,
+static inline bool BytesAreDirectRelativeJmpInstruction32bitWithPrefixParse(const ROP::byte *bytes,
+                                                                            const unsigned numBytes,
                                                                             const PrefixBytesInfo& prefixes,
                                                                             int32_t *offset = NULL) {
-    assert(0 <= first && first < (int)bSeq.size());
-    assert(0 <= last && last < (int)bSeq.size());
-    assert(first <= last);
+    assert(numBytes > 0);
 
     // Try to parse a prefix byte.
-    if (first < last) { // at least 2 bytes.
-        std::optional<PrefixBytesInfo> newPref = ParsePrefixByte(prefixes, bSeq[first], ROP::BitSizeClass::BIT32);
-        if (newPref && BytesAreDirectRelativeJmpInstruction32bitWithPrefixParse(bSeq,
-                                                                                first + 1, last,
+    if (numBytes >= 2) {
+        std::optional<PrefixBytesInfo> newPref = ParsePrefixByte(prefixes, bytes[0], ROP::BitSizeClass::BIT32);
+        if (newPref && BytesAreDirectRelativeJmpInstruction32bitWithPrefixParse(bytes + 1,
+                                                                                numBytes - 1,
                                                                                 *newPref,
                                                                                 offset)) {
             return true;
         }
     }
 
-    if (BytesAreDirectRelativeJmpInstruction32bit(bSeq, first, last, prefixes, offset)) {
+    if (BytesAreDirectRelativeJmpInstruction32bit(bytes, numBytes, prefixes, offset)) {
         return true;
     }
 
@@ -242,17 +240,17 @@ static inline bool BytesAreDirectRelativeJmpInstruction32bitWithPrefixParse(cons
  * @note As an asm string, this is represented as "jmp finalAddress",
  *       even though only the offset is encoded.
  */
-static inline bool BytesAreDirectRelativeJmpInstruction64bit(const ROP::byteSequence& bSeq,
-                                                             int first, int last,
+static inline bool BytesAreDirectRelativeJmpInstruction64bit(const ROP::byte *bytes,
+                                                             const unsigned numBytes,
                                                              const PrefixBytesInfo& prefixes,
                                                              int32_t *offset = NULL) {
     UNUSED(prefixes);
-    const int numBytes = (last - first + 1);
+    assert(numBytes > 0);
 
-    if (numBytes == (1 + 1) && bSeq[first] == 0xEB) {
+    if (numBytes == (1 + 1) && bytes[0] == 0xEB) {
         // Is "JMP rel8" instruction.
         if (offset) {
-            *offset = ConvertLittleEndianBytesToInteger<int8_t>(bSeq.data() + first + 1);
+            *offset = ConvertLittleEndianBytesToInteger<int8_t>(bytes + 1);
         }
         return true;
     }
@@ -260,10 +258,10 @@ static inline bool BytesAreDirectRelativeJmpInstruction64bit(const ROP::byteSequ
     // The operand-size override prefix byte doesn't affect this instruction on x64,
     // so the "JMP rel16" instruction is not possible on 64bit.
 
-    if (numBytes == (1 + 4) && bSeq[first] == 0xE9) {
+    if (numBytes == (1 + 4) && bytes[0] == 0xE9) {
         // Is "JMP rel32" instruction.
         if (offset) {
-            *offset = ConvertLittleEndianBytesToInteger<int32_t>(bSeq.data() + first + 1);
+            *offset = ConvertLittleEndianBytesToInteger<int32_t>(bytes + 1);
         }
         return true;
     }
@@ -275,26 +273,24 @@ static inline bool BytesAreDirectRelativeJmpInstruction64bit(const ROP::byteSequ
  * The same as `BytesAreDirectRelativeJmpInstruction64bit()`,
  * but try parsing the prefix bytes as well.
  */
-static inline bool BytesAreDirectRelativeJmpInstruction64bitWithPrefixParse(const ROP::byteSequence& bSeq,
-                                                                            int first, int last,
+static inline bool BytesAreDirectRelativeJmpInstruction64bitWithPrefixParse(const ROP::byte *bytes,
+                                                                            const unsigned numBytes,
                                                                             const PrefixBytesInfo& prefixes,
                                                                             int32_t *offset = NULL) {
-    assert(0 <= first && first < (int)bSeq.size());
-    assert(0 <= last && last < (int)bSeq.size());
-    assert(first <= last);
+    assert(numBytes > 0);
 
     // Try to parse a prefix byte.
-    if (first < last) { // at least 2 bytes.
-        std::optional<PrefixBytesInfo> newPref = ParsePrefixByte(prefixes, bSeq[first], ROP::BitSizeClass::BIT64);
-        if (newPref && BytesAreDirectRelativeJmpInstruction64bitWithPrefixParse(bSeq,
-                                                                                first + 1, last,
+    if (numBytes >= 2) {
+        std::optional<PrefixBytesInfo> newPref = ParsePrefixByte(prefixes, bytes[0], ROP::BitSizeClass::BIT64);
+        if (newPref && BytesAreDirectRelativeJmpInstruction64bitWithPrefixParse(bytes + 1,
+                                                                                numBytes - 1,
                                                                                 *newPref,
                                                                                 offset)) {
             return true;
         }
     }
 
-    if (BytesAreDirectRelativeJmpInstruction64bit(bSeq, first, last, prefixes, offset)) {
+    if (BytesAreDirectRelativeJmpInstruction64bit(bytes, numBytes, prefixes, offset)) {
         return true;
     }
 
@@ -306,18 +302,18 @@ static inline bool BytesAreDirectRelativeJmpInstruction64bitWithPrefixParse(cons
  * In other words, check if this is a "JMP ptr16:16" or "JMP ptr16:32" instruction.
  * This instruction type seems to be valid on x86_32, but not x86_64.
  */
-static inline bool BytesAreDirectAbsoluteJmpInstruction32bit(const ROP::byteSequence& bSeq,
-                                                             int first, int last,
+static inline bool BytesAreDirectAbsoluteJmpInstruction32bit(const ROP::byte *bytes,
+                                                             const unsigned numBytes,
                                                              const PrefixBytesInfo& prefixes) {
-    const int numBytes = (last - first + 1);
+    assert(numBytes > 0);
     bool hasSizeOverridePrefix = (prefixes.group3Byte == (ROP::byte)ROP::PrefixByteX86::OPERAND_SIZE_OVERRIDE);
 
-    if (!hasSizeOverridePrefix && numBytes == (1 + 2 + 4) && bSeq[first] == 0xEA) {
+    if (!hasSizeOverridePrefix && numBytes == (1 + 2 + 4) && bytes[0] == 0xEA) {
         // Is "JMP ptr16:32" instruction.
         return true;
     }
 
-    if (hasSizeOverridePrefix && numBytes == (1 + 2 + 2) && bSeq[first] == 0xEA) {
+    if (hasSizeOverridePrefix && numBytes == (1 + 2 + 2) && bytes[0] == 0xEA) {
         // Is "JMP ptr16:16" instruction.
         return true;
     }
@@ -339,14 +335,14 @@ int ________Unconditional_indirect_JMPs________;
  * @return `false`, if the bytes definitely don't match this instruction type.
  *         `true`, if the bytes match this instruction type or are invalid.
  */
-static inline bool BytesAreNearAbsoluteIndirectJmpInstructionOrInvalid(const ROP::byteSequence& bSeq,
-                                                                       int first, int last,
+static inline bool BytesAreNearAbsoluteIndirectJmpInstructionOrInvalid(const ROP::byte *bytes,
+                                                                       const unsigned numBytes,
                                                                        const PrefixBytesInfo& prefixes) {
     UNUSED(prefixes);
-    const int numBytes = (last - first + 1);
+    assert(numBytes > 0);
 
     // Opcode: 0xFF /4.
-    if (numBytes >= 2 && bSeq[first] == 0xFF && GetRegBitsOfModRMByte(bSeq[first + 1]) == 4) {
+    if (numBytes >= 2 && bytes[0] == 0xFF && GetRegBitsOfModRMByte(bytes[1]) == 4) {
         return true;
     }
 
@@ -359,14 +355,14 @@ static inline bool BytesAreNearAbsoluteIndirectJmpInstructionOrInvalid(const ROP
  * @return `false`, if the bytes definitely don't match this instruction type.
  *         `true`, if the bytes match this instruction type or are invalid.
  */
-static inline bool BytesAreFarAbsoluteIndirectJmpInstructionOrInvalid(const ROP::byteSequence& bSeq,
-                                                                      int first, int last,
+static inline bool BytesAreFarAbsoluteIndirectJmpInstructionOrInvalid(const ROP::byte *bytes,
+                                                                      const unsigned numBytes,
                                                                       const PrefixBytesInfo& prefixes) {
     UNUSED(prefixes);
-    const int numBytes = (last - first + 1);
+    assert(numBytes > 0);
 
     // Opcode: 0xFF /5.
-    if (numBytes >= 2 && bSeq[first] == 0xFF && GetRegBitsOfModRMByte(bSeq[first + 1]) == 5) {
+    if (numBytes >= 2 && bytes[0] == 0xFF && GetRegBitsOfModRMByte(bytes[1]) == 5) {
         return true;
     }
 
@@ -386,40 +382,40 @@ int ________Misc________;
  * @note As an asm string, this is represented as "call finalAddress",
  *       even though only the offset is encoded.
  */
-static inline bool BytesAreRelativeCallInstruction64bit(const ROP::byteSequence& bSeq,
-                                                        int first, int last,
+static inline bool BytesAreRelativeCallInstruction64bit(const ROP::byte *bytes,
+                                                        const unsigned numBytes,
                                                         const PrefixBytesInfo& prefixes) {
     UNUSED(prefixes);
-    const int numBytes = (last - first + 1);
-    return (numBytes == 5 && bSeq[first] == 0xE8);
+    assert(numBytes > 0);
+    return (numBytes == 5 && bytes[0] == 0xE8);
 }
 
-static inline bool BytesAreNearRetInstruction(const ROP::byteSequence& bSeq,
-                                              int first, int last,
+static inline bool BytesAreNearRetInstruction(const ROP::byte *bytes,
+                                              const unsigned numBytes,
                                               const PrefixBytesInfo& prefixes) {
     UNUSED(prefixes);
-    const int numBytes = (last - first + 1);
+    assert(numBytes > 0);
 
     // "ret" instruction.
-    if (numBytes == 1 && bSeq[first] == 0xC3) { return true; }
+    if (numBytes == 1 && bytes[0] == 0xC3) { return true; }
 
     // "ret imm16" instruction.
-    if (numBytes == 3 && bSeq[first] == 0xC2) { return true; }
+    if (numBytes == 3 && bytes[0] == 0xC2) { return true; }
 
     return false;
 }
 
-static inline bool BytesAreFarRetInstruction(const ROP::byteSequence& bSeq,
-                                             int first, int last,
+static inline bool BytesAreFarRetInstruction(const ROP::byte *bytes,
+                                             const unsigned numBytes,
                                              const PrefixBytesInfo& prefixes) {
     UNUSED(prefixes);
-    const int numBytes = (last - first + 1);
+    assert(numBytes > 0);
 
     // "retf" instruction.
-    if (numBytes == 1 && bSeq[first] == 0xCB) { return true; }
+    if (numBytes == 1 && bytes[0] == 0xCB) { return true; }
 
     // "retf imm16" instruction.
-    if (numBytes == 3 && bSeq[first] == 0xCA) { return true; }
+    if (numBytes == 3 && bytes[0] == 0xCA) { return true; }
 
     return false;
 }
@@ -436,22 +432,21 @@ int ________High_level________;
  * Check if the given bytes represent an instruction
  * that is useful as the ending instruction of an instruction sequence.
  */
-static inline bool BytesAreUsefulInstructionAtSequenceEnd(const ROP::byteSequence& bSeq,
-                                                          int first, int last,
+static inline bool BytesAreUsefulInstructionAtSequenceEnd(const ROP::byte *bytes,
+                                                          const unsigned numBytes,
                                                           const PrefixBytesInfo& prefixes,
                                                           ROP::BitSizeClass archSize) {
-    assert(0 <= first && first < (int)bSeq.size());
-    assert(0 <= last && last < (int)bSeq.size());
-    assert(first <= last);
+    assert(numBytes > 0);
 
-    if (first < last) { // at least 2 bytes
-        std::optional<PrefixBytesInfo> newPref = ParsePrefixByte(prefixes, bSeq[first], archSize);
-        if (newPref && BytesAreUsefulInstructionAtSequenceEnd(bSeq, first + 1, last, *newPref, archSize)) {
+    // Try to parse a prefix byte.
+    if (numBytes >= 2) {
+        std::optional<PrefixBytesInfo> newPref = ParsePrefixByte(prefixes, bytes[0], archSize);
+        if (newPref && BytesAreUsefulInstructionAtSequenceEnd(bytes + 1, numBytes - 1, *newPref, archSize)) {
             return true;
         }
     }
 
-    if (BytesAreNearRetInstruction(bSeq, first, last, prefixes)) {
+    if (BytesAreNearRetInstruction(bytes, numBytes, prefixes)) {
         return true;
     }
 
@@ -465,51 +460,49 @@ static inline bool BytesAreUsefulInstructionAtSequenceEnd(const ROP::byteSequenc
  * that is unhelpful inside of an instruction sequence,
  * where "inside" means anywhere except the last instruction.
  */
-static inline bool BytesAreBadInstructionInsideSequence(const ROP::byteSequence& bSeq,
-                                                        int first, int last,
+static inline bool BytesAreBadInstructionInsideSequence(const ROP::byte *bytes,
+                                                        const unsigned numBytes,
                                                         const PrefixBytesInfo& prefixes,
                                                         ROP::BitSizeClass archSize) {
-    assert(0 <= first && first < (int)bSeq.size());
-    assert(0 <= last && last < (int)bSeq.size());
-    assert(first <= last);
+    assert(numBytes > 0);
 
     // Try to parse a prefix byte.
-    if (first < last) { // at least 2 bytes.
-        std::optional<PrefixBytesInfo> newPref = ParsePrefixByte(prefixes, bSeq[first], archSize);
-        if (newPref && BytesAreBadInstructionInsideSequence(bSeq, first + 1, last, *newPref, archSize)) {
+    if (numBytes >= 2) {
+        std::optional<PrefixBytesInfo> newPref = ParsePrefixByte(prefixes, bytes[0], archSize);
+        if (newPref && BytesAreBadInstructionInsideSequence(bytes + 1, numBytes - 1, *newPref, archSize)) {
             return true;
         }
     }
 
-    if (BytesAreNearRetInstruction(bSeq, first, last, prefixes)) {
+    if (BytesAreNearRetInstruction(bytes, numBytes, prefixes)) {
         return true;
     }
-    if (BytesAreFarRetInstruction(bSeq, first, last, prefixes)) {
+    if (BytesAreFarRetInstruction(bytes, numBytes, prefixes)) {
         return true;
     }
 
-    if (BytesAreRelativeCallInstruction64bit(bSeq, first, last, prefixes)) {
+    if (BytesAreRelativeCallInstruction64bit(bytes, numBytes, prefixes)) {
         return true;
     }
 
     if (archSize == ROP::BitSizeClass::BIT32
-        && BytesAreDirectRelativeJmpInstruction32bit(bSeq, first, last, prefixes)) {
+        && BytesAreDirectRelativeJmpInstruction32bit(bytes, numBytes, prefixes)) {
         return true;
     }
     if (archSize == ROP::BitSizeClass::BIT64
-        && BytesAreDirectRelativeJmpInstruction64bit(bSeq, first, last, prefixes)) {
+        && BytesAreDirectRelativeJmpInstruction64bit(bytes, numBytes, prefixes)) {
         return true;
     }
 
     if (archSize == ROP::BitSizeClass::BIT32
-        && BytesAreDirectAbsoluteJmpInstruction32bit(bSeq, first, last, prefixes)) {
+        && BytesAreDirectAbsoluteJmpInstruction32bit(bytes, numBytes, prefixes)) {
         return true;
     }
 
-    if (BytesAreNearAbsoluteIndirectJmpInstructionOrInvalid(bSeq, first, last, prefixes)) {
+    if (BytesAreNearAbsoluteIndirectJmpInstructionOrInvalid(bytes, numBytes, prefixes)) {
         return true;
     }
-    if (BytesAreFarAbsoluteIndirectJmpInstructionOrInvalid(bSeq, first, last, prefixes)) {
+    if (BytesAreFarAbsoluteIndirectJmpInstructionOrInvalid(bytes, numBytes, prefixes)) {
         return true;
     }
 
