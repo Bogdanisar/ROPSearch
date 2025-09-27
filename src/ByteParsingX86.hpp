@@ -156,6 +156,44 @@ static inline unsigned GetRMBitsOfModRMByte(ROP::byte b) {
 #pragma endregion ModRM bytes
 
 
+#pragma region Returns
+#if false
+int ________Returns________;
+#endif
+
+static inline bool BytesAreNearRetInstruction(const ROP::byte *bytes,
+                                              const unsigned numBytes,
+                                              const PrefixBytesInfo& prefixes) {
+    UNUSED(prefixes);
+    assert(numBytes > 0);
+
+    // "ret" instruction.
+    if (numBytes == 1 && bytes[0] == 0xC3) { return true; }
+
+    // "ret imm16" instruction.
+    if (numBytes == 3 && bytes[0] == 0xC2) { return true; }
+
+    return false;
+}
+
+static inline bool BytesAreFarRetInstruction(const ROP::byte *bytes,
+                                             const unsigned numBytes,
+                                             const PrefixBytesInfo& prefixes) {
+    UNUSED(prefixes);
+    assert(numBytes > 0);
+
+    // "retf" instruction.
+    if (numBytes == 1 && bytes[0] == 0xCB) { return true; }
+
+    // "retf imm16" instruction.
+    if (numBytes == 3 && bytes[0] == 0xCA) { return true; }
+
+    return false;
+}
+
+#pragma endregion Returns
+
+
 #pragma region Unconditional direct JMPs
 #if false
 int ________Unconditional_direct_JMPs________;
@@ -372,9 +410,9 @@ static inline bool BytesAreFarAbsoluteIndirectJmpInstructionOrInvalid(const ROP:
 #pragma endregion Unconditional indirect JMPs
 
 
-#pragma region Misc
+#pragma region Call instructions
 #if false
-int ________Misc________;
+int ________Call_instructions________;
 #endif
 
 /**
@@ -390,37 +428,7 @@ static inline bool BytesAreRelativeCallInstruction64bit(const ROP::byte *bytes,
     return (numBytes == 5 && bytes[0] == 0xE8);
 }
 
-static inline bool BytesAreNearRetInstruction(const ROP::byte *bytes,
-                                              const unsigned numBytes,
-                                              const PrefixBytesInfo& prefixes) {
-    UNUSED(prefixes);
-    assert(numBytes > 0);
-
-    // "ret" instruction.
-    if (numBytes == 1 && bytes[0] == 0xC3) { return true; }
-
-    // "ret imm16" instruction.
-    if (numBytes == 3 && bytes[0] == 0xC2) { return true; }
-
-    return false;
-}
-
-static inline bool BytesAreFarRetInstruction(const ROP::byte *bytes,
-                                             const unsigned numBytes,
-                                             const PrefixBytesInfo& prefixes) {
-    UNUSED(prefixes);
-    assert(numBytes > 0);
-
-    // "retf" instruction.
-    if (numBytes == 1 && bytes[0] == 0xCB) { return true; }
-
-    // "retf imm16" instruction.
-    if (numBytes == 3 && bytes[0] == 0xCA) { return true; }
-
-    return false;
-}
-
-#pragma endregion Misc
+#pragma endregion Call instructions
 
 
 #pragma region High level
@@ -481,10 +489,6 @@ static inline bool BytesAreBadInstructionInsideSequence(const ROP::byte *bytes,
         return true;
     }
 
-    if (BytesAreRelativeCallInstruction64bit(bytes, numBytes, prefixes)) {
-        return true;
-    }
-
     if (archSize == ROP::BitSizeClass::BIT32
         && BytesAreDirectRelativeJmpInstruction32bit(bytes, numBytes, prefixes)) {
         return true;
@@ -503,6 +507,10 @@ static inline bool BytesAreBadInstructionInsideSequence(const ROP::byte *bytes,
         return true;
     }
     if (BytesAreFarAbsoluteIndirectJmpInstructionOrInvalid(bytes, numBytes, prefixes)) {
+        return true;
+    }
+
+    if (BytesAreRelativeCallInstruction64bit(bytes, numBytes, prefixes)) {
         return true;
     }
 
