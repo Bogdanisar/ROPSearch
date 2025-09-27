@@ -410,6 +410,50 @@ static inline bool BytesAreFarAbsoluteIndirectJmpInstructionOrInvalid(const ROP:
 #pragma endregion Unconditional indirect JMPs
 
 
+#pragma region Software interrupts
+#if false
+int ________Software_interrupts________;
+#endif
+
+/**
+ * Check if this is an "int 0x80" instruction,
+ * which can be used to make system calls on 32bit/64bit Linux (only through the 32bit ABI).
+ */
+static inline bool BytesAreSystemCallInterruptInstruction(const ROP::byte *bytes,
+                                                          const unsigned numBytes,
+                                                          const PrefixBytesInfo& prefixes) {
+    UNUSED(prefixes);
+    assert(numBytes > 0);
+
+    // "int 0x80" instruction.
+    return (numBytes == 2 && bytes[0] == 0xCD && bytes[1] == 0x80);
+}
+
+/** Check if this is a (software) interrupt instruction. */
+static inline bool BytesAreInterruptInstruction(const ROP::byte *bytes,
+                                                const unsigned numBytes,
+                                                const PrefixBytesInfo& prefixes) {
+    UNUSED(prefixes);
+    assert(numBytes > 0);
+
+    // "int3" instruction.
+    if (numBytes == 1 && bytes[0] == 0xCC) { return true; }
+
+    // "int imm8".
+    if (numBytes == 2 && bytes[0] == 0xCD) { return true; }
+
+    // "into" instruction.
+    if (numBytes == 1 && bytes[0] == 0xCE) { return true; }
+
+    // "int1" instruction.
+    if (numBytes == 1 && bytes[0] == 0xF1) { return true; }
+
+    return false;
+}
+
+#pragma endregion Software interrupts
+
+
 #pragma region Call instructions
 #if false
 int ________Call_instructions________;
@@ -507,6 +551,12 @@ static inline bool BytesAreBadInstructionInsideSequence(const ROP::byte *bytes,
         return true;
     }
     if (BytesAreFarAbsoluteIndirectJmpInstructionOrInvalid(bytes, numBytes, prefixes)) {
+        return true;
+    }
+
+    if (BytesAreInterruptInstruction(bytes, numBytes, prefixes)
+        && !BytesAreSystemCallInterruptInstruction(bytes, numBytes, prefixes) // syscalls may be useful inside a sequence.
+    ) {
         return true;
     }
 
