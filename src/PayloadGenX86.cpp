@@ -267,17 +267,25 @@ void ROP::PayloadGenX86::computeRelevantSequenceIndexes() {
         }
     }
 
-    std::string syscallInstruction;
-    syscallInstruction = (this->processArchSize == BitSizeClass::BIT64) ? "syscall" : "int 0x80";
+    std::vector<std::string> syscallInstructionList = {"sysenter", "int 0x80"};
+    if (this->processArchSize == BitSizeClass::BIT64) {
+        syscallInstructionList = {"syscall"};
+    }
 
     // Compute `this->indexValidSyscallInstrSeq` member.
     this->indexValidSyscallInstrSeq = this->instrSeqs.size();
-    for (unsigned sequenceIndex : this->firstInstrToSequenceIndexes[syscallInstruction]) {
-        addressType sequenceAddress = this->instrSeqs[sequenceIndex].first;
+    for (const std::string& syscallInstruction : syscallInstructionList) {
+        for (unsigned sequenceIndex : this->firstInstrToSequenceIndexes[syscallInstruction]) {
+            addressType sequenceAddress = this->instrSeqs[sequenceIndex].first;
 
-        if (this->registerSizedValueIsFreeOfForbiddenBytes(sequenceAddress)) {
-            // Found a valid index.
-            this->indexValidSyscallInstrSeq = sequenceIndex;
+            if (this->registerSizedValueIsFreeOfForbiddenBytes(sequenceAddress)) {
+                // Found a valid index.
+                this->indexValidSyscallInstrSeq = sequenceIndex;
+                break;
+            }
+        }
+
+        if (this->indexValidSyscallInstrSeq != this->instrSeqs.size()) {
             break;
         }
     }
@@ -352,6 +360,7 @@ void ROP::PayloadGenX86::configureGenerator() {
     this->vmInstructionsObject.cIgnoreOutputSequencesThatStartWithDirectRelativeJumps = true;
     this->vmInstructionsObject.cInnerAssemblySyntax = ROP::AssemblySyntax::Intel;
     this->vmInstructionsObject.cComputeRegisterInfo = true;
+    this->vmInstructionsObject.allowedSequenceTypes = {"rop", "system-call"};
     this->vmInstructionsObject.buildInstructionTrie();
 
     this->processArchSize = this->vmInstructionsObject.getVirtualMemoryBytes().getProcessArchSize();
