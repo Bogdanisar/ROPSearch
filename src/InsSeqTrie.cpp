@@ -19,6 +19,16 @@ ROP::InsSeqTrie::InsSeqTrie(InsSeqTrie&& other)
 // Move assignment operator.
 ROP::InsSeqTrie& ROP::InsSeqTrie::operator=(InsSeqTrie&& other) {
     std::swap(this->root, other.root);
+    std::swap(this->cArchBitSize,
+              other.cArchBitSize);
+    std::swap(this->cMinInstructionsInInstructionSequence,
+              other.cMinInstructionsInInstructionSequence);
+    std::swap(this->cBadAddressBytes,
+              other.cBadAddressBytes);
+    std::swap(this->cNumBadAddressBytes,
+              other.cNumBadAddressBytes);
+    std::swap(this->cIgnoreDuplicateInstructionSequenceResults,
+              other.cIgnoreDuplicateInstructionSequenceResults);
     std::swap(this->cIgnoreOutputSequencesThatStartWithDirectRelativeJumps,
               other.cIgnoreOutputSequencesThatStartWithDirectRelativeJumps);
     return *this;
