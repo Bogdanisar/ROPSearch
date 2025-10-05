@@ -466,23 +466,38 @@ static inline bool BytesAreInterruptInstruction(const ROP::byte *bytes,
     return false;
 }
 
-/** Check if this is an instruction that could launch a system-call. */
+/** Check if this is the "sysenter" instruction. */
+static inline bool BytesAreSysenterInstruction(const ROP::byte *bytes,
+                                               const unsigned numBytes,
+                                               const PrefixBytesInfo& prefixes) {
+    UNUSED(prefixes);
+    assert(numBytes > 0);
+
+    // "sysenter" instruction.
+    return (numBytes == 2 && bytes[0] == 0x0F && bytes[1] == 0x34);
+}
+
+/** Check if this is the "syscall" instruction. */
 static inline bool BytesAreSyscallInstruction(const ROP::byte *bytes,
                                               const unsigned numBytes,
                                               const PrefixBytesInfo& prefixes) {
     UNUSED(prefixes);
     assert(numBytes > 0);
 
-    // "int 0x80" instruction.
-    if (BytesAreSystemCallInterruptInstruction(bytes, numBytes, prefixes)) { return true; }
-
-    // "sysenter" instruction.
-    if (numBytes == 2 && bytes[0] == 0x0F && bytes[1] == 0x34) { return true; }
-
     // "syscall" instruction.
-    if (numBytes == 2 && bytes[0] == 0x0F && bytes[1] == 0x05) { return true; }
+    return (numBytes == 2 && bytes[0] == 0x0F && bytes[1] == 0x05);
+}
 
-    return false;
+/** Check if this is an instruction that could launch a system-call. */
+static inline bool BytesAreSystemCallLauncherInstruction(const ROP::byte *bytes,
+                                                         const unsigned numBytes,
+                                                         const PrefixBytesInfo& prefixes) {
+    UNUSED(prefixes);
+    assert(numBytes > 0);
+
+    return (BytesAreSystemCallInterruptInstruction(bytes, numBytes, prefixes) ||
+            BytesAreSysenterInstruction(bytes, numBytes, prefixes) ||
+            BytesAreSyscallInstruction(bytes, numBytes, prefixes));
 }
 
 #pragma endregion Software interrupts and system calls
@@ -516,6 +531,8 @@ int ________High_level________;
 
 static bool cAllowRetAtSeqEnd = false;
 static bool cAllowRetImmAtSeqEnd = false;
+static bool cAllowInt0x80AtSeqEnd = false;
+static bool cAllowSysenterAtSeqEnd = false;
 static bool cAllowSyscallAtSeqEnd = false;
 
 /**
@@ -536,14 +553,21 @@ static inline bool BytesAreUsefulInstructionAtSequenceEnd(const ROP::byte *bytes
         }
     }
 
+    // Return instructions.
     if (cAllowRetAtSeqEnd && BytesAreNearRetInstructionSimple(bytes, numBytes, prefixes)) {
         return true;
     }
-
     if (cAllowRetImmAtSeqEnd && BytesAreNearRetInstructionWithImmediate(bytes, numBytes, prefixes)) {
         return true;
     }
 
+    // System-call instructions.
+    if (cAllowInt0x80AtSeqEnd && BytesAreSystemCallInterruptInstruction(bytes, numBytes, prefixes)) {
+        return true;
+    }
+    if (cAllowSysenterAtSeqEnd && BytesAreSysenterInstruction(bytes, numBytes, prefixes)) {
+        return true;
+    }
     if (cAllowSyscallAtSeqEnd && BytesAreSyscallInstruction(bytes, numBytes, prefixes)) {
         return true;
     }

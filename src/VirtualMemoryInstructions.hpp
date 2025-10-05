@@ -138,7 +138,10 @@ namespace ROP {
          * - "ret": sequences that end in a "ret" instruction;
          * - "ret-imm": sequences that end in a "ret imm16" instruction;
          * - "rop": short for "ret" and "ret-imm";
-         * - "syscall": sequences that end in a syscall instruction ("int 0x80", "sysenter" or "syscall");
+         * - "int80": sequences that end in a "int 0x80" instruction;
+         * - "sysenter": sequences that end in a "sysenter" instruction;
+         * - "syscall": sequences that end in a "syscall" instruction;
+         * - "system-call": short for "int80", "sysenter" and "syscall";
          * - "all": all available sequence types;
          */
         std::set<std::string> allowedSequenceTypes;

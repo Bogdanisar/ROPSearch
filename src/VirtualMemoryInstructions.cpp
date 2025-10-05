@@ -289,15 +289,25 @@ void ROP::VirtualMemoryInstructions::buildInstructionTrie() {
     this->instructionTrie.cIgnoreDuplicateInstructionSequenceResults = ignDupes;
     this->instructionTrie.cIgnoreOutputSequencesThatStartWithDirectRelativeJumps = ignRelJmps;
 
-    if (this->allowedSequenceTypes.count("all") || this->allowedSequenceTypes.count("rop") || this->allowedSequenceTypes.count("ret")) {
-        cAllowRetAtSeqEnd = true;
+    // Determine which kinds of instructions are allowed at the end of a sequence.
+    if (this->allowedSequenceTypes.count("all") > 0) {
+        this->allowedSequenceTypes.insert("rop");
+        this->allowedSequenceTypes.insert("system-call");
     }
-    if (this->allowedSequenceTypes.count("all") || this->allowedSequenceTypes.count("rop") || this->allowedSequenceTypes.count("ret-imm")) {
-        cAllowRetImmAtSeqEnd = true;
+    if (this->allowedSequenceTypes.count("rop") > 0) {
+        this->allowedSequenceTypes.insert("ret");
+        this->allowedSequenceTypes.insert("ret-imm");
     }
-    if (this->allowedSequenceTypes.count("all") || this->allowedSequenceTypes.count("syscall")) {
-        cAllowSyscallAtSeqEnd = true;
+    if (this->allowedSequenceTypes.count("system-call") > 0) {
+        this->allowedSequenceTypes.insert("int80");
+        this->allowedSequenceTypes.insert("sysenter");
+        this->allowedSequenceTypes.insert("syscall");
     }
+    cAllowRetAtSeqEnd = (this->allowedSequenceTypes.count("ret") > 0);
+    cAllowRetImmAtSeqEnd = (this->allowedSequenceTypes.count("ret-imm") > 0);
+    cAllowInt0x80AtSeqEnd = (this->allowedSequenceTypes.count("int80") > 0);
+    cAllowSysenterAtSeqEnd = (this->allowedSequenceTypes.count("sysenter") > 0);
+    cAllowSyscallAtSeqEnd = (this->allowedSequenceTypes.count("syscall") > 0);
 
     for (const VirtualMemorySegmentBytes& segm : this->vmBytes.getExecutableSegments()) {
         if (this->cSearchForSequencesWithDirectRelativeJumpsInTheMiddle) {
