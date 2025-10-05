@@ -616,13 +616,13 @@ void DoListCommand() {
     }();
 
     // Apply the configuration values.
-    vmInstructions.minInstructionsInInstructionSequence = minInstructions;
-    vmInstructions.maxInstructionsInInstructionSequence = maxInstructions;
-    vmInstructions.badAddressBytes = GetBadBytesArguments();
-    vmInstructions.ignoreDuplicateInstructionSequenceResults = ignoreDuplicates;
-    vmInstructions.searchForSequencesWithDirectRelativeJumpsInTheMiddle = !ignoreRelativeJumps;
-    vmInstructions.ignoreOutputSequencesThatStartWithDirectRelativeJumps = !includeRelativeJumpStarts;
-    vmInstructions.innerAssemblySyntax = desiredSyntax;
+    vmInstructions.cMinInstructionsInInstructionSequence = minInstructions;
+    vmInstructions.cMaxInstructionsInInstructionSequence = maxInstructions;
+    vmInstructions.cBadAddressBytes = GetBadBytesArguments();
+    vmInstructions.cIgnoreDuplicateInstructionSequenceResults = ignoreDuplicates;
+    vmInstructions.cSearchForSequencesWithDirectRelativeJumpsInTheMiddle = !ignoreRelativeJumps;
+    vmInstructions.cIgnoreOutputSequencesThatStartWithDirectRelativeJumps = !includeRelativeJumpStarts;
+    vmInstructions.cInnerAssemblySyntax = desiredSyntax;
 
     if (hasRegisterQueryArg) {
         vector<string> queryStringList = gListCmdSubparser.get<vector<string>>("--query");
@@ -635,7 +635,7 @@ void DoListCommand() {
         }
 
         // If we have a "--query" argument, then we will have to compute the register info for each instruction.
-        vmInstructions.computeRegisterInfo = true;
+        vmInstructions.cComputeRegisterInfo = true;
     }
     else {
         assertMessage(!packPartialRegistersInQuery,
@@ -957,19 +957,19 @@ void DoROPChainCommand() {
 
     // Configure the forbidden bytes.
     if (forbidNullBytes) {
-        generator.forbiddenBytes.set(0x00);
+        generator.cForbiddenBytes.set(0x00);
     }
     if (forbidWhitespaceBytes) {
-        generator.forbiddenBytes |= GetWhitespaceBytesAsBitset();
+        generator.cForbiddenBytes |= GetWhitespaceBytesAsBitset();
     }
-    generator.numForbiddenBytes = generator.forbiddenBytes.count();
+    generator.cNumForbiddenBytes = generator.cForbiddenBytes.count();
 
     // Configure the other settings.
-    generator.ignoreDuplicateInstructionSequenceResults = !allowDuplicates;
-    generator.maxInstructionsInSequence = maxInstructions;
-    generator.approximateByteSizeOfStackBuffer = approximateStackBufferSize;
-    generator.numVariantsToOutputForEachStep = maxInstrSeqVariants;
-    generator.numAcceptablePaddingBytesForOneInstrSequence = maxPaddingBytesForEachInstructionSequence;
+    generator.cIgnoreDuplicateInstructionSequenceResults = !allowDuplicates;
+    generator.cMaxInstructionsInSequence = maxInstructions;
+    generator.cApproximateByteSizeOfStackBuffer = approximateStackBufferSize;
+    generator.cNumVariantsToOutputForEachStep = maxInstrSeqVariants;
+    generator.cNumAcceptablePaddingBytesForOneInstrSequence = maxPaddingBytesForEachInstructionSequence;
     generator.configureGenerator();
 
     bool success = false;

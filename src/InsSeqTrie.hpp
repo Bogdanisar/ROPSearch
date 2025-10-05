@@ -40,13 +40,18 @@ namespace ROP {
         // The root node, corresponding to the empty instruction sequence.
         Node *root;
 
-        // Config values.
-        BitSizeClass archBitSize;
-        int minInstructionsInInstructionSequence = 1;
-        std::bitset<256> badAddressBytes;
-        unsigned numBadAddressBytes = 0; // optimization since bitset::count() might not be O(1).
-        bool ignoreDuplicateInstructionSequenceResults = true;
-        bool ignoreOutputSequencesThatStartWithDirectRelativeJumps = true;
+
+        //////////////////////// Config values ////////////////////////
+
+        BitSizeClass cArchBitSize;
+        int cMinInstructionsInInstructionSequence = 1;
+        std::bitset<256> cBadAddressBytes;
+        unsigned cNumBadAddressBytes = 0; // optimization since bitset::count() might not be O(1).
+        bool cIgnoreDuplicateInstructionSequenceResults = true;
+        bool cIgnoreOutputSequencesThatStartWithDirectRelativeJumps = true;
+
+        //////////////////////// Config values ////////////////////////
+
 
         InsSeqTrie();
 

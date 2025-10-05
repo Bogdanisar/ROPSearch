@@ -192,7 +192,7 @@ void ROP::PayloadGenX86::loadTheStackPointerInstructionToOffsetMap() {
     this->stackPointerIncreaseInstructionToOffset["inc sp"] = 1;
     this->stackPointerIncreaseInstructionToOffset["inc spl"] = 1;
 
-    unsigned maxOffset = this->numAcceptablePaddingBytesForOneInstrSequence;
+    unsigned maxOffset = this->cNumAcceptablePaddingBytesForOneInstrSequence;
     char offsetBuffer[100];
     for (unsigned offset = 0; offset <= maxOffset; ++offset) {
         for (std::string regString : {"rsp", "esp", "sp", "spl"}) {
@@ -225,7 +225,7 @@ void ROP::PayloadGenX86::computeRelevantSequenceIndexes() {
             continue;
         }
 
-        if (this->ignoreDuplicateInstructionSequenceResults) {
+        if (this->cIgnoreDuplicateInstructionSequenceResults) {
             // Check if the current instruction has been found before.
 
             const std::vector<std::string>& insSeq = this->instrSeqs[idx].second;
@@ -293,12 +293,12 @@ void ROP::PayloadGenX86::addPythonScriptPrelude() {
     this->addLineToPythonScript("# Configuration options:");
     ss.str("");
     ss << "# Max length of each instruction sequence: ";
-    ss << this->maxInstructionsInSequence;
+    ss << this->cMaxInstructionsInSequence;
     this->addLineToPythonScript(ss.str());
 
-    bool forbidNullBytesInPayload = this->forbiddenBytes[0x00];
+    bool forbidNullBytesInPayload = this->cForbiddenBytes[0x00];
     std::bitset<256> whitespaceBytes = GetWhitespaceBytesAsBitset();
-    bool forbidWhitespaceBytesInPayload = (this->forbiddenBytes & whitespaceBytes) == whitespaceBytes;
+    bool forbidWhitespaceBytesInPayload = (this->cForbiddenBytes & whitespaceBytes) == whitespaceBytes;
 
     ss.str("");
     ss << "# Allow NULL bytes in payload: ";
@@ -312,19 +312,19 @@ void ROP::PayloadGenX86::addPythonScriptPrelude() {
 
     ss.str("");
     ss << "# Ignore duplicate instruction sequence results: ";
-    ss << (this->ignoreDuplicateInstructionSequenceResults ? "Yes" : "No");
+    ss << (this->cIgnoreDuplicateInstructionSequenceResults ? "Yes" : "No");
     this->addLineToPythonScript(ss.str());
 
     ss.str("");
     // ss << "# Approximate byte count of stack content that needs to be overflowed: ";
     ss << "# Approximate byte count of stack content before saved return: ";
-    ss << this->approximateByteSizeOfStackBuffer;
+    ss << this->cApproximateByteSizeOfStackBuffer;
     this->addLineToPythonScript(ss.str());
 
     ss.str("");
     ss << "# Maximum number of instruction sequence variants to output for each step: ";
-    if (this->numVariantsToOutputForEachStep != 0) {
-        ss << this->numVariantsToOutputForEachStep;
+    if (this->cNumVariantsToOutputForEachStep != 0) {
+        ss << this->cNumVariantsToOutputForEachStep;
     }
     else {
         ss << "All";
@@ -333,7 +333,7 @@ void ROP::PayloadGenX86::addPythonScriptPrelude() {
 
     ss.str("");
     ss << "# Number of acceptable padding bytes for a single instruction sequence: ";
-    ss << this->numAcceptablePaddingBytesForOneInstrSequence;
+    ss << this->cNumAcceptablePaddingBytesForOneInstrSequence;
     this->addLineToPythonScript(ss.str());
 
     this->addLineToPythonScript(""); // New line.
@@ -344,14 +344,14 @@ void ROP::PayloadGenX86::addPythonScriptPrelude() {
 
 void ROP::PayloadGenX86::configureGenerator() {
     // Configure the object and build the instruction sequence trie.
-    this->vmInstructionsObject.minInstructionsInInstructionSequence = 1;
-    this->vmInstructionsObject.maxInstructionsInInstructionSequence = this->maxInstructionsInSequence;
-    this->vmInstructionsObject.badAddressBytes = this->forbiddenBytes;
-    this->vmInstructionsObject.ignoreDuplicateInstructionSequenceResults = this->ignoreDuplicateInstructionSequenceResults;
-    this->vmInstructionsObject.searchForSequencesWithDirectRelativeJumpsInTheMiddle = true;
-    this->vmInstructionsObject.ignoreOutputSequencesThatStartWithDirectRelativeJumps = true;
-    this->vmInstructionsObject.innerAssemblySyntax = ROP::AssemblySyntax::Intel;
-    this->vmInstructionsObject.computeRegisterInfo = true;
+    this->vmInstructionsObject.cMinInstructionsInInstructionSequence = 1;
+    this->vmInstructionsObject.cMaxInstructionsInInstructionSequence = this->cMaxInstructionsInSequence;
+    this->vmInstructionsObject.cBadAddressBytes = this->cForbiddenBytes;
+    this->vmInstructionsObject.cIgnoreDuplicateInstructionSequenceResults = this->cIgnoreDuplicateInstructionSequenceResults;
+    this->vmInstructionsObject.cSearchForSequencesWithDirectRelativeJumpsInTheMiddle = true;
+    this->vmInstructionsObject.cIgnoreOutputSequencesThatStartWithDirectRelativeJumps = true;
+    this->vmInstructionsObject.cInnerAssemblySyntax = ROP::AssemblySyntax::Intel;
+    this->vmInstructionsObject.cComputeRegisterInfo = true;
     this->vmInstructionsObject.buildInstructionTrie();
 
     this->processArchSize = this->vmInstructionsObject.getVirtualMemoryBytes().getProcessArchSize();
@@ -367,20 +367,20 @@ void ROP::PayloadGenX86::configureGenerator() {
 
 
 unsigned ROP::PayloadGenX86::getNumberOfVariantsToOutputForThisStep(unsigned numFoundVariants) {
-    if (this->numVariantsToOutputForEachStep == 0) {
+    if (this->cNumVariantsToOutputForEachStep == 0) {
         return numFoundVariants;
     }
 
-    return std::min(this->numVariantsToOutputForEachStep, numFoundVariants);
+    return std::min(this->cNumVariantsToOutputForEachStep, numFoundVariants);
 }
 
 bool ROP::PayloadGenX86::registerSizedValueIsFreeOfForbiddenBytes(uint64_t cValue) {
     // No forbidden bytes? Then any value is ok.
-    if (this->numForbiddenBytes == 0) {
+    if (this->cNumForbiddenBytes == 0) {
         return true;
     }
 
-    return !RegisterSizedConstantHasBadBytes(this->processArchSize, this->forbiddenBytes, cValue);
+    return !RegisterSizedConstantHasBadBytes(this->processArchSize, this->cForbiddenBytes, cValue);
 }
 
 ROP::addressType ROP::PayloadGenX86::findValidVirtualMemoryAddressOfString(const char * const cStr) {
@@ -759,7 +759,7 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
         int imm = this->checkInstructionIsRetAndGetImmediateValue(currInstrSequence.back(),
                                                                   currRegInfoSequence.back());
         bool lastInstructionIsRet = (imm != -1);
-        if (lastInstructionIsRet && imm <= (int)this->numAcceptablePaddingBytesForOneInstrSequence) {
+        if (lastInstructionIsRet && imm <= (int)this->cNumAcceptablePaddingBytesForOneInstrSequence) {
             // All good.
             numReturnPaddingNeeded = imm;
         }
@@ -768,7 +768,7 @@ ROP::PayloadGenX86::searchForSequenceStartingWithInstruction(const std::string& 
             sequenceIsGood = false;
         }
 
-        if (numMiddlePaddingNeeded + numReturnPaddingNeeded > this->numAcceptablePaddingBytesForOneInstrSequence) {
+        if (numMiddlePaddingNeeded + numReturnPaddingNeeded > this->cNumAcceptablePaddingBytesForOneInstrSequence) {
             sequenceIsGood = false;
         }
 
@@ -1057,7 +1057,7 @@ bool ROP::PayloadGenX86::appendROPChainForShellCodeWithPathNullNull() {
         this->currLineIndent++;
 
         // Append the RET-sled in order to cover the bytes of the stack variables/buffers.
-        this->appendRetSledBytesToPayload(this->approximateByteSizeOfStackBuffer);
+        this->appendRetSledBytesToPayload(this->cApproximateByteSizeOfStackBuffer);
 
         // Putting the right value into each argument takes some gadget work.
         using argWorkType = std::function<bool(const std::set<x86_reg>&)>;
@@ -1149,7 +1149,7 @@ bool ROP::PayloadGenX86::appendROPChainForShellCodeWithPathEmptyEmpty() {
         this->currLineIndent++;
 
         // Append the RET-sled in order to cover the bytes of the stack variables/buffers.
-        this->appendRetSledBytesToPayload(this->approximateByteSizeOfStackBuffer);
+        this->appendRetSledBytesToPayload(this->cApproximateByteSizeOfStackBuffer);
 
         // Putting the right value into each argument takes some gadget work.
         using argWorkType = std::function<bool(const std::set<x86_reg>&)>;

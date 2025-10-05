@@ -817,7 +817,7 @@ void testFilterVMInstructionSequencesByRegisterInfo(string targetExecutable) {
     pv(targetPid); pn;
 
     VirtualMemoryInstructions vmInfo(targetPid);
-    vmInfo.computeRegisterInfo = true;
+    vmInfo.cComputeRegisterInfo = true;
     vmInfo.buildInstructionTrie();
     printf("Finished building vmInfo object!\n\n");
 
@@ -1083,18 +1083,18 @@ void testPayloadGeneration() {
     PayloadGenX86 generator(targetPid);
 
     // Forbid the NULL byte.
-    generator.forbiddenBytes.set(0x00);
+    generator.cForbiddenBytes.set(0x00);
 
     // Forbid whitespace bytes.
     for (auto byte : GetWhitespaceBytesAsSet()) {
-        generator.forbiddenBytes.set(byte);
+        generator.cForbiddenBytes.set(byte);
     }
 
-    generator.ignoreDuplicateInstructionSequenceResults = true;
-    generator.maxInstructionsInSequence = 10;
-    generator.approximateByteSizeOfStackBuffer = 100;
-    generator.numVariantsToOutputForEachStep = 0; // all of them.
-    generator.numAcceptablePaddingBytesForOneInstrSequence = 400;
+    generator.cIgnoreDuplicateInstructionSequenceResults = true;
+    generator.cMaxInstructionsInSequence = 10;
+    generator.cApproximateByteSizeOfStackBuffer = 100;
+    generator.cNumVariantsToOutputForEachStep = 0; // all of them.
+    generator.cNumAcceptablePaddingBytesForOneInstrSequence = 400;
     generator.configureGenerator();
 
     // generator.appendGadgetForCopyOrExchangeRegisters(X86_REG_RAX, X86_REG_RDX, {});

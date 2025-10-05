@@ -110,28 +110,28 @@ namespace ROP {
 
         //////////////////////// Config values ////////////////////////
 
-        int minInstructionsInInstructionSequence = 1;
-        int maxInstructionsInInstructionSequence = 10;
+        int cMinInstructionsInInstructionSequence = 1;
+        int cMaxInstructionsInInstructionSequence = 10;
 
         // Ignore results where the virtual address contains any of these bytes.
-        std::bitset<256> badAddressBytes;
+        std::bitset<256> cBadAddressBytes;
 
         // Keep just the first virtual address that we find for a given sequence.
-        bool ignoreDuplicateInstructionSequenceResults = true;
+        bool cIgnoreDuplicateInstructionSequenceResults = true;
 
         // Include instruction sequences like "xor eax, eax; jmp 0xee877518 --> pop edi; pop esi; ret".
-        bool searchForSequencesWithDirectRelativeJumpsInTheMiddle = true;
+        bool cSearchForSequencesWithDirectRelativeJumpsInTheMiddle = true;
 
         // Ignore instruction sequences like "jmp 0xee877518 --> pop edi; pop esi; ret"
         // (since the starting `jmp` instruction doesn't add value by itself).
-        bool ignoreOutputSequencesThatStartWithDirectRelativeJumps = true;
+        bool cIgnoreOutputSequencesThatStartWithDirectRelativeJumps = true;
 
         // The assembly syntax that will be output by Capstone when disassembling.
-        AssemblySyntax innerAssemblySyntax = AssemblySyntax::Intel;
+        AssemblySyntax cInnerAssemblySyntax = AssemblySyntax::Intel;
 
         // Tell Capstone to compute the extra detail information when building the ins seq trie.
         // Default value: false (details aren't always needed).
-        bool computeRegisterInfo = false;
+        bool cComputeRegisterInfo = false;
 
         //////////////////////// Config values ////////////////////////
 

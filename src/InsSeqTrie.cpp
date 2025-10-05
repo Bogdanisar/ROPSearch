@@ -19,8 +19,8 @@ ROP::InsSeqTrie::InsSeqTrie(InsSeqTrie&& other)
 // Move assignment operator.
 ROP::InsSeqTrie& ROP::InsSeqTrie::operator=(InsSeqTrie&& other) {
     std::swap(this->root, other.root);
-    std::swap(this->ignoreOutputSequencesThatStartWithDirectRelativeJumps,
-              other.ignoreOutputSequencesThatStartWithDirectRelativeJumps);
+    std::swap(this->cIgnoreOutputSequencesThatStartWithDirectRelativeJumps,
+              other.cIgnoreOutputSequencesThatStartWithDirectRelativeJumps);
     return *this;
 }
 
@@ -36,13 +36,13 @@ ROP::InsSeqTrie::Node* ROP::InsSeqTrie::addInstruction(
     }
     Node *childNode = referenceNode->children[instruction];
 
-    if (this->numBadAddressBytes != 0
-        && RegisterSizedConstantHasBadBytes(this->archBitSize, this->badAddressBytes, vAddress)) {
+    if (this->cNumBadAddressBytes != 0
+        && RegisterSizedConstantHasBadBytes(this->cArchBitSize, this->cBadAddressBytes, vAddress)) {
         // Don't add this address since it has bad bytes.
         return childNode;
     }
 
-    if (this->ignoreDuplicateInstructionSequenceResults && childNode->matchingVirtualAddresses.size() != 0) {
+    if (this->cIgnoreDuplicateInstructionSequenceResults && childNode->matchingVirtualAddresses.size() != 0) {
         // Don't add this address since it's a duplicate.
         // But check if it's smaller than the one we already know.
         childNode->matchingVirtualAddresses[0] = std::min(childNode->matchingVirtualAddresses[0], vAddress);
@@ -86,18 +86,18 @@ void ROP::InsSeqTrie::getTrieContent(Node *currentNode,
 {
     assert(currentNode->matchingVirtualAddresses.size() != 0
            || currentNode == this->root
-           || this->numBadAddressBytes != 0);
+           || this->cNumBadAddressBytes != 0);
 
     if (currentNode->matchingVirtualAddresses.size() != 0) {
         for (addressType addr : currentNode->matchingVirtualAddresses) {
 
-            if ((int)currInstrSeq.size() < this->minInstructionsInInstructionSequence) {
+            if ((int)currInstrSeq.size() < this->cMinInstructionsInInstructionSequence) {
                 // The current sequence is too short.
                 // Don't add it to the output list.
                 continue;
             }
 
-            if (this->ignoreOutputSequencesThatStartWithDirectRelativeJumps) {
+            if (this->cIgnoreOutputSequencesThatStartWithDirectRelativeJumps) {
                 const std::string& startInstruction = currInstrSeq.back();
                 bool startInstructionIsRelativeJump = (startInstruction.find("-->") != std::string::npos);
                 if (startInstructionIsRelativeJump) {

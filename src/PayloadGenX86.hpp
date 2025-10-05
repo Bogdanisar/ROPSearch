@@ -288,14 +288,14 @@ namespace ROP {
 
         //////////////////////// Config values ////////////////////////
 
-        std::bitset<256> forbiddenBytes;
-        unsigned numForbiddenBytes; // optimization since bitset::count() might not be O(1).
+        std::bitset<256> cForbiddenBytes;
+        unsigned cNumForbiddenBytes; // optimization since bitset::count() might not be O(1).
 
-        bool ignoreDuplicateInstructionSequenceResults = true;
-        unsigned maxInstructionsInSequence = 10;
-        unsigned approximateByteSizeOfStackBuffer = 100; // i.e. the payload overflows something like `char buffer[100]`.
-        unsigned numVariantsToOutputForEachStep = 1; // Set to `0` for "All of them".
-        unsigned numAcceptablePaddingBytesForOneInstrSequence = 100;
+        bool cIgnoreDuplicateInstructionSequenceResults = true;
+        unsigned cMaxInstructionsInSequence = 10;
+        unsigned cApproximateByteSizeOfStackBuffer = 100; // i.e. the payload overflows something like `char buffer[100]`.
+        unsigned cNumVariantsToOutputForEachStep = 1; // Set to `0` for "All of them".
+        unsigned cNumAcceptablePaddingBytesForOneInstrSequence = 100;
 
         //////////////////////// Config values ////////////////////////
 
