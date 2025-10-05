@@ -161,19 +161,34 @@ static inline unsigned GetRMBitsOfModRMByte(ROP::byte b) {
 int ________Returns________;
 #endif
 
+static inline bool BytesAreNearRetInstructionSimple(const ROP::byte *bytes,
+                                                    const unsigned numBytes,
+                                                    const PrefixBytesInfo& prefixes) {
+    UNUSED(prefixes);
+    assert(numBytes > 0);
+
+    // "ret" instruction.
+    return (numBytes == 1 && bytes[0] == 0xC3);
+}
+
+static inline bool BytesAreNearRetInstructionWithImmediate(const ROP::byte *bytes,
+                                                           const unsigned numBytes,
+                                                           const PrefixBytesInfo& prefixes) {
+    UNUSED(prefixes);
+    assert(numBytes > 0);
+
+    // "ret imm16" instruction.
+    return (numBytes == 3 && bytes[0] == 0xC2);
+}
+
 static inline bool BytesAreNearRetInstruction(const ROP::byte *bytes,
                                               const unsigned numBytes,
                                               const PrefixBytesInfo& prefixes) {
     UNUSED(prefixes);
     assert(numBytes > 0);
 
-    // "ret" instruction.
-    if (numBytes == 1 && bytes[0] == 0xC3) { return true; }
-
-    // "ret imm16" instruction.
-    if (numBytes == 3 && bytes[0] == 0xC2) { return true; }
-
-    return false;
+    return BytesAreNearRetInstructionSimple(bytes, numBytes, prefixes) ||
+           BytesAreNearRetInstructionWithImmediate(bytes, numBytes, prefixes);
 }
 
 static inline bool BytesAreFarRetInstruction(const ROP::byte *bytes,
@@ -480,6 +495,9 @@ static inline bool BytesAreRelativeCallInstruction64bit(const ROP::byte *bytes,
 int ________High_level________;
 #endif
 
+static bool cAllowRetAtSeqEnd = false;
+static bool cAllowRetImmAtSeqEnd = false;
+
 /**
  * Check if the given bytes represent an instruction
  * that is useful as the ending instruction of an instruction sequence.
@@ -498,7 +516,11 @@ static inline bool BytesAreUsefulInstructionAtSequenceEnd(const ROP::byte *bytes
         }
     }
 
-    if (BytesAreNearRetInstruction(bytes, numBytes, prefixes)) {
+    if (cAllowRetAtSeqEnd && BytesAreNearRetInstructionSimple(bytes, numBytes, prefixes)) {
+        return true;
+    }
+
+    if (cAllowRetImmAtSeqEnd && BytesAreNearRetInstructionWithImmediate(bytes, numBytes, prefixes)) {
         return true;
     }
 

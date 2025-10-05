@@ -114,6 +114,12 @@ void ConfigureListCommandSubparser() {
     gListCmdSubparser.add_argument("--unique")
         .help("discard duplicate instruction sequence results (keep just one virtual address for the found sequences)")
         .flag();
+    gListCmdSubparser.add_argument("-t", "--types")
+        .help("select which types of sequences are listed in the output, classed by the last instruction. "
+              "Choices: 'all', 'rop', 'ret', 'ret-imm'")
+        .metavar("TYPE")
+        .default_value<vector<string>>({"rop"})
+        .nargs(argparse::nargs_pattern::at_least_one);
     gListCmdSubparser.add_argument("--no-null")
         .help("ignore instruction sequences that have a \"0x00\" byte in their virtual memory address. Note: This may print nothing on 64bit arch.")
         .flag();
@@ -127,12 +133,12 @@ void ConfigureListCommandSubparser() {
         .metavar("BYTE")
         .nargs(argparse::nargs_pattern::at_least_one);
     gListCmdSubparser.add_argument("--no-reljumps")
-        .help("Ignore instruction sequences with direct relative 'jmp' instructions in the middle. "
+        .help("ignore instruction sequences with direct relative 'jmp' instructions in the middle. "
               "They are usually included. "
               "Example: 'mov ebx, 0xffffffff; jmp 0xee73845b --> mov eax, ebx; pop ebx; ret'")
         .flag();
     gListCmdSubparser.add_argument("--include-reljump-starts")
-        .help("Keep instruction sequences with direct relative 'jmp' instructions at the start. "
+        .help("keep instruction sequences with direct relative 'jmp' instructions at the start. "
               "They are usually ignored. "
               "Example: 'jmp 0xee73845b --> mov eax, ebx; pop ebx; ret'")
         .flag();
@@ -141,13 +147,13 @@ void ConfigureListCommandSubparser() {
         .metavar("STR")
         .nargs(argparse::nargs_pattern::at_least_one);
     gListCmdSubparser.add_argument("--pack", "--pack-partial-registers")
-        .help("Treat partial registers as being the same register when used in the '--query' argument.")
+        .help("treat partial registers as being the same register when used in the '--query' argument.")
         .flag();
 
     // "Output" arguments
     gListCmdSubparser.add_usage_newline();
     gListCmdSubparser.add_argument("--show-address-base")
-        .help("Print the address of each instruction sequence as \"base + offset\".")
+        .help("print the address of each instruction sequence as \"base + offset\".")
         .flag();
     gListCmdSubparser.add_argument("-asm", "--assembly-syntax")
         .help("desired assembly syntax for the output instructions. Possible values: \"intel\", \"att\"")
@@ -188,7 +194,7 @@ void ConfigureAssemblyInfoCommandSubparser() {
         .choices("intel", "att")
         .nargs(1);
     gAssemblyInfoCmdSubparser.add_argument("-asize", "--arch-bit-size")
-        .help("The bit size of the instruction architecture. Possible values: 32, 64")
+        .help("the bit size of the instruction architecture. Possible values: 32, 64")
         .metavar("INT")
         .default_value(64)
         .choices(32, 64)
@@ -586,6 +592,7 @@ void DoListCommand() {
     const int minInstructions = gListCmdSubparser.get<int>("--min-instructions");
     const int maxInstructions = gListCmdSubparser.get<int>("--max-instructions");
     const bool ignoreDuplicates = gListCmdSubparser.get<bool>("--unique");
+    vector<string> seqTypes = gListCmdSubparser.get<vector<string>>("--types");
     const bool ignoreRelativeJumps = gListCmdSubparser.is_used("--no-reljumps");
     const bool includeRelativeJumpStarts = gListCmdSubparser.is_used("--include-reljump-starts");
     const bool hasRegisterQueryArg = gListCmdSubparser.is_used("--query");
@@ -623,6 +630,17 @@ void DoListCommand() {
     vmInstructions.cSearchForSequencesWithDirectRelativeJumpsInTheMiddle = !ignoreRelativeJumps;
     vmInstructions.cIgnoreOutputSequencesThatStartWithDirectRelativeJumps = !includeRelativeJumpStarts;
     vmInstructions.cInnerAssemblySyntax = desiredSyntax;
+
+    // Do manual validation of the received values
+    // since argparse is bugged when using both '.choices()' and '.default_value()' arg modifiers.
+    set<string> validSeqTypes({"all", "rop", "ret", "ret-imm"});
+    for (const string& str : seqTypes) {
+        if (validSeqTypes.count(str) == 0) {
+            exitError("Invalid sequence type for \"--types\" argument: \"%s\"", str.c_str());
+        }
+    }
+
+    vmInstructions.allowedSequenceTypes = set<string>(seqTypes.begin(), seqTypes.end());
 
     if (hasRegisterQueryArg) {
         vector<string> queryStringList = gListCmdSubparser.get<vector<string>>("--query");

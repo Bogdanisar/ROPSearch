@@ -133,6 +133,15 @@ namespace ROP {
         // Default value: false (details aren't always needed).
         bool cComputeRegisterInfo = false;
 
+        /**
+         * Specify which instruction sequences are desired, classified by the terminating instruction.
+         * - "ret": sequences that end in a "ret" instruction;
+         * - "ret-imm": sequences that end in a "ret imm16" instruction;
+         * - "rop": short for "ret" and "ret-imm";
+         * - "all": all available sequence types. For now, equivalent to "rop";
+         */
+        std::set<std::string> allowedSequenceTypes;
+
         //////////////////////// Config values ////////////////////////
 
 

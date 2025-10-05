@@ -289,6 +289,13 @@ void ROP::VirtualMemoryInstructions::buildInstructionTrie() {
     this->instructionTrie.cIgnoreDuplicateInstructionSequenceResults = ignDupes;
     this->instructionTrie.cIgnoreOutputSequencesThatStartWithDirectRelativeJumps = ignRelJmps;
 
+    if (this->allowedSequenceTypes.count("all") || this->allowedSequenceTypes.count("rop") || this->allowedSequenceTypes.count("ret")) {
+        cAllowRetAtSeqEnd = true;
+    }
+    if (this->allowedSequenceTypes.count("all") || this->allowedSequenceTypes.count("rop") || this->allowedSequenceTypes.count("ret-imm")) {
+        cAllowRetImmAtSeqEnd = true;
+    }
+
     for (const VirtualMemorySegmentBytes& segm : this->vmBytes.getExecutableSegments()) {
         if (this->cSearchForSequencesWithDirectRelativeJumpsInTheMiddle) {
             this->buildRelativeJmpMap(segm);
