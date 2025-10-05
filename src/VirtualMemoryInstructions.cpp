@@ -295,6 +295,9 @@ void ROP::VirtualMemoryInstructions::buildInstructionTrie() {
     if (this->allowedSequenceTypes.count("all") || this->allowedSequenceTypes.count("rop") || this->allowedSequenceTypes.count("ret-imm")) {
         cAllowRetImmAtSeqEnd = true;
     }
+    if (this->allowedSequenceTypes.count("all") || this->allowedSequenceTypes.count("syscall")) {
+        cAllowSyscallAtSeqEnd = true;
+    }
 
     for (const VirtualMemorySegmentBytes& segm : this->vmBytes.getExecutableSegments()) {
         if (this->cSearchForSequencesWithDirectRelativeJumpsInTheMiddle) {

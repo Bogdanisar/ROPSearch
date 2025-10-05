@@ -425,9 +425,9 @@ static inline bool BytesAreFarAbsoluteIndirectJmpInstructionOrInvalid(const ROP:
 #pragma endregion Unconditional indirect JMPs
 
 
-#pragma region Software interrupts
+#pragma region Software interrupts and system calls
 #if false
-int ________Software_interrupts________;
+int ________Software_interrupts_and_system_calls________;
 #endif
 
 /**
@@ -454,7 +454,7 @@ static inline bool BytesAreInterruptInstruction(const ROP::byte *bytes,
     // "int3" instruction.
     if (numBytes == 1 && bytes[0] == 0xCC) { return true; }
 
-    // "int imm8".
+    // "int imm8" instruction.
     if (numBytes == 2 && bytes[0] == 0xCD) { return true; }
 
     // "into" instruction.
@@ -466,7 +466,26 @@ static inline bool BytesAreInterruptInstruction(const ROP::byte *bytes,
     return false;
 }
 
-#pragma endregion Software interrupts
+/** Check if this is an instruction that could launch a system-call. */
+static inline bool BytesAreSyscallInstruction(const ROP::byte *bytes,
+                                              const unsigned numBytes,
+                                              const PrefixBytesInfo& prefixes) {
+    UNUSED(prefixes);
+    assert(numBytes > 0);
+
+    // "int 0x80" instruction.
+    if (BytesAreSystemCallInterruptInstruction(bytes, numBytes, prefixes)) { return true; }
+
+    // "sysenter" instruction.
+    if (numBytes == 2 && bytes[0] == 0x0F && bytes[1] == 0x34) { return true; }
+
+    // "syscall" instruction.
+    if (numBytes == 2 && bytes[0] == 0x0F && bytes[1] == 0x05) { return true; }
+
+    return false;
+}
+
+#pragma endregion Software interrupts and system calls
 
 
 #pragma region Call instructions
@@ -497,6 +516,7 @@ int ________High_level________;
 
 static bool cAllowRetAtSeqEnd = false;
 static bool cAllowRetImmAtSeqEnd = false;
+static bool cAllowSyscallAtSeqEnd = false;
 
 /**
  * Check if the given bytes represent an instruction
@@ -521,6 +541,10 @@ static inline bool BytesAreUsefulInstructionAtSequenceEnd(const ROP::byte *bytes
     }
 
     if (cAllowRetImmAtSeqEnd && BytesAreNearRetInstructionWithImmediate(bytes, numBytes, prefixes)) {
+        return true;
+    }
+
+    if (cAllowSyscallAtSeqEnd && BytesAreSyscallInstruction(bytes, numBytes, prefixes)) {
         return true;
     }
 

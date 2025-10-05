@@ -116,7 +116,7 @@ void ConfigureListCommandSubparser() {
         .flag();
     gListCmdSubparser.add_argument("-t", "--types")
         .help("select which types of sequences are listed in the output, classed by the last instruction. "
-              "Choices: 'all', 'rop', 'ret', 'ret-imm'")
+              "Choices: 'all', 'rop', 'ret', 'ret-imm', 'syscall'")
         .metavar("TYPE")
         .default_value<vector<string>>({"rop"})
         .nargs(argparse::nargs_pattern::at_least_one);
@@ -633,7 +633,7 @@ void DoListCommand() {
 
     // Do manual validation of the received values
     // since argparse is bugged when using both '.choices()' and '.default_value()' arg modifiers.
-    set<string> validSeqTypes({"all", "rop", "ret", "ret-imm"});
+    set<string> validSeqTypes({"all", "rop", "ret", "ret-imm", "syscall"});
     for (const string& str : seqTypes) {
         if (validSeqTypes.count(str) == 0) {
             exitError("Invalid sequence type for \"--types\" argument: \"%s\"", str.c_str());
